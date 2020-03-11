@@ -1,6 +1,9 @@
 
                 ChangeLog file for zlib
 
+Changes in 1.2.11.f-abcouwer-safety-v0 (TBD)
+- Updated README and version info
+
 Changes in 1.2.11 (15 Jan 2017)
 - Fix deflate stored bug when pulling last block from window
 - Permit immediate deflateParams changes before any deflate input
