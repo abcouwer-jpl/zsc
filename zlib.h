@@ -37,12 +37,12 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.11"
-#define ZLIB_VERNUM 0x12b0
+#define ZLIB_VERSION "1.2.11.f-abcouwer-safety-v0"
+#define ZLIB_VERNUM 0x12bf
 #define ZLIB_VER_MAJOR 1
 #define ZLIB_VER_MINOR 2
 #define ZLIB_VER_REVISION 11
-#define ZLIB_VER_SUBREVISION 0
+#define ZLIB_VER_SUBREVISION f
 
 /*
     The 'zlib' compression library provides in-memory compression and

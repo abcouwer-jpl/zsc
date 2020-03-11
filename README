@@ -1,3 +1,24 @@
+ZLIB DATA COMPRESSION LIBRARY - flight safety version
+
+zlib 1.2.11.f-abcouwer-safety-v0 is a version of zlib intended 
+to be safe for flight software or other safety-critical applications.
+See https://www.zlib.net/. 
+
+This version was created by pushing zlib 1.2.11 to the JPL internal github, via
+
+git clone https://github.com/madler/zlib.git
+cd zlib
+git push --mirror https://github.jpl.nasa.gov/abcouwer/zlib-safe.git
+
+To pull any future changes from public zlib, one should be able to do
+
+git remote add public https://github.com/madler/zlib.git
+git pull public master # Creates a merge commit
+git push origin master
+
+
+
+
 ZLIB DATA COMPRESSION LIBRARY
 
 zlib 1.2.11 is a general purpose data compression library.  All the code is
