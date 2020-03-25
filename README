@@ -4,10 +4,12 @@ zlib 1.2.11.f-abcouwer-safety-v0 is a version of zlib intended
 to be safe for flight software or other safety-critical applications.
 
 See https://www.zlib.net/ for information about zlib.
-This zlib version's repo is at https://github.jpl.nasa.gov/abcouwer/zlib-safe.
 
-This repo is owned/developed/maintained by Neil Abcouwer, 
-neil.abcouwer@jpl.nasa.gov.
+This zlib version's repo is at https://github.jpl.nasa.gov/abcouwer/zlib-safe.
+Owned/developed/maintained by Neil Abcouwer, neil.abcouwer@jpl.nasa.gov.
+
+If you fork from this repo for more than just playing around, 
+Neil would appreciate learning what it's being used for.
 
 This version was created by pushing zlib 1.2.11 to the JPL internal github, via
 
@@ -27,7 +29,7 @@ To build and test with warnings and coverage enabled:
   ./configure --warn --cover
   make test
   
-To see coverage reports (work in progress, doesn't do assertions):
+To generate .gcov files and see coverage summary:
 
   ./test/parse_gcov.pl | tee gcov_log.txt
   
@@ -39,7 +41,7 @@ TODO
 - get close to 100% coverage in testing
 
 
-Version-specific info ends here.
+1.2.11.f-abcouwer-safety-v0 specific info ends here.
 The information below this line is all from zlib 1.2.11's README.
 -----------------------------------------------------------------------------
 
