@@ -29,13 +29,12 @@ To build and test with warnings and coverage enabled:
   
 To see coverage reports (work in progress, doesn't do assertions):
 
-  ./test/parse_gcov.pl -v 9 | tee gcov_log.txt
+  ./test/parse_gcov.pl | tee gcov_log.txt
   
 TODO 
 - fix issues such that --Werror compiles.
 - add gtest suite
 - add tests for data corpus
-- make easy way to see test coverage
 - run static analyzers like cobra, semmle, which found issues for M2020
 - get close to 100% coverage in testing
 
