@@ -86,6 +86,7 @@ zconst=0
 build64=0
 gcc=0
 warn=0
+werror=0
 debug=0
 old_cc="$CC"
 old_cflags="$CFLAGS"
@@ -106,6 +107,7 @@ leave()
 }
 
 # process command line options
+# Neil Abcouwer added werror
 while test $# -ge 1
 do
 case "$1" in
@@ -136,6 +138,7 @@ case "$1" in
     --localstatedir=*) echo "ignored option: --localstatedir" | tee -a configure.log; shift ;;
     -c* | --const) zconst=1; shift ;;
     -w* | --warn) warn=1; shift ;;
+    --werror) werror=1; shift ;;
     -d* | --debug) debug=1; shift ;;
     *)
       echo "unknown option: $1" | tee -a configure.log
@@ -198,6 +201,10 @@ if test "$gcc" -eq 1 && ($cc -c $test.c) >> configure.log 2>&1; then
     else
       CFLAGS="${CFLAGS} -Wall -Wextra -pedantic"
     fi
+  fi
+  # Werror added by Neil Abcouwer
+  if test "$werror" -eq 1; then
+    CFLAGS="${CFLAGS} -Werror"
   fi
   if test $debug -eq 1; then
     CFLAGS="${CFLAGS} -DZLIB_DEBUG"

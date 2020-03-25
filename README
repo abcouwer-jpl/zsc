@@ -2,22 +2,48 @@ ZLIB DATA COMPRESSION LIBRARY - flight safety version
 
 zlib 1.2.11.f-abcouwer-safety-v0 is a version of zlib intended 
 to be safe for flight software or other safety-critical applications.
-See https://www.zlib.net/. 
+
+See https://www.zlib.net/ for information about zlib.
+
+This zlib version's repo is at https://github.jpl.nasa.gov/abcouwer/zlib-safe.
+Owned/developed/maintained by Neil Abcouwer, neil.abcouwer@jpl.nasa.gov.
+
+If you fork from this repo for more than just playing around, 
+Neil would appreciate learning what it's being used for.
 
 This version was created by pushing zlib 1.2.11 to the JPL internal github, via
 
-git clone https://github.com/madler/zlib.git
-cd zlib
-git push --mirror https://github.jpl.nasa.gov/abcouwer/zlib-safe.git
+  git clone https://github.com/madler/zlib.git
+  cd zlib
+  git push --mirror https://github.jpl.nasa.gov/abcouwer/zlib-safe.git
 
 To pull any future changes from public zlib, one should be able to do
 
-git remote add public https://github.com/madler/zlib.git
-git pull public master # Creates a merge commit
-git push origin master
+  git remote add public https://github.com/madler/zlib.git
+  git pull public master # Creates a merge commit
+  git push origin master
+
+To build and test with warnings and coverage enabled:
+
+  make clean
+  ./configure --warn --cover
+  make test
+  
+To generate .gcov files and see coverage summary:
+
+  ./test/parse_gcov.pl | tee gcov_log.txt
+  
+TODO 
+- fix issues such that --Werror compiles.
+- add gtest suite
+- add tests for data corpus
+- run static analyzers like cobra, semmle, which found issues for M2020
+- get close to 100% coverage in testing
 
 
-
+1.2.11.f-abcouwer-safety-v0 specific info ends here.
+The information below this line is all from zlib 1.2.11's README.
+-----------------------------------------------------------------------------
 
 ZLIB DATA COMPRESSION LIBRARY
 
