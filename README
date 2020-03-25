@@ -27,9 +27,9 @@ To build and test with warnings and coverage enabled:
   ./configure --warn --cover
   make test
   
-To see coverage reports (work in progress):
+To see coverage reports (work in progress, doesn't do assertions):
 
-  gcov *.gcno
+  ./test/parse_gcov.pl -v 9 | tee gcov_log.txt
   
 TODO 
 - fix issues such that --Werror compiles.
