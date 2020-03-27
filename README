@@ -33,10 +33,16 @@ To generate .gcov files and see coverage summary:
 
   ./test/parse_gcov.pl | tee gcov_log.txt
   
+To build and run gtest test
+
+  cmake . 
+  make
+  make test ARGS="-V"
+  
 TODO 
-- fix issues such that --Werror compiles.
-- add gtest suite
 - add tests for data corpus
+- add full gtest suite
+- fix issues such that --Werror compiles.
 - run static analyzers like cobra, semmle, which found issues for M2020
 - get close to 100% coverage in testing
 
