@@ -37,6 +37,12 @@ To build and run gtest test
 
   ./build.bash test
   
+To build and run gtest test with coverage
+
+  ./build.bash coverage
+  
+Then open ./build/coverage/index.html
+  
 TODO 
 - add tests for data corpus
 - add full gtest suite

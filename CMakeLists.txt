@@ -23,7 +23,7 @@ include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckCSourceCompiles)
-enable_testing()
+#enable_testing()
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(stdint.h    HAVE_STDINT_H)
@@ -229,6 +229,41 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
 endif()
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+endif()
+
+
+if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
+  # build the unit tests
+  set(CMAKE_BUILD_TYPE "Test")
+  set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/test)
+  add_custom_target(ctest COMMAND ${CMAKE_CTEST_COMMAND})
+  include(CodeCoverage)
+  APPEND_COVERAGE_COMPILER_FLAGS()
+  set(COVERAGE_EXCLUDES 
+    '/usr/*' 
+    '${CMAKE_CURRENT_SOURCE_DIR}/test/*'
+    '${CMAKE_CURRENT_SOURCE_DIR}/build/*')
+  MESSAGE( STATUS "COVERAGE_EXCLUDES: " ${COVERAGE_EXCLUDES} )
+  setup_target_for_coverage(
+    NAME coverage 
+    EXECUTABLE ctest
+    DEPENDENCIES ctest)
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Test")
+  set(CMAKE_BUILD_TYPE "Debug")
+  add_definitions(-DSTATIC=)
+  set(ENV{CTEST_OUTPUT_ON_FAILURE} TRUE)
+
+  include(CTest)
+  enable_testing()
+  
+  #add_subdirectory(test/ut)
+  
+  
+  
+  
+  
 endif()
 
 #============================================================================
