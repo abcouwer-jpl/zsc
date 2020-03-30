@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.4.4)
+cmake_minimum_required(VERSION 2.8.2)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -260,8 +260,19 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
   
   #add_subdirectory(test/ut)
   
-  
-  
+  project(cantrbry NONE)
+
+  include(ExternalProject)
+  ExternalProject_Add(cantrbry
+      GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/cantrbry.git
+      GIT_TAG           master
+      SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
+      BINARY_DIR        ""
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND     ""
+      INSTALL_COMMAND   ""
+      TEST_COMMAND      ""
+    )
   
   
 endif()
