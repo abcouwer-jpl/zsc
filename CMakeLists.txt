@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 2.4.4)
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
 project(zlib)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-long-long -pedantic -Werror -Wno-unused-local-typedefs")
 
 set(VERSION "1.2.11.f-abcouwer-safety-v0")
 

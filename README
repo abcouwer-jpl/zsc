@@ -35,9 +35,7 @@ To generate .gcov files and see coverage summary:
   
 To build and run gtest test
 
-  cmake . 
-  make
-  make test ARGS="-V"
+  ./build.bash test
   
 TODO 
 - add tests for data corpus
