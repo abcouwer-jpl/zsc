@@ -244,6 +244,22 @@ int stream_size;
     return inflateInit2_(strm, DEF_WBITS, version, stream_size);
 }
 
+
+
+uLong ZEXPORT inflateBoundAlloc2(windowBits)
+    int windowBits;
+{
+    uLong bound = 0;
+    bound += sizeof(struct inflate_state);
+    bound += (1U << windowBits) * sizeof(unsigned char);
+    return bound;
+}
+
+uLong ZEXPORT inflateBoundAlloc(void)
+{
+    return inflateBoundAlloc2(DEF_WBITS);
+}
+
 int ZEXPORT inflatePrime(strm, bits, value)
 z_streamp strm;
 int bits;

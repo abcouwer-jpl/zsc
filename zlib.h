@@ -1,4 +1,17 @@
 /* zlib.h -- interface of the 'zlib' general purpose compression library
+
+  version 1.2.11.f-abcouwer-safety-v0
+
+  Neil Abcouwer, Jet Propulsion Laboratory, 2020-03
+
+  This is a version of zlib meant to be "flight safe".
+  That means, among other things, no dynamic memory,
+  no loops without bound, use of assert, etc.
+
+
+  ----
+
+
   version 1.2.11, January 15th, 2017
 
   Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
@@ -130,6 +143,7 @@ typedef struct gz_header_s {
 
 typedef gz_header FAR *gz_headerp;
 
+
 /*
      The application must update next_in and avail_in when avail_in has dropped
    to zero.  It must update next_out and avail_out when avail_out has dropped
@@ -210,6 +224,7 @@ typedef gz_header FAR *gz_headerp;
 /* The deflate compression method (the only one supported in this version) */
 
 #define Z_NULL  0  /* for initializing zalloc, zfree, opaque */
+
 
 #define zlib_version zlibVersion()
 /* for compatibility with versions < 1.0.2 */
@@ -772,6 +787,16 @@ ZEXTERN uLong ZEXPORT deflateBound OF((z_streamp strm,
    than Z_FINISH or Z_NO_FLUSH are used.
 */
 
+ZEXTERN uLong ZEXPORT deflateBoundDestNoStream OF((uLong sourceLen,
+                                                   int windowBits,
+                                                   int memLevel,
+                                                   gz_headerp gz_head));
+
+ZEXTERN uLong ZEXPORT deflateBoundAlloc OF((int windowBits,
+                                            int memLevel));
+// return the bound of memory zlib will alloc
+
+
 ZEXTERN int ZEXPORT deflatePending OF((z_streamp strm,
                                        unsigned *pending,
                                        int *bits));
@@ -977,6 +1002,10 @@ ZEXTERN int ZEXPORT inflateReset2 OF((z_streamp strm,
    stream state was inconsistent (such as zalloc or state being Z_NULL), or if
    the windowBits parameter is invalid.
 */
+
+ZEXTERN uLong ZEXPORT inflateBoundAlloc OF((void));
+ZEXTERN uLong ZEXPORT inflateBoundAlloc2 OF((int windowBits));
+// FIXME number of bytes allocated by inflating
 
 ZEXTERN int ZEXPORT inflatePrime OF((z_streamp strm,
                                      int bits,
@@ -1224,6 +1253,7 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags OF((void));
    you need special options.
 */
 
+
 ZEXTERN int ZEXPORT compress OF((Bytef *dest,   uLongf *destLen,
                                  const Bytef *source, uLong sourceLen));
 /*
@@ -1262,6 +1292,65 @@ ZEXTERN uLong ZEXPORT compressBound OF((uLong sourceLen));
    compress() or compress2() call to allocate the destination buffer.
 */
 
+// FIXME comments
+ZEXTERN int ZEXPORT compressSafe OF((Bytef *dest,
+                                     uLongf *destLen,
+                                     const Bytef *source,
+                                     uLong sourceLen,
+                                     Bytef *work,
+                                     uLong workLen));
+
+ZEXTERN int ZEXPORT compressSafeGzip OF((Bytef *dest,
+                                         uLongf *destLen,
+                                         const Bytef *source,
+                                         uLong sourceLen,
+                                         Bytef *work,
+                                         uLong workLen,
+                                         gz_headerp gz_header));
+
+ZEXTERN int ZEXPORT compressSafe2 OF((Bytef *dest,
+                                      uLongf *destLen,
+                                      const Bytef *source,
+                                      uLong sourceLen,
+                                      Bytef *work,
+                                      uLong workLen,
+                                      int level,
+                                      int windowBits,
+                                      int memLevel,
+                                      int strategy));
+
+ZEXTERN int ZEXPORT compressSafeGzip2 OF((Bytef *dest,
+                                          uLongf *destLen,
+                                          const Bytef *source,
+                                          uLong sourceLen,
+                                          Bytef *work,
+                                          uLong workLen,
+                                          int level,
+                                          int windowBits,
+                                          int memLevel,
+                                          int strategy,
+                                          gz_headerp gz_header));
+
+ZEXTERN uLong ZEXPORT compressSafeBoundWork OF((void));
+
+ZEXTERN uLong ZEXPORT compressSafeBoundWork2 OF((int windowBits,
+                                                 int memLevel));
+
+ZEXTERN uLong ZEXPORT compressSafeBoundDest OF((uLong sourceLen));
+
+ZEXTERN uLong ZEXPORT compressSafeBoundDestGzip OF((uLong sourceLen,
+                                                    gz_headerp gz_header));
+
+ZEXTERN uLong ZEXPORT compressSafeBoundDest2 OF((uLong sourceLen,
+                                                 int windowBits,
+                                                 int memLevel));
+
+ZEXTERN uLong ZEXPORT compressSafeBoundDestGzip2 OF((uLong sourceLen,
+                                                     int windowBits,
+                                                     int memLevel,
+                                                     gz_headerp gz_head));
+
+
 ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
                                    const Bytef *source, uLong sourceLen));
 /*
@@ -1287,6 +1376,30 @@ ZEXTERN int ZEXPORT uncompress2 OF((Bytef *dest,   uLongf *destLen,
    length of the source is *sourceLen.  On return, *sourceLen is the number of
    source bytes consumed.
 */
+
+
+ZEXTERN int ZEXPORT uncompressSafe OF((Bytef *dest,
+                                       uLongf *destLen,
+                                       const Bytef *source,
+                                       uLong *sourceLen,
+                                       Bytef *work,
+                                       uLong workLen));
+
+ZEXTERN int ZEXPORT uncompressSafe2 OF((Bytef *dest,
+                                        uLongf *destLen,
+                                        const Bytef *source,
+                                        uLong *sourceLen,
+                                        Bytef *work,
+                                        uLong workLen,
+                                        int windowBits));
+
+ZEXTERN uLong ZEXPORT uncompressSafeBoundWork OF((void));
+ZEXTERN uLong ZEXPORT uncompressSafeBoundWork2 OF((int windowBits));
+
+
+
+// note that zlib does not provide a record of the size of the uncompressed data
+
 
                         /* gzip file access functions */
 

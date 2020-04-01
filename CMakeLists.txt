@@ -23,7 +23,6 @@ include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckCSourceCompiles)
-#enable_testing()
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(stdint.h    HAVE_STDINT_H)
@@ -113,6 +112,7 @@ set(ZLIB_PRIVATE_HDRS
 set(ZLIB_SRCS
     adler32.c
     compress.c
+    compress_safe.c
     crc32.c
     deflate.c
     gzclose.c
@@ -125,6 +125,7 @@ set(ZLIB_SRCS
     inffast.c
     trees.c
     uncompr.c
+    uncompr_safe.c
     zutil.c
 )
 
@@ -258,22 +259,23 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
   include(CTest)
   enable_testing()
   
-  #add_subdirectory(test/ut)
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry/README.md)
+  else()
   
-  project(cantrbry NONE)
-
-  include(ExternalProject)
-  ExternalProject_Add(cantrbry
-      GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/cantrbry.git
-      GIT_TAG           master
-      SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
-      BINARY_DIR        ""
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND     ""
-      INSTALL_COMMAND   ""
-      TEST_COMMAND      ""
-    )
-  
+      project(cantrbry NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(cantrbry
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/cantrbry.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
   
 endif()
 
