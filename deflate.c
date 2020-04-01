@@ -708,6 +708,115 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
            (sourceLen >> 25) + 13 - 6 + wraplen;
 }
 
+// find the deflate bound when there is no active stream
+uLong ZEXPORT deflateBoundDestNoStream(sourceLen,
+        windowBits, memLevel, gz_head)
+    uLong sourceLen;
+    int windowBits;
+    int memLevel;
+    gz_headerp gz_head;
+{
+    uLong complen, wraplen;
+    int wrap = 1;
+
+    /* conservative upper bound for compressed data */
+    complen = sourceLen +
+              ((sourceLen + 7) >> 3) + ((sourceLen + 63) >> 6) + 5;
+
+    if (windowBits < 0) { /* suppress zlib wrapper */
+        wrap = 0;
+        windowBits = -windowBits;
+    }
+#ifdef GZIP
+    else if (windowBits > 15) {
+        wrap = 2;       /* write gzip wrapper instead */
+        windowBits -= 16;
+    }
+#endif
+
+    /* compute wrapper length */
+    switch (wrap) {
+    case 0:                                 /* raw deflate */
+        wraplen = 0;
+        break;
+    case 1:                                 /* zlib wrapper */
+        wraplen = 6 + 4; // FIXME (s->strstart ? 4 : 0);
+        break;
+#ifdef GZIP
+    case 2:                                 /* gzip wrapper */
+        wraplen = 18;
+        if (gz_head != Z_NULL) {          /* user-supplied gzip header */
+            Bytef *str;
+            if (gz_head->extra != Z_NULL)
+                wraplen += 2 + gz_head->extra_len;
+            str = gz_head->name;
+            if (str != Z_NULL)
+                do {
+                    wraplen++;
+                } while (*str++);
+            str = gz_head->comment;
+            if (str != Z_NULL)
+                do {
+                    wraplen++;
+                } while (*str++);
+            if (gz_head->hcrc)
+                wraplen += 2;
+        }
+        break;
+#endif
+    default:                                /* for compiler happiness */
+        wraplen = 6;
+    }
+
+    /* if not default parameters, return conservative bound */
+    uInt hash_bits = (uInt) memLevel + 7;
+    if (windowBits != 15 || hash_bits != 8 + 7)
+        return complen + wraplen;
+
+    /* default settings: return tight bound for that case */
+    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
+           (sourceLen >> 25) + 13 - 6 + wraplen;
+}
+
+
+// return the bound of memory zlib will alloc
+uLong ZEXPORT deflateBoundAlloc(windowBits, memLevel)
+    int windowBits;
+    int memLevel;
+{
+    // see deflateInit2_() for these allocations
+
+    uLong bound = 0;
+
+    if (windowBits < 0) { /* suppress zlib wrapper */
+        windowBits = -windowBits;
+    }
+#ifdef GZIP
+    else if (windowBits > 15) {
+        windowBits -= 16;
+    }
+#endif
+
+    if (windowBits == 8) {
+        windowBits = 9; /* until 256-byte window bug fixed */
+    }
+
+    uInt window_size = 1 << windowBits;
+    uInt hash_bits = (uInt) memLevel + 7;
+    uInt hash_size = 1 << hash_bits;
+    uInt lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
+
+    bound += sizeof(deflate_state);           // strm->state
+    bound += window_size * 2 * sizeof(Byte);  // strm->state->window
+    bound += window_size * 2 * sizeof(Pos);   // strm->state->prev
+    bound += hash_size * sizeof(Pos);         // strm->state->head
+    bound += lit_bufsize * (sizeof(ush) + 2); // strm->state->pending_buf
+
+    return bound;
+}
+
+
+
 /* =========================================================================
  * Put a short in the pending buffer. The 16-bit value is put in MSB order.
  * IN assertion: the stream state is correct and there is enough room in

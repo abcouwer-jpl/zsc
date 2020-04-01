@@ -1,9 +1,14 @@
-cmake_minimum_required(VERSION 2.4.4)
+cmake_minimum_required(VERSION 2.8.2)
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
-project(zlib C)
+project(zlib)
 
-set(VERSION "1.2.11")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-long-long -pedantic -Werror -Wno-unused-local-typedefs")
+
+set(VERSION "1.2.11.f-abcouwer-safety-v0")
 
 option(ASM686 "Enable building i686 assembly implementation")
 option(AMD64 "Enable building amd64 assembly implementation")
@@ -18,7 +23,6 @@ include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckCSourceCompiles)
-enable_testing()
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(stdint.h    HAVE_STDINT_H)
@@ -108,6 +112,7 @@ set(ZLIB_PRIVATE_HDRS
 set(ZLIB_SRCS
     adler32.c
     compress.c
+    compress_safe.c
     crc32.c
     deflate.c
     gzclose.c
@@ -120,6 +125,7 @@ set(ZLIB_SRCS
     inffast.c
     trees.c
     uncompr.c
+    uncompr_safe.c
     zutil.c
 )
 
@@ -226,6 +232,148 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
+
+if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
+  # build the unit tests
+  set(CMAKE_BUILD_TYPE "Test")
+  set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/test)
+  add_custom_target(ctest COMMAND ${CMAKE_CTEST_COMMAND})
+  include(CodeCoverage)
+  APPEND_COVERAGE_COMPILER_FLAGS()
+  set(COVERAGE_EXCLUDES 
+    '/usr/*' 
+    '${CMAKE_CURRENT_SOURCE_DIR}/test/*'
+    '${CMAKE_CURRENT_SOURCE_DIR}/build/*')
+  MESSAGE( STATUS "COVERAGE_EXCLUDES: " ${COVERAGE_EXCLUDES} )
+  setup_target_for_coverage(
+    NAME coverage 
+    EXECUTABLE ctest
+    DEPENDENCIES ctest)
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Test")
+  set(CMAKE_BUILD_TYPE "Debug")
+  add_definitions(-DSTATIC=)
+  set(ENV{CTEST_OUTPUT_ON_FAILURE} TRUE)
+
+  include(CTest)
+  enable_testing()
+  
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry/README.md)
+  else()
+  
+      project(cantrbry NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(cantrbry
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/cantrbry.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl/README.md)
+  else()
+  
+      project(artificl NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(artificl
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/artificl.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/large/README.md)
+  else()
+  
+      project(large NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(large
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/large.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/large"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary/README.md)
+  else()
+  
+      project(calgary NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(calgary
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/calgary.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
+endif()
+
+#============================================================================
+# Download and unpack googletest at configure time
+#============================================================================
+
+configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+
+
+
+
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+if(result)
+  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+if(result)
+  message(FATAL_ERROR "Build step for googletest failed: ${result}")
+endif()
+
+# Prevent overriding the parent project's compiler/linker
+# settings on Windows
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# Add googletest directly to our build. This defines
+# the gtest and gtest_main targets.
+add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+                 EXCLUDE_FROM_ALL)
+
+# The gtest/gtest_main targets carry header search path
+# dependencies automatically when using CMake 2.8.11 or
+# later. Otherwise we have to add them here ourselves.
+if (CMAKE_VERSION VERSION_LESS 2.8.11)
+  include_directories("${gtest_SOURCE_DIR}/include")
+endif()
+
+
+
 #============================================================================
 # Example binaries
 #============================================================================
@@ -247,3 +395,17 @@ if(HAVE_OFF64_T)
     target_link_libraries(minigzip64 zlib)
     set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
 endif()
+
+
+
+#============================================================================
+# gtest binaries
+#============================================================================
+
+add_executable(example_gtest test/example_gtest.cpp)
+target_link_libraries(example_gtest zlib gtest_main)
+add_test(NAME example_gtest_test COMMAND example_gtest)
+
+add_executable(zlib_gtest test/zlib_gtest.cpp)
+target_link_libraries(zlib_gtest zlib gtest_main)
+add_test(NAME zlib_gtest_test COMMAND zlib_gtest)
