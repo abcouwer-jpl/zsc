@@ -11,6 +11,11 @@
 // FIXME REMOVE
 #include <stdio.h>
 
+#ifndef DEF_WBITS
+#  define DEF_WBITS MAX_WBITS
+#endif
+/* default windowBits for decompression. MAX_WBITS is for compression only */
+
 typedef struct uncompress_safe_static_mem_s {
     Bytef *work; // work buffer
     uLong workLen; // work length
@@ -151,7 +156,7 @@ int ZEXPORT uncompressSafe (dest, destLen, source, sourceLen, work, workLen)
     uLong workLen;
 {
     return uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
-            MAX_WBITS);
+            DEF_WBITS);
 }
 
 

@@ -10,6 +10,18 @@
 // FIXME REMOVE
 #include <stdio.h>
 
+#ifndef DEF_WBITS
+#  define DEF_WBITS MAX_WBITS
+#endif
+/* default windowBits for decompression. MAX_WBITS is for compression only */
+
+#if MAX_MEM_LEVEL >= 8
+#  define DEF_MEM_LEVEL 8
+#else
+#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#endif
+/* default memLevel */
+
 typedef struct compress_safe_static_mem_s {
     Bytef* work; // work buffer
     uLong workLen; // work length
@@ -169,9 +181,8 @@ int ZEXPORT compressSafeGzip(dest, destLen, source, sourceLen,
     gz_headerp gz_head;
 {
     return compressSafeGzip2(dest, destLen, source, sourceLen,
-            work, workLen, Z_DEFAULT_COMPRESSION, MAX_WBITS,
-            MAX_MEM_LEVEL < 8 ? MAX_MEM_LEVEL : 8, // FIXME
-            Z_DEFAULT_STRATEGY, gz_head);
+            work, workLen, Z_DEFAULT_COMPRESSION, DEF_WBITS + 16, // magic num for gzip
+            DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, gz_head);
 }
 
 int ZEXPORT compressSafe(dest, destLen, source, sourceLen,
@@ -183,8 +194,9 @@ int ZEXPORT compressSafe(dest, destLen, source, sourceLen,
     Bytef *work; // work buffer
     uLong workLen; // work length
 {
-    return compressSafeGzip(dest, destLen, source, sourceLen,
-            work, workLen, Z_NULL);
+    return compressSafe2(dest, destLen, source, sourceLen,
+            work, workLen, Z_DEFAULT_COMPRESSION, DEF_WBITS,
+            DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 }
 
 
