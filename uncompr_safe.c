@@ -36,7 +36,8 @@ voidpf uncompress_safe_static_alloc(voidpf opaque, uInt items, uInt size)
     new_ptr = (voidpf) (mem->work + mem->workAlloced);
     mem->workAlloced += bytes;
     // FIXME remove
-    printf("Uncompress allocated %lu bytes.\n", mem->workAlloced);
+    printf("Uncompress allocated %lu bytes, total %lu.\n",
+            bytes, mem->workAlloced);
     return new_ptr;
 }
 

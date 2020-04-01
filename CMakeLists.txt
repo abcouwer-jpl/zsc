@@ -277,6 +277,60 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
         )
   endif()
   
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl/README.md)
+  else()
+  
+      project(artificl NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(artificl
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/artificl.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/large/README.md)
+  else()
+  
+      project(large NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(large
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/large.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/large"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
+  if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary/README.md)
+  else()
+  
+      project(calgary NONE)
+    
+      include(ExternalProject)
+      ExternalProject_Add(calgary
+          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/calgary.git
+          GIT_TAG           master
+          SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary"
+          BINARY_DIR        ""
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND     ""
+          INSTALL_COMMAND   ""
+          TEST_COMMAND      ""
+        )
+  endif()
+  
 endif()
 
 #============================================================================
