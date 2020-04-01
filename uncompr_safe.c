@@ -8,6 +8,9 @@
 #define ZLIB_INTERNAL
 #include "zlib.h"
 
+// FIXME REMOVE
+#include <stdio.h>
+
 typedef struct uncompress_safe_static_mem_s {
     Bytef *work; // work buffer
     uLong workLen; // work length
@@ -32,6 +35,8 @@ voidpf uncompress_safe_static_alloc(voidpf opaque, uInt items, uInt size)
 
     new_ptr = (voidpf) (mem->work + mem->workAlloced);
     mem->workAlloced += bytes;
+    // FIXME remove
+    printf("Uncompress allocated %lu bytes.\n", mem->workAlloced);
     return new_ptr;
 }
 
@@ -40,6 +45,8 @@ void uncompress_safe_static_free(void* opaque, void* addr)
     // do nothing but make compiler happy
     (void) opaque;
     (void) addr;
+
+
 }
 
 // get the bounded size of the work buffer

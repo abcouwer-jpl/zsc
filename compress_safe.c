@@ -7,6 +7,9 @@
 #define ZLIB_INTERNAL
 #include "zlib.h"
 
+// FIXME REMOVE
+#include <stdio.h>
+
 typedef struct compress_safe_static_mem_s {
     Bytef* work; // work buffer
     uLong workLen; // work length
@@ -31,6 +34,9 @@ voidpf compress_safe_static_alloc(voidpf opaque, uInt items, uInt size)
 
     new_ptr = (voidpf) (mem->work + mem->workAlloced);
     mem->workAlloced += bytes;
+    // FIXME remove
+    printf("Compress allocated %lu bytes, total %lu.\n",
+            bytes, mem->workAlloced);
     return new_ptr;
 }
 
@@ -163,7 +169,8 @@ int ZEXPORT compressSafeGzip(dest, destLen, source, sourceLen,
     gz_headerp gz_head;
 {
     return compressSafeGzip2(dest, destLen, source, sourceLen,
-            work, workLen, Z_DEFAULT_COMPRESSION, MAX_WBITS, MAX_MEM_LEVEL,
+            work, workLen, Z_DEFAULT_COMPRESSION, MAX_WBITS,
+            MAX_MEM_LEVEL < 8 ? MAX_MEM_LEVEL : 8, // FIXME
             Z_DEFAULT_STRATEGY, gz_head);
 }
 

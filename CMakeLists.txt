@@ -352,3 +352,6 @@ add_executable(example_gtest test/example_gtest.cpp)
 target_link_libraries(example_gtest zlib gtest_main)
 add_test(NAME example_gtest_test COMMAND example_gtest)
 
+add_executable(zlib_gtest test/zlib_gtest.cpp)
+target_link_libraries(zlib_gtest zlib gtest_main)
+add_test(NAME zlib_gtest_test COMMAND zlib_gtest)
