@@ -148,9 +148,11 @@ void zlib_test_compress(bool use_gzip)
 
 
 
-        compressed_buf_len = compressSafeBoundDestGzip(len, &head);
+        err = compressGetMaxOutputSizeGzip(len, &head, &compressed_buf_len);
+        EXPECT_EQ(err, Z_OK);
         compressed_buf = (Byte *) malloc(compressed_buf_len);
-        work_buf_len = compressSafeBoundWork();
+        err = compressGetMinWorkBufSize(&work_buf_len);
+        EXPECT_EQ(err, Z_OK);
         work_buf = (Byte *) malloc(work_buf_len);
         compressed_buf_len_out = compressed_buf_len;
 
@@ -162,9 +164,11 @@ void zlib_test_compress(bool use_gzip)
                 work_buf, work_buf_len, &head);
 
     } else {
-        compressed_buf_len = compressSafeBoundDest(len);
+        err = compressGetMaxOutputSize(len, &compressed_buf_len);
+        EXPECT_EQ(err, Z_OK);
         compressed_buf = (Byte *) malloc(compressed_buf_len);
-        work_buf_len = compressSafeBoundWork();
+        err = compressGetMinWorkBufSize(&work_buf_len);
+        EXPECT_EQ(err, Z_OK);
         work_buf = (Byte *) malloc(work_buf_len);
         compressed_buf_len_out = compressed_buf_len;
 
@@ -237,11 +241,11 @@ void zlib_test_corpus(bool use_gzip)
     FILE * file;
     int source_buf_len;
     Byte * source_buf;
-    int compressed_buf_len;
+    uLong compressed_buf_len;
     Byte * compressed_buf;
-    int cwork_buf_len;
+    uLong cwork_buf_len;
     Byte * cwork_buf;
-    int uwork_buf_len;
+    uLong uwork_buf_len;
     Byte * uwork_buf;
     int ucomp_buf_len;
     Byte * ucomp_buf;
@@ -258,11 +262,14 @@ void zlib_test_corpus(bool use_gzip)
 
     source_buf_len = CORPUS_MAX_SIZE_LARGE;
     source_buf = (Byte*) malloc(source_buf_len);
-    compressed_buf_len =
-            use_gzip ? compressSafeBoundDestGzip(source_buf_len, &head) :
-                       compressSafeBoundDest(source_buf_len);
+    err = use_gzip ?
+            compressGetMaxOutputSizeGzip(source_buf_len, &head,
+                    &compressed_buf_len) :
+            compressGetMaxOutputSize(source_buf_len, &compressed_buf_len);
+    EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
-    cwork_buf_len = compressSafeBoundWork();
+    err = compressGetMinWorkBufSize(&cwork_buf_len);
+    EXPECT_EQ(err, Z_OK);
     cwork_buf = (Byte *) malloc(cwork_buf_len);
     uwork_buf_len = uncompressSafeBoundWork();
     uwork_buf = (Byte *) malloc(uwork_buf_len);
@@ -295,8 +302,9 @@ void zlib_test_corpus(bool use_gzip)
 
         EXPECT_EQ(err, Z_OK);
 
-        printf("Compressed to %lu bytes, reduction of %f \%.\n",
-                compressed_buf_len_out, (nread-compressed_buf_len_out)/nread);
+        printf("Compressed to %lu bytes, reduction of %f percent.\n",
+                compressed_buf_len_out,
+                (100.0*(nread-compressed_buf_len_out))/nread);
 
         uLong ucomp_buf_len_out = ucomp_buf_len;
         err = use_gzip ? uncompressSafeGzip(ucomp_buf, &ucomp_buf_len_out,
