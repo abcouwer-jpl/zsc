@@ -211,7 +211,7 @@ uLong ZEXPORT compressSafeBoundWork2(windowBits, memLevel)
 
 uLong ZEXPORT compressSafeBoundWork(void)
 {
-    return compressSafeBoundWork2(MAX_WBITS, MAX_MEM_LEVEL);
+    return compressSafeBoundWork2(DEF_WBITS, DEF_MEM_LEVEL);
 }
 
 uLong ZEXPORT compressSafeBoundDestGzip2(sourceLen,
@@ -239,7 +239,7 @@ uLong ZEXPORT compressSafeBoundDestGzip(sourceLen, gz_head)
     gz_headerp gz_head;
 {
     return compressSafeBoundDestGzip2(sourceLen,
-            MAX_WBITS, MAX_MEM_LEVEL, gz_head);
+            DEF_WBITS, DEF_MEM_LEVEL, gz_head);
 }
 
 uLong ZEXPORT compressSafeBoundDest(sourceLen)

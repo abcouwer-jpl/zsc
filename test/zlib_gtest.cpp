@@ -124,27 +124,67 @@ TEST_F(ZlibTest, Version) {
 
 }
 
-TEST_F(ZlibTest, CompressSafe) {
+
+void zlib_test_compress(bool test_gzip)
+{
     int err;
     uLong len = (uLong)strlen(hello)+1;
 
-    uLong compressed_buf_len = compressSafeBoundDest(len);
-    Byte * compressed_buf = (Byte *)malloc(compressed_buf_len);
-    uLong work_buf_len = compressSafeBoundWork();
-    Byte * work_buf = (Byte *)malloc(work_buf_len);
+    uLong compressed_buf_len;
+    Byte * compressed_buf;
+    uLong work_buf_len;
+    Byte * work_buf;
+    uLong compressed_buf_len_out;
 
-    printf("Compressed buf size: %lu. Work buf size: %lu.\n",
-            compressed_buf_len, work_buf_len);
+    if (test_gzip) {
+        gz_header head;
+        memset(&head, 0, sizeof(head));
+        head.text = true;
+        head.time = 42;
+        head.os = 3;
+        head.extra = Z_NULL;
+        head.name = Z_NULL;
+        head.comment = Z_NULL;
 
-    uLong compressed_buf_len_out = compressed_buf_len;
-    err = compressSafe(compressed_buf, &compressed_buf_len_out,
-            (const Bytef*)hello, len,
-            work_buf, work_buf_len);
+
+
+        compressed_buf_len = compressSafeBoundDestGzip(len, &head);
+        compressed_buf = (Byte *) malloc(compressed_buf_len);
+        work_buf_len = compressSafeBoundWork();
+        work_buf = (Byte *) malloc(work_buf_len);
+        compressed_buf_len_out = compressed_buf_len;
+
+        printf("Compressed buf size: %lu. Work buf size: %lu.\n",
+                compressed_buf_len, work_buf_len);
+
+        err = compressSafeGzip(compressed_buf, &compressed_buf_len_out,
+                (const Bytef*) hello, len,
+                work_buf, work_buf_len, &head);
+
+    } else {
+        compressed_buf_len = compressSafeBoundDest(len);
+        compressed_buf = (Byte *) malloc(compressed_buf_len);
+        work_buf_len = compressSafeBoundWork();
+        work_buf = (Byte *) malloc(work_buf_len);
+        compressed_buf_len_out = compressed_buf_len;
+
+        printf("Compressed buf size: %lu. Work buf size: %lu.\n",
+                compressed_buf_len, work_buf_len);
+
+        err = compressSafe(compressed_buf, &compressed_buf_len_out,
+                (const Bytef*) hello, len,
+                work_buf, work_buf_len);
+
+
+    }
 
     EXPECT_EQ(err, Z_OK);
 
     free(work_buf);
 
+
+    printf("Compressed to size: %lu.\n",
+            compressed_buf_len_out);
 
 
     uLong uncompressed_buf_len = len;
@@ -155,7 +195,7 @@ TEST_F(ZlibTest, CompressSafe) {
     printf("Work buf size: %lu.\n",
             work_buf_len);
 
-    compressed_buf_len_out = compressed_buf_len;
+    //compressed_buf_len_out = compressed_buf_len;
     uLong uncompressed_buf_len_out = uncompressed_buf_len;
     err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
             compressed_buf, &compressed_buf_len_out,
@@ -173,6 +213,67 @@ TEST_F(ZlibTest, CompressSafe) {
     free(compressed_buf);
     free(uncompressed_buf);
 
+}
+
+TEST_F(ZlibTest, CompressSafe) {
+    bool test_gzip = false;
+    zlib_test_compress(test_gzip);
+
+//    int err;
+//    uLong len = (uLong)strlen(hello)+1;
+//
+//    uLong compressed_buf_len = compressSafeBoundDest(len);
+//    Byte * compressed_buf = (Byte *)malloc(compressed_buf_len);
+//    uLong work_buf_len = compressSafeBoundWork();
+//    Byte * work_buf = (Byte *)malloc(work_buf_len);
+//
+//    printf("Compressed buf size: %lu. Work buf size: %lu.\n",
+//            compressed_buf_len, work_buf_len);
+//
+//    uLong compressed_buf_len_out = compressed_buf_len;
+//    err = compressSafe(compressed_buf, &compressed_buf_len_out,
+//            (const Bytef*)hello, len,
+//            work_buf, work_buf_len);
+//
+//    EXPECT_EQ(err, Z_OK);
+//
+//    free(work_buf);
+//
+//    printf("Compressed to size: %lu.\n",
+//            compressed_buf_len_out);
+//
+//
+//    uLong uncompressed_buf_len = len;
+//    Byte * uncompressed_buf = (Byte *)malloc(uncompressed_buf_len);
+//    work_buf_len = uncompressSafeBoundWork();
+//    work_buf = (Byte *)malloc(work_buf_len);
+//
+//    printf("Work buf size: %lu.\n",
+//            work_buf_len);
+//
+//    //compressed_buf_len_out = compressed_buf_len;
+//    uLong uncompressed_buf_len_out = uncompressed_buf_len;
+//    err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
+//            compressed_buf, &compressed_buf_len_out,
+//            work_buf, work_buf_len);
+//
+//    EXPECT_EQ(err, Z_OK);
+//    if (strcmp((char*)uncompressed_buf, hello)) {
+//        fprintf(stderr, "bad uncompress\n");
+//        exit(1);
+//    } else {
+//        printf("uncompress(): %s\n", (char *)uncompressed_buf);
+//    }
+//
+//    free(work_buf);
+//    free(compressed_buf);
+//    free(uncompressed_buf);
+
+}
+
+TEST_F(ZlibTest, CompressSafeGzip) {
+    bool test_gzip = true;
+    zlib_test_compress(test_gzip);
 }
 
 TEST_F(ZlibTest, CompressCorpusSafe) {
