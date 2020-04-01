@@ -101,7 +101,6 @@ set(ZLIB_PUBLIC_HDRS
 set(ZLIB_PRIVATE_HDRS
     crc32.h
     deflate.h
-    gzguts.h
     inffast.h
     inffixed.h
     inflate.h
@@ -111,20 +110,14 @@ set(ZLIB_PRIVATE_HDRS
 )
 set(ZLIB_SRCS
     adler32.c
-    compress.c
     compress_safe.c
     crc32.c
     deflate.c
-    gzclose.c
-    gzlib.c
-    gzread.c
-    gzwrite.c
     inflate.c
     infback.c
     inftrees.c
     inffast.c
     trees.c
-    uncompr.c
     uncompr_safe.c
     zutil.c
 )
@@ -242,6 +235,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
   APPEND_COVERAGE_COMPILER_FLAGS()
   set(COVERAGE_EXCLUDES 
     '/usr/*' 
+    '${CMAKE_CURRENT_SOURCE_DIR}/gz*'
+    '${CMAKE_CURRENT_SOURCE_DIR}/compress.c'
+    '${CMAKE_CURRENT_SOURCE_DIR}/uncompr.c'
+    '${CMAKE_CURRENT_SOURCE_DIR}/infback.c*'
     '${CMAKE_CURRENT_SOURCE_DIR}/test/*'
     '${CMAKE_CURRENT_SOURCE_DIR}/build/*')
   MESSAGE( STATUS "COVERAGE_EXCLUDES: " ${COVERAGE_EXCLUDES} )
@@ -378,23 +375,23 @@ endif()
 # Example binaries
 #============================================================================
 
-add_executable(example test/example.c)
-target_link_libraries(example zlib)
-add_test(example example)
+#add_executable(example test/example.c)
+#target_link_libraries(example zlib)
+#add_test(example example)
 
-add_executable(minigzip test/minigzip.c)
-target_link_libraries(minigzip zlib)
+#add_executable(minigzip test/minigzip.c)
+#target_link_libraries(minigzip zlib)
 
-if(HAVE_OFF64_T)
-    add_executable(example64 test/example.c)
-    target_link_libraries(example64 zlib)
-    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
-    add_test(example64 example64)
+#if(HAVE_OFF64_T)
+#    add_executable(example64 test/example.c)
+#    target_link_libraries(example64 zlib)
+#    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+#    add_test(example64 example64)
 
-    add_executable(minigzip64 test/minigzip.c)
-    target_link_libraries(minigzip64 zlib)
-    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
-endif()
+#    add_executable(minigzip64 test/minigzip.c)
+#    target_link_libraries(minigzip64 zlib)
+#    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+#endif()
 
 
 
@@ -402,9 +399,9 @@ endif()
 # gtest binaries
 #============================================================================
 
-add_executable(example_gtest test/example_gtest.cpp)
-target_link_libraries(example_gtest zlib gtest_main)
-add_test(NAME example_gtest_test COMMAND example_gtest)
+#add_executable(example_gtest test/example_gtest.cpp)
+#target_link_libraries(example_gtest zlib gtest_main)
+#add_test(NAME example_gtest_test COMMAND example_gtest)
 
 add_executable(zlib_gtest test/zlib_gtest.cpp)
 target_link_libraries(zlib_gtest zlib gtest_main)
