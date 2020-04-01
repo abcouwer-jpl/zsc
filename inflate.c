@@ -249,6 +249,22 @@ int stream_size;
 uLong ZEXPORT inflateBoundAlloc2(windowBits)
     int windowBits;
 {
+    /* check for wrapper bits within windowBits */
+    if (windowBits < 0) {
+        windowBits = -windowBits;
+    } else {
+#ifdef GUNZIP
+        if (windowBits < 48)
+            windowBits &= 15;
+#endif
+    }
+
+    // FIXME check for invalid window bis
+//    /* set number of window bits, free window if different */
+//    if (windowBits && (windowBits < 8 || windowBits > 15))
+//        return Z_STREAM_ERROR;
+
+
     uLong bound = 0;
     bound += sizeof(struct inflate_state);
     bound += (1U << windowBits) * sizeof(unsigned char);

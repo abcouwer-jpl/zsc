@@ -1385,6 +1385,14 @@ ZEXTERN int ZEXPORT uncompressSafe OF((Bytef *dest,
                                        Bytef *work,
                                        uLong workLen));
 
+ZEXTERN int ZEXPORT uncompressSafeGzip OF((Bytef *dest,
+                                           uLongf *destLen,
+                                           const Bytef *source,
+                                           uLong *sourceLen,
+                                           Bytef *work,
+                                           uLong workLen));
+
+
 ZEXTERN int ZEXPORT uncompressSafe2 OF((Bytef *dest,
                                         uLongf *destLen,
                                         const Bytef *source,

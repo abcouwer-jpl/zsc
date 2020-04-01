@@ -197,9 +197,15 @@ void zlib_test_compress(bool test_gzip)
 
     //compressed_buf_len_out = compressed_buf_len;
     uLong uncompressed_buf_len_out = uncompressed_buf_len;
-    err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
-            compressed_buf, &compressed_buf_len_out,
-            work_buf, work_buf_len);
+    if (test_gzip) {
+        err = uncompressSafeGzip(uncompressed_buf, &uncompressed_buf_len_out,
+                compressed_buf, &compressed_buf_len_out,
+                work_buf, work_buf_len);
+    } else {
+        err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
+                compressed_buf, &compressed_buf_len_out,
+                work_buf, work_buf_len);
+    }
 
     EXPECT_EQ(err, Z_OK);
     if (strcmp((char*)uncompressed_buf, hello)) {
