@@ -700,6 +700,10 @@ ZEXTERN int ZEXPORT deflateGetDictionary OF((z_streamp strm,
    stream state is inconsistent.
 */
 
+// removed Neil Abcouwer for zlib-safe
+// copying then doing allocs will spool more memory from the work buffer
+// maybe revisit
+#if 0
 ZEXTERN int ZEXPORT deflateCopy OF((z_streamp dest,
                                     z_streamp source));
 /*
@@ -717,6 +721,7 @@ ZEXTERN int ZEXPORT deflateCopy OF((z_streamp dest,
    (such as zalloc being Z_NULL).  msg is left unchanged in both source and
    destination.
 */
+#endif
 
 ZEXTERN int ZEXPORT deflateReset OF((z_streamp strm));
 /*

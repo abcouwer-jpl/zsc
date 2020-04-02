@@ -1229,6 +1229,10 @@ int ZEXPORT deflateEnd (strm)
     return status == BUSY_STATE ? Z_DATA_ERROR : Z_OK;
 }
 
+// removed Neil Abcouwer for zlib-safe
+// copying then doing allocs will spool more memory from the work buffer
+// maybe revisit
+#if 0
 /* =========================================================================
  * Copy the source state to the destination state.
  * To simplify the source, this is not supported for 16-bit MSDOS (which
@@ -1288,6 +1292,7 @@ int ZEXPORT deflateCopy (dest, source)
     return Z_OK;
 #endif /* MAXSEG_64K */
 }
+#endif
 
 /* ===========================================================================
  * Read a new buffer from the current input stream, update the adler32
