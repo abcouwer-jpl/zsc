@@ -73,7 +73,9 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen,
     // see zlib.h for description of parameters
     err = deflateInit2(&stream, level, Z_DEFLATED, windowBits, memLevel,
             strategy);
-    if (err != Z_OK) { return err; }
+    if (err != Z_OK) {
+        return err;
+    }
 
     stream.next_out = dest;
     stream.avail_out = *destLen;
@@ -86,7 +88,10 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen,
         if (err != Z_OK) { return err; }
     }
 
-    // FIXME check output buffer size, warn if small (but still might succeed)
+    // check output buffer size, warn if small (but still might succeed)
+    uLong bound = deflateBound(&stream, sourceLen);
+    int dest_small = (*destLen < bound);
+    (void)dest_small; // FIXME make compiler happy until used
 
     // compress in one fell swoop
     err = deflate(&stream, Z_FINISH);
@@ -96,8 +101,9 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen,
         // when compressing with deflate(Z_FINISH),
         // Z_STREAM_END is expected, not Z_OK
         // Z_OK may indicate there wasn't enough output space
+        // FIXME war and report if small buffer
         (void)deflateEnd(&stream); // clean up
-        return (err == Z_OK) ? Z_MEM_ERROR : err;
+        return (err == Z_OK) ? Z_BUF_ERROR : err;
     }
 
     err = deflateEnd(&stream);
@@ -126,31 +132,33 @@ int ZEXPORT compressSafe2(dest, destLen, source, sourceLen,
 
 
 int ZEXPORT compressSafeGzip(dest, destLen, source, sourceLen,
-        work, workLen, gz_head)
+        work, workLen, level, gz_head)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
     uLong sourceLen;
     Bytef *work; // work buffer
     uLong workLen; // work length
+    int level;
     gz_headerp gz_head;
 {
     return compressSafeGzip2(dest, destLen, source, sourceLen,
-            work, workLen, Z_DEFAULT_COMPRESSION, DEF_WBITS + GZIP_CODE,
+            work, workLen, level, DEF_WBITS + GZIP_CODE,
             DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, gz_head);
 }
 
 int ZEXPORT compressSafe(dest, destLen, source, sourceLen,
-        work, workLen)
+        work, workLen, level)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
     uLong sourceLen;
     Bytef *work; // work buffer
     uLong workLen; // work length
+    int level;
 {
     return compressSafe2(dest, destLen, source, sourceLen,
-            work, workLen, Z_DEFAULT_COMPRESSION, DEF_WBITS,
+            work, workLen, level, DEF_WBITS,
             DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 }
 

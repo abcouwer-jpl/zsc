@@ -233,8 +233,6 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
    void ZLIB_INTERNAL zmemzero OF((Bytef* dest, uInt len));
 #endif
 
-voidpf ZLIB_INTERNAL z_static_alloc OF((voidpf opaque, uInt items, uInt size));
-void ZLIB_INTERNAL z_static_free OF((void* opaque, void* addr));
 
 /* Diagnostic functions */
 #ifdef ZLIB_DEBUG

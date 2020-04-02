@@ -236,6 +236,11 @@ typedef struct z_static_mem_s {
 /* for compatibility with versions < 1.0.2 */
 
 
+ZEXTERN voidpf ZEXPORT z_static_alloc OF((voidpf opaque, uInt items, uInt size));
+ZEXTERN void ZEXPORT z_static_free OF((void* opaque, void* addr));
+// FIXME document
+
+
                         /* basic functions */
 
 ZEXTERN const char * ZEXPORT zlibVersion OF((void));
@@ -1308,7 +1313,8 @@ ZEXTERN int ZEXPORT compressSafe OF((Bytef *dest,
                                      const Bytef *source,
                                      uLong sourceLen,
                                      Bytef *work,
-                                     uLong workLen));
+                                     uLong workLen,
+                                     int level));
 
 ZEXTERN int ZEXPORT compressSafeGzip OF((Bytef *dest,
                                          uLongf *destLen,
@@ -1316,6 +1322,7 @@ ZEXTERN int ZEXPORT compressSafeGzip OF((Bytef *dest,
                                          uLong sourceLen,
                                          Bytef *work,
                                          uLong workLen,
+                                         int level,
                                          gz_headerp gz_header));
 
 ZEXTERN int ZEXPORT compressSafe2 OF((Bytef *dest,
