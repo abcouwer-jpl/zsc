@@ -22,6 +22,8 @@
 #endif
 /* default memLevel */
 
+#define GZIP_CODE (16)
+
 typedef struct compress_safe_static_mem_s {
     Bytef* work; // work buffer
     uLong workLen; // work length
@@ -94,8 +96,10 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen,
     uLong min_work_buf_size = (uLong)(-1);
     int err = deflateGetMinWorkBufSize(windowBits, memLevel,
             &min_work_buf_size);
-    if (err != Z_OK) { return err; }
-    if ((uLong)workLen < min_work_buf_size) {
+    if (err != Z_OK) {
+        return err;
+    }
+    if (workLen < min_work_buf_size) {
         // work buffer is smaller than bound
         // FIXME warn
         return Z_MEM_ERROR;
@@ -151,42 +155,6 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen,
     // FIXME warn if bad
 
     return err;
-
-
-
-//
-//    // FIXME warning msg
-//    return err == Z_STREAM_END ? Z_OK : err;
-//
-//
-//
-//    stream.next_out = dest;
-//    stream.avail_out = 0;
-//    stream.next_in = (z_const Bytef *)source;
-//    stream.avail_in = 0;
-//
-//    // set gzip header, if not null
-//    if (gz_head != Z_NULL) {
-//        err = deflateSetHeader(&stream, gz_head);
-//        if (err != Z_OK) return err;
-//    }
-//
-//    // FIXME bound loop
-//    do {
-//        if (stream.avail_out == 0) {
-//            stream.avail_out = left > (uLong)max ? max : (uInt)left;
-//            left -= stream.avail_out;
-//        }
-//        if (stream.avail_in == 0) {
-//            stream.avail_in = sourceLen > (uLong)max ? max : (uInt)sourceLen;
-//            sourceLen -= stream.avail_in;
-//        }
-//        err = deflate(&stream, sourceLen ? Z_NO_FLUSH : Z_FINISH);
-//    } while (err == Z_OK);
-//
-//    *destLen = stream.total_out;
-//    deflateEnd(&stream);
-//    return err == Z_STREAM_END ? Z_OK : err;
 }
 
 // compress using a work buffer instead of dynamic memory
@@ -219,7 +187,7 @@ int ZEXPORT compressSafeGzip(dest, destLen, source, sourceLen,
     gz_headerp gz_head;
 {
     return compressSafeGzip2(dest, destLen, source, sourceLen,
-            work, workLen, Z_DEFAULT_COMPRESSION, DEF_WBITS + 16, // magic num for gzip
+            work, workLen, Z_DEFAULT_COMPRESSION, DEF_WBITS + GZIP_CODE,
             DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, gz_head);
 }
 
@@ -281,13 +249,14 @@ int ZEXPORT compressGetMaxOutputSizeGzip(sourceLen, gz_head, size_out)
     uLongf *size_out;
 {
     return compressGetMaxOutputSizeGzip2(sourceLen,
-            DEF_WBITS + 16, DEF_MEM_LEVEL, gz_head, size_out);
+            DEF_WBITS + GZIP_CODE, DEF_MEM_LEVEL, gz_head, size_out);
 }
 
 int ZEXPORT compressGetMaxOutputSize(sourceLen, size_out)
     uLong sourceLen;
     uLongf *size_out;
 {
-    return compressGetMaxOutputSizeGzip(sourceLen, Z_NULL, size_out);
+    return compressGetMaxOutputSize2(sourceLen,
+            DEF_WBITS, DEF_MEM_LEVEL, size_out);
 }
 

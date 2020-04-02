@@ -1005,8 +1005,10 @@ ZEXTERN int ZEXPORT inflateReset2 OF((z_streamp strm,
    the windowBits parameter is invalid.
 */
 
-ZEXTERN uLong ZEXPORT inflateBoundAlloc OF((void));
-ZEXTERN uLong ZEXPORT inflateBoundAlloc2 OF((int windowBits));
+ZEXTERN int ZEXPORT inflateGetMinWorkBufSize OF((uLongf *size_out));
+
+ZEXTERN int ZEXPORT inflateGetMinWorkBufSize2 OF((int windowBits,
+                                                   uLongf *size_out));
 // FIXME number of bytes allocated by inflating
 
 ZEXTERN int ZEXPORT inflatePrime OF((z_streamp strm,
@@ -1397,8 +1399,8 @@ ZEXTERN int ZEXPORT uncompressSafeGzip OF((Bytef *dest,
                                            const Bytef *source,
                                            uLong *sourceLen,
                                            Bytef *work,
-                                           uLong workLen));
-
+                                           uLong workLen,
+                                           gz_headerp gz_head));
 
 ZEXTERN int ZEXPORT uncompressSafe2 OF((Bytef *dest,
                                         uLongf *destLen,
@@ -1408,8 +1410,19 @@ ZEXTERN int ZEXPORT uncompressSafe2 OF((Bytef *dest,
                                         uLong workLen,
                                         int windowBits));
 
-ZEXTERN uLong ZEXPORT uncompressSafeBoundWork OF((void));
-ZEXTERN uLong ZEXPORT uncompressSafeBoundWork2 OF((int windowBits));
+ZEXTERN int ZEXPORT uncompressSafeGzip2 OF((Bytef *dest,
+                                        uLongf *destLen,
+                                        const Bytef *source,
+                                        uLong *sourceLen,
+                                        Bytef *work,
+                                        uLong workLen,
+                                        int windowBits,
+                                        gz_headerp gz_head));
+
+ZEXTERN int ZEXPORT uncompressGetMinWorkBufSize OF((uLongf *size_out));
+
+ZEXTERN int ZEXPORT uncompressGetMinWorkBufSize2 OF((int windowBits,
+                                                     uLongf *size_out));
 
 
 

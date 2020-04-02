@@ -16,6 +16,8 @@
 #endif
 /* default windowBits for decompression. MAX_WBITS is for compression only */
 
+#define GZIP_CODE (16)
+
 typedef struct uncompress_safe_static_mem_s {
     Bytef *work; // work buffer
     uLong workLen; // work length
@@ -51,25 +53,25 @@ void uncompress_safe_static_free(void* opaque, void* addr)
     // do nothing but make compiler happy
     (void) opaque;
     (void) addr;
-
-
 }
 
 // get the bounded size of the work buffer
-uLong ZEXPORT uncompressSafeBoundWork2(windowBits)
+int ZEXPORT uncompressGetMinWorkBufSize2(windowBits, size_out)
     int windowBits;
+    uLongf *size_out;
 {
-    return inflateBoundAlloc2(windowBits);
+    return inflateGetMinWorkBufSize2(windowBits, size_out);
 }
 
 // get the bounded size of the work buffer
-uLong ZEXPORT uncompressSafeBoundWork(void)
+int ZEXPORT uncompressGetMinWorkBufSize(size_out)
+    uLongf *size_out;
 {
-    return inflateBoundAlloc();
+    return inflateGetMinWorkBufSize(size_out);
 }
 
-int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
-        windowBits)
+int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
+        windowBits, gz_head)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
@@ -77,10 +79,16 @@ int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
     Bytef *work; // work buffer
     uLong workLen;
     int windowBits;
+    gz_headerp gz_head;
 {
     // check if workbuffer is large enough
-    uLong bound = uncompressSafeBoundWork2(windowBits);
-    if (workLen < bound) {
+    uLong min_work_buf_size = (uLong)(-1);
+
+    int err = uncompressGetMinWorkBufSize2(windowBits, &min_work_buf_size);
+    if (err != Z_OK) {
+        return err;
+    }
+    if (workLen < min_work_buf_size) {
         // work buffer is smaller than bound
         // FIXME warn
         printf("work buffer is smaller than bound.\n");
@@ -95,24 +103,10 @@ int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
     mem.workAlloced = 0;
 
     z_stream stream;
-    // FIXME zmemzero(&stream, sizeof(stream));
-    int err;
-    const uInt max = (uInt)-1;
-    uLong len, left;
-    Byte buf[1];    /* for detection of incomplete stream when *destLen == 0 */
-
-    len = *sourceLen;
-    if (*destLen) {
-        left = *destLen;
-        *destLen = 0;
-    }
-    else {
-        left = 1;
-        dest = buf;
-    }
-
     stream.next_in = (z_const Bytef *)source;
-    stream.avail_in = 0;
+    stream.avail_in = *sourceLen;
+    stream.next_out = dest;
+    stream.avail_out = *destLen;
     stream.zalloc = uncompress_safe_static_alloc;
     stream.zfree = uncompress_safe_static_free;
     stream.opaque = (voidpf)&mem;
@@ -120,41 +114,42 @@ int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
     err = inflateInit2(&stream, windowBits);
     if (err != Z_OK) return err;
 
-    stream.next_out = dest;
-    stream.avail_out = 0;
-
-    do {
-        if (stream.avail_out == 0) {
-            stream.avail_out = left > (uLong)max ? max : (uInt)left;
-            left -= stream.avail_out;
-        }
-        if (stream.avail_in == 0) {
-            stream.avail_in = len > (uLong)max ? max : (uInt)len;
-            len -= stream.avail_in;
-        }
-        err = inflate(&stream, Z_NO_FLUSH);
-    } while (err == Z_OK);
-
-    *sourceLen -= len + stream.avail_in;
-    if (dest != buf) {
-        *destLen = stream.total_out;
-    } else if (stream.total_out && err == Z_BUF_ERROR) {
-        left = 1;
+    if(gz_head != Z_NULL) {
+        err = inflateGetHeader(&stream, gz_head);
+        if (err != Z_OK) return err;
     }
 
-    inflateEnd(&stream);
-    int ret = err == Z_STREAM_END ? Z_OK :
-            err == Z_NEED_DICT ? Z_DATA_ERROR  :
-            err == Z_BUF_ERROR && left + stream.avail_out ? Z_DATA_ERROR :
-            err;
+    // inflate in one swoop
+    err = inflate(&stream, Z_FINISH);
+    *destLen = stream.total_out;
+    *sourceLen = stream.total_in;
 
-    if (ret != Z_OK) {
-        printf("err = %d, errmsg = %s.\n", err, stream.msg);
+    if(err != Z_STREAM_END) {
+        // when uncompressing with inflate(Z_FINISH),
+        // Z_STREAM_END is expected, not Z_OK
+        // Z_OK may indicate there wasn't enough output space
+        (void)inflateEnd(&stream); // clean up
+        return (err == Z_OK) ? Z_MEM_ERROR : err;
     }
-    return err == Z_STREAM_END ? Z_OK :
-           err == Z_NEED_DICT ? Z_DATA_ERROR  :
-           err == Z_BUF_ERROR && left + stream.avail_out ? Z_DATA_ERROR :
-           err;
+
+    err = inflateEnd(&stream);
+    // FIXME warn if bad
+
+    return err;
+}
+
+int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
+        windowBits)
+    Bytef *dest;
+    uLongf *destLen;
+    const Bytef *source;
+    uLong *sourceLen;
+    Bytef *work; // work buffer
+    uLong workLen;
+    int windowBits;
+{
+    return uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
+            windowBits, Z_NULL);
 }
 
 int ZEXPORT uncompressSafe (dest, destLen, source, sourceLen, work, workLen)
@@ -169,16 +164,18 @@ int ZEXPORT uncompressSafe (dest, destLen, source, sourceLen, work, workLen)
             DEF_WBITS);
 }
 
-int ZEXPORT uncompressSafeGzip (dest, destLen, source, sourceLen, work, workLen)
+int ZEXPORT uncompressSafeGzip(dest, destLen, source, sourceLen, work, workLen,
+        gz_head)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
     uLong *sourceLen;
     Bytef *work; // work buffer
     uLong workLen;
+    gz_headerp gz_head;
 {
-    return uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
-            DEF_WBITS + 16);
+    return uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
+            DEF_WBITS + GZIP_CODE, gz_head);
 }
 
 

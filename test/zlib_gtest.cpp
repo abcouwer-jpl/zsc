@@ -135,19 +135,18 @@ void zlib_test_compress(bool use_gzip)
     uLong work_buf_len;
     Byte * work_buf;
     uLong compressed_buf_len_out;
+    gz_header head;
+    memset(&head, 0, sizeof(head));
+    head.text = true;
+    head.time = 42;
+    head.os = 3;
+    head.extra = Z_NULL;
+    head.name = Z_NULL;
+    head.comment = Z_NULL;
+    gz_header head_out;
+
 
     if (use_gzip) {
-        gz_header head;
-        memset(&head, 0, sizeof(head));
-        head.text = true;
-        head.time = 42;
-        head.os = 3;
-        head.extra = Z_NULL;
-        head.name = Z_NULL;
-        head.comment = Z_NULL;
-
-
-
         err = compressGetMaxOutputSizeGzip(len, &head, &compressed_buf_len);
         EXPECT_EQ(err, Z_OK);
         compressed_buf = (Byte *) malloc(compressed_buf_len);
@@ -193,7 +192,8 @@ void zlib_test_compress(bool use_gzip)
 
     uLong uncompressed_buf_len = len;
     Byte * uncompressed_buf = (Byte *)malloc(uncompressed_buf_len);
-    work_buf_len = uncompressSafeBoundWork();
+    err = uncompressGetMinWorkBufSize(&work_buf_len);
+    EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *)malloc(work_buf_len);
 
     printf("Work buf size: %lu.\n",
@@ -204,7 +204,7 @@ void zlib_test_compress(bool use_gzip)
     if (use_gzip) {
         err = uncompressSafeGzip(uncompressed_buf, &uncompressed_buf_len_out,
                 compressed_buf, &compressed_buf_len_out,
-                work_buf, work_buf_len);
+                work_buf, work_buf_len, &head_out);
     } else {
         err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
                 compressed_buf, &compressed_buf_len_out,
@@ -217,6 +217,10 @@ void zlib_test_compress(bool use_gzip)
         exit(1);
     } else {
         printf("uncompress(): %s\n", (char *)uncompressed_buf);
+    }
+
+    if (use_gzip) {
+        EXPECT_EQ(head.time, head_out.time);
     }
 
     free(work_buf);
@@ -258,6 +262,7 @@ void zlib_test_corpus(bool use_gzip)
     head.extra = Z_NULL;
     head.name = Z_NULL;
     head.comment = Z_NULL;
+    gz_header head_out;
 
 
     source_buf_len = CORPUS_MAX_SIZE_LARGE;
@@ -271,7 +276,8 @@ void zlib_test_corpus(bool use_gzip)
     err = compressGetMinWorkBufSize(&cwork_buf_len);
     EXPECT_EQ(err, Z_OK);
     cwork_buf = (Byte *) malloc(cwork_buf_len);
-    uwork_buf_len = uncompressSafeBoundWork();
+    err = uncompressGetMinWorkBufSize(&uwork_buf_len);
+    EXPECT_EQ(err, Z_OK);
     uwork_buf = (Byte *) malloc(uwork_buf_len);
     ucomp_buf_len = CORPUS_MAX_SIZE_LARGE;
     ucomp_buf = (Byte*) malloc(ucomp_buf_len);
@@ -309,7 +315,7 @@ void zlib_test_corpus(bool use_gzip)
         uLong ucomp_buf_len_out = ucomp_buf_len;
         err = use_gzip ? uncompressSafeGzip(ucomp_buf, &ucomp_buf_len_out,
                                  compressed_buf, &compressed_buf_len_out,
-                                 uwork_buf, uwork_buf_len) :
+                                 uwork_buf, uwork_buf_len, &head_out) :
                          uncompressSafe(ucomp_buf, &ucomp_buf_len_out,
                                  compressed_buf, &compressed_buf_len_out,
                                  uwork_buf, uwork_buf_len);
@@ -326,6 +332,9 @@ void zlib_test_corpus(bool use_gzip)
         }
         EXPECT_EQ(nbad, 0);
 
+        if (use_gzip) {
+            EXPECT_EQ(head.time, head_out.time);
+        }
 
         if (err == Z_OK) {
             printf("Input:\n");
@@ -367,8 +376,6 @@ TEST_F(ZlibTest, CorpusGzip) {
     bool use_gzip = true;
     zlib_test_corpus(use_gzip);
 }
-
-
 
 
 
