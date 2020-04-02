@@ -5,60 +5,13 @@
 /* @(#) $Id$ */
 
 #define ZLIB_INTERNAL
-#include "zlib.h"
+#include "zutil.h"
 
 // FIXME REMOVE
 #include <stdio.h>
 
-#ifndef DEF_WBITS
-#  define DEF_WBITS MAX_WBITS
-#endif
-/* default windowBits for decompression. MAX_WBITS is for compression only */
-
-#if MAX_MEM_LEVEL >= 8
-#  define DEF_MEM_LEVEL 8
-#else
-#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
-#endif
-/* default memLevel */
-
 #define GZIP_CODE (16)
 
-typedef struct compress_safe_static_mem_s {
-    Bytef* work; // work buffer
-    uLong workLen; // work length
-    uLong workAlloced; // work length allocated
-} compress_safe_static_mem;
-
-// allocate from the work buffer
-voidpf compress_safe_static_alloc(voidpf opaque, uInt items, uInt size)
-{
-    voidpf new_ptr = Z_NULL;
-    compress_safe_static_mem* mem = (compress_safe_static_mem*) opaque;
-    // FIXME assert not null
-    uLong bytes = items * size;
-    // FIXME assert mult didn't overflow
-
-    // check there's enough space
-    if (mem->workAlloced + bytes > mem->workLen) {
-        // FIXME warn?
-        return Z_NULL;
-    }
-
-    new_ptr = (voidpf) (mem->work + mem->workAlloced);
-    mem->workAlloced += bytes;
-    // FIXME remove
-    printf("Compress allocated %lu bytes, total %lu.\n",
-            bytes, mem->workAlloced);
-    return new_ptr;
-}
-
-void compress_safe_static_free(void* opaque, void* addr)
-{
-    // do nothing but make compiler happy
-    (void) opaque;
-    (void) addr;
-}
 
 /* ===========================================================================
      Compresses the source buffer into the destination buffer,
@@ -105,20 +58,16 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen,
         return Z_MEM_ERROR;
     }
 
-    compress_safe_static_mem mem;
+    z_static_mem mem;
+    zmemzero(&mem, sizeof(mem));
     mem.work = work;
     mem.workLen = workLen;
     mem.workAlloced = 0;
 
-//    const uInt max = (uInt)(-1);
-
-//    uLong left = *destLen;
-//    *destLen = 0;
-
     z_stream stream;
-    // FIXME zmemzero(&stream, sizeof(stream));
-    stream.zalloc = compress_safe_static_alloc;
-    stream.zfree = compress_safe_static_free;
+    zmemzero(&stream, sizeof(stream));
+    stream.zalloc = z_static_alloc;
+    stream.zfree = z_static_free;
     stream.opaque = (voidpf)&mem;
 
     // see zlib.h for description of parameters

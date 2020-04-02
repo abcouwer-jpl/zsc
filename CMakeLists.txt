@@ -114,7 +114,6 @@ set(ZLIB_SRCS
     crc32.c
     deflate.c
     inflate.c
-    infback.c
     inftrees.c
     inffast.c
     trees.c

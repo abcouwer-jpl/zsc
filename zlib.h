@@ -143,6 +143,12 @@ typedef struct gz_header_s {
 
 typedef gz_header FAR *gz_headerp;
 
+/* Simple static memory struct, for allocing from a buffer */
+typedef struct z_static_mem_s {
+    Bytef *work; // work buffer
+    uLong workLen; // work length
+    uLong workAlloced; // work length allocated
+} z_static_mem;
 
 /*
      The application must update next_in and avail_in when avail_in has dropped

@@ -6,54 +6,12 @@
 /* @(#) $Id$ */
 
 #define ZLIB_INTERNAL
-#include "zlib.h"
+#include "zutil.h"
 
 // FIXME REMOVE
 #include <stdio.h>
 
-#ifndef DEF_WBITS
-#  define DEF_WBITS MAX_WBITS
-#endif
-/* default windowBits for decompression. MAX_WBITS is for compression only */
-
 #define GZIP_CODE (16)
-
-typedef struct uncompress_safe_static_mem_s {
-    Bytef *work; // work buffer
-    uLong workLen; // work length
-    uLong workAlloced; // work length allocated
-} uncompress_safe_static_mem;
-
-// allocate from the work buffer
-voidpf uncompress_safe_static_alloc(voidpf opaque, uInt items, uInt size)
-{
-    voidpf new_ptr = Z_NULL;
-    uncompress_safe_static_mem* mem = (uncompress_safe_static_mem*) opaque;
-    // FIXME assert not null
-    uLong bytes = items * size;
-
-    // FIXME assert mult didn't overflow
-
-    // check there's enough space
-    if (mem->workAlloced + bytes > mem->workLen) {
-        // FIXME warn?
-        return Z_NULL;
-    }
-
-    new_ptr = (voidpf) (mem->work + mem->workAlloced);
-    mem->workAlloced += bytes;
-    // FIXME remove
-    printf("Uncompress allocated %lu bytes, total %lu.\n",
-            bytes, mem->workAlloced);
-    return new_ptr;
-}
-
-void uncompress_safe_static_free(void* opaque, void* addr)
-{
-    // do nothing but make compiler happy
-    (void) opaque;
-    (void) addr;
-}
 
 // get the bounded size of the work buffer
 int ZEXPORT uncompressGetMinWorkBufSize2(windowBits, size_out)
@@ -96,19 +54,20 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
         // FIXME could adjust windowBits until it works?
     }
 
-    uncompress_safe_static_mem mem;
-    // FIXME zmemzero(&mem, sizeof(mem));
+    z_static_mem mem;
+    zmemzero(&mem, sizeof(mem));
     mem.work = work;
     mem.workLen = workLen;
     mem.workAlloced = 0;
 
     z_stream stream;
+    zmemzero(&stream, sizeof(stream));
     stream.next_in = (z_const Bytef *)source;
     stream.avail_in = *sourceLen;
     stream.next_out = dest;
     stream.avail_out = *destLen;
-    stream.zalloc = uncompress_safe_static_alloc;
-    stream.zfree = uncompress_safe_static_free;
+    stream.zalloc = z_static_alloc;
+    stream.zfree = z_static_free;
     stream.opaque = (voidpf)&mem;
 
     err = inflateInit2(&stream, windowBits);
