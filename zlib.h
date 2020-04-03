@@ -981,6 +981,10 @@ ZEXTERN int ZEXPORT inflateSync OF((z_streamp strm));
    input each time, until success or end of the input data.
 */
 
+// removed Neil Abcouwer for zlib-safe
+// copying then doing allocs will spool more memory from the work buffer
+// maybe revisit
+#if 0
 ZEXTERN int ZEXPORT inflateCopy OF((z_streamp dest,
                                     z_streamp source));
 /*
@@ -996,6 +1000,7 @@ ZEXTERN int ZEXPORT inflateCopy OF((z_streamp dest,
    (such as zalloc being Z_NULL).  msg is left unchanged in both source and
    destination.
 */
+#endif
 
 ZEXTERN int ZEXPORT inflateReset OF((z_streamp strm));
 /*

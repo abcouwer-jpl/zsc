@@ -71,11 +71,17 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
     stream.opaque = (voidpf)&mem;
 
     err = inflateInit2(&stream, windowBits);
-    if (err != Z_OK) return err;
+    if (err != Z_OK) {
+        // might be unreachable, as windowbits is checked above
+        return err;
+    }
 
     if(gz_head != Z_NULL) {
         err = inflateGetHeader(&stream, gz_head);
-        if (err != Z_OK) return err;
+        if (err != Z_OK) {
+            printf("inflateGetHeader failed\n");
+            return err;
+        }
     }
 
     // inflate in one swoop
@@ -84,6 +90,8 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
     *sourceLen = stream.total_in;
 
     if(err != Z_STREAM_END) {
+        printf("inflate failed\n");
+
         // when uncompressing with inflate(Z_FINISH),
         // Z_STREAM_END is expected, not Z_OK
         // Z_OK may indicate there wasn't enough output space

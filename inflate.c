@@ -1488,6 +1488,10 @@ z_streamp strm;
     return state->mode == STORED && state->bits == 0;
 }
 
+// removed Neil Abcouwer for zlib-safe
+// copying then doing allocs will spool more memory from the work buffer
+// maybe revisit
+#if 0
 int ZEXPORT inflateCopy(dest, source)
 z_streamp dest;
 z_streamp source;
@@ -1534,6 +1538,7 @@ z_streamp source;
     dest->state = (struct internal_state FAR *)copy;
     return Z_OK;
 }
+#endif
 
 int ZEXPORT inflateUndermine(strm, subvert)
 z_streamp strm;
