@@ -42,7 +42,7 @@
 
 // disabling corpus test makes testing much faster,
 // but gets slightly less coverage
-#define DO_CORPUS_TESTS 1
+#define DO_LONG_TESTS 1
 
 
 // max size of a file from a corpus
@@ -70,6 +70,9 @@ typedef enum {
     SCENARIO_FULL_FLUSH = 1 << 3, // flush in portions
     SCENARIO_CORRUPT = 1 << 4, // corrupted portion
     SCENARIO_TINY = 1 << 5, // tiny buffers require more flushing
+    SCENARIO_PARTIAL_FLUSH = 1 << 6, // do partial flush
+    SCENARIO_NO_FLUSH = 1 << 7, // do no flush
+
 } ZlibTestScenario;
 
 enum {NUM_CORPUS = 20}; //keep in sync
@@ -139,8 +142,19 @@ class ZlibTest : public ::testing::Test {
 //  // for Foo.
 };
 
+int good_allocs_allowed = 0;
 
+// a bad allocator function which only returns NULL, for testing fault cases
+voidpf zlib_test_bad_alloc(voidpf opaque, uInt items, uInt size)
+{
+    if (good_allocs_allowed > 0) {
+        good_allocs_allowed--;
+        return z_static_alloc (opaque, items, size);
+    } else {
+        return Z_NULL;
+    }
 
+}
 
 void zlib_test(
         Byte * source_buf,
@@ -421,9 +435,20 @@ void zlib_test(
 
         int flush_type = Z_NO_FLUSH;
 
-        if(scenarios & SCENARIO_FULL_FLUSH) {
+
+        if(scenarios & SCENARIO_NO_FLUSH) {
+            printf("doing no flush\n");
+            flush_type = Z_FULL_FLUSH;
+            max_in = 10000;
+            max_out = 10000;
+        } else if(scenarios & SCENARIO_FULL_FLUSH) {
             printf("doing full flush\n");
             flush_type = Z_FULL_FLUSH;
+            max_in = 10000;
+            max_out = 10000;
+        } else if(scenarios & SCENARIO_PARTIAL_FLUSH) {
+            printf("doing full flush\n");
+            flush_type = Z_PARTIAL_FLUSH;
             max_in = 10000;
             max_out = 10000;
         }
@@ -795,9 +820,16 @@ TEST_F(ZlibTest, Version) {
         fprintf(stderr, "warning: different zlib version\n");
     }
 
+    uLong compile_flags = zlibCompileFlags();
     printf("zlib version %s = 0x%04x, compile flags = 0x%lx\n",
             ZLIB_VERSION, ZLIB_VERNUM, zlibCompileFlags());
 
+    // Neil's unit testing was conducted on machine where
+    // sizeof(uInt) = 4, sizeof(uLong) = 8,
+    // sizeof(voidpf) = 8, sizeof(z_off_t) = 8,
+    // results may not hold for different machine
+    // FIXME test on more machines
+    EXPECT_EQ(compile_flags, 0xA9);
 }
 
 
@@ -854,14 +886,7 @@ TEST_F(ZlibTest, CompressFixed) {
 }
 
 
-#if DO_CORPUS_TESTS
-TEST_F(ZlibTest, Corpus) {
-    for (int j = 0; j < NUM_CORPUS; j++) {
-        printf("\n");
-        zlib_test_file(corpus_files[j]);
-    }
-}
-
+#if DO_LONG_TESTS
 TEST_F(ZlibTest, CorpusGzip) {
     for (int j = 0; j < NUM_CORPUS; j++) {
         printf("\n");
@@ -869,19 +894,49 @@ TEST_F(ZlibTest, CorpusGzip) {
     }
 }
 
-TEST_F(ZlibTest, CorpusLevels) {
+TEST_F(ZlibTest, CorpusNoComp) {
     for (int j = 0; j < NUM_CORPUS; j++) {
         printf("\n");
         zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_BASIC,
                 Z_NO_COMPRESSION);
+    }
+}
+
+TEST_F(ZlibTest, CorpusLevels) {
+    for (int j = 0; j < NUM_CORPUS; j++) {
         printf("\n");
         zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_BASIC,
                 Z_BEST_SPEED);
         printf("\n");
         zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_BASIC,
+                Z_DEFAULT_COMPRESSION);
+        printf("\n");
+        zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_BASIC,
                 Z_BEST_COMPRESSION);
     }
 }
+
+TEST_F(ZlibTest, AliceAllLevels) {
+    for (int j = Z_BEST_SPEED; j <= Z_BEST_COMPRESSION; j++) {
+        printf("\n");
+        zlib_test_alice(WRAP_ZLIB, SCENARIO_BASIC, j);
+    }
+}
+
+TEST_F(ZlibTest, CorpusFullFlush) {
+    for (int j = 0; j < NUM_CORPUS; j++) {
+        printf("\n");
+        zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_FULL_FLUSH);
+    }
+}
+
+TEST_F(ZlibTest, CorpusPartialFlush) {
+    for (int j = 0; j < NUM_CORPUS; j++) {
+        printf("\n");
+        zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_PARTIAL_FLUSH);
+    }
+}
+
 #endif
 
 TEST_F(ZlibTest, Dictionary) {
@@ -899,6 +954,25 @@ TEST_F(ZlibTest, Params) {
 TEST_F(ZlibTest, FullFlush) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH);
 }
+
+TEST_F(ZlibTest, PartialFlush) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_PARTIAL_FLUSH);
+}
+
+TEST_F(ZlibTest, NoFlush) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_NO_FLUSH);
+}
+
+TEST_F(ZlibTest, NoFlushHuff) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_NO_FLUSH, Z_DEFAULT_COMPRESSION,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_HUFFMAN_ONLY);
+}
+
+TEST_F(ZlibTest, NoFlushRLE) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_NO_FLUSH, Z_DEFAULT_COMPRESSION,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_RLE);
+}
+
 
 TEST_F(ZlibTest, Corrupt) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_CORRUPT);
@@ -1073,9 +1147,147 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
 
+}
 
+TEST_F(ZlibTest, DeflateErrors) {
+    printf("test errors in deflate.c\n");
+
+    int err;
+
+    printf("null version gives error\n");
+    err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+            Z_NULL, sizeof(z_stream));
+    EXPECT_EQ(err, Z_VERSION_ERROR);
+
+    printf("bad version gives error\n");
+    err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+            "2.0.0.0", sizeof(z_stream));
+    EXPECT_EQ(err, Z_VERSION_ERROR);
+
+    printf("bad stream size gives error\n");
+    err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+            ZLIB_VERSION, sizeof(z_stream)+1);
+    EXPECT_EQ(err, Z_VERSION_ERROR);
+
+    printf("null stream gives error\n");
+    err = deflateInit2(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    printf("null alloc gives error\n");
+
+    uLong work_buf_size = (uLong)(-1);
+    err = deflateGetMinWorkBufSize(DEF_WBITS, DEF_MEM_LEVEL,
+            &work_buf_size);
+    ASSERT_EQ(err, Z_OK);
+    Bytef *work_buf = (Bytef*)malloc(work_buf_size);
+    ASSERT_NE(work_buf, (Bytef*)NULL);
+
+
+    z_static_mem mem;
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
+
+    z_stream stream;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)0;
+    stream.zfree = (free_func)0;
+    stream.opaque = (voidpf)0;
+
+    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+
+    printf("null free gives error\n");
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)z_static_alloc;
+    stream.zfree = (free_func)0;
+    stream.opaque = (voidpf)0;
+
+    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+
+    printf("null allocation gives error\n");
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
+    stream.zfree = (free_func)z_static_free;
+    stream.opaque = (voidpf)&mem;
+
+    good_allocs_allowed = 0;
+
+    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_MEM_ERROR);
+
+
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
+    stream.zfree = (free_func)z_static_free;
+    stream.opaque = (voidpf)&mem;
+
+    good_allocs_allowed = 1;
+
+    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_MEM_ERROR);
+
+    printf("deflate fns should fail with null stream\n");
+    // FIXME make assert eventually
+
+    err = deflateSetDictionary(Z_NULL, Z_NULL, 0);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflateGetDictionary(Z_NULL, Z_NULL, Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflateResetKeep(Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflateReset(Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflateSetHeader(Z_NULL, Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflatePending(Z_NULL, Z_NULL, Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflatePrime(Z_NULL, 0, 0);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflateParams(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = deflateTune(Z_NULL, 0, 0, 0, 0);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    uLong bound = deflateBound(Z_NULL, 424242);
+    EXPECT_EQ(bound, 424242
+            + ((424242 + 7) >> 3) + ((424242 + 63) >> 6) +5 + 6);
+
+    err = deflate(Z_NULL, Z_NO_FLUSH);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    free(work_buf);
 
 }
+
 
 TEST_F(ZlibTest, CRC32Combine) {
     unsigned char buf[] = { 5, 7, 21, 17, 35, 77, 201, 170, 85, 14 };

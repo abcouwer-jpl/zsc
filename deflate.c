@@ -296,7 +296,9 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
     s = (deflate_state *) ZALLOC(strm, 1, sizeof(deflate_state));
-    if (s == Z_NULL) return Z_MEM_ERROR;
+    if (s == Z_NULL) {
+        return Z_MEM_ERROR;
+    }
     strm->state = (struct internal_state FAR *)s;
     s->strm = strm;
     s->status = INIT_STATE;     /* to pass state test in deflateReset() */
@@ -2209,7 +2211,8 @@ local block_state deflate_rle(s, flush)
          */
         if (s->lookahead <= MAX_MATCH) {
             fill_window(s);
-            if (s->lookahead <= MAX_MATCH && flush == Z_NO_FLUSH) {
+            if (s->lookahead <= MAX_MATCH
+                    && flush == Z_NO_FLUSH) {
                 return need_more;
             }
             if (s->lookahead == 0) break; /* flush the current block */
