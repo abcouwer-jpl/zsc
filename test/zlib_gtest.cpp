@@ -69,6 +69,7 @@ typedef enum {
     SCENARIO_PARAMS = 1 << 2,     // adjust params
     SCENARIO_FULL_FLUSH = 1 << 3, // flush in portions
     SCENARIO_CORRUPT = 1 << 4, // corrupted portion
+    SCENARIO_TINY = 1 << 5, // tiny buffers require more flushing
 } ZlibTestScenario;
 
 enum {NUM_CORPUS = 20}; //keep in sync
@@ -170,6 +171,11 @@ void zlib_test(
 //    printf("Read %d bytes.\n", nread);
 //    ASSERT_TRUE(nread <= source_buf_len);
 //    source_buf_len = nread;
+
+    if (scenarios & SCENARIO_TINY) {
+        windowBits = 9;
+        memLevel = 1;
+    }
 
     // if all params are default, we'll use more basic functions
     bool all_params_default =
@@ -276,7 +282,7 @@ void zlib_test(
                     &compressed_buf_len);
         } else {
             err = compressGetMaxOutputSizeGzip2(source_buf_len, windowBits,
-                memLevel, Z_NULL, &compressed_buf_len);
+                memLevel, &head_in, &compressed_buf_len);
         }
         break;
     }
@@ -318,6 +324,17 @@ void zlib_test(
             }
             break;
         case WRAP_GZIP_NULL:
+            if (all_params_default) {
+                 err = compressSafeGzip(compressed_buf, &compressed_buf_len_out,
+                         source_buf, source_buf_len,
+                         work_buf, work_buf_len, level, Z_NULL);
+             } else {
+                 err = compressSafeGzip2(compressed_buf, &compressed_buf_len_out,
+                         source_buf, source_buf_len,
+                         work_buf, work_buf_len, level,
+                         windowBits, memLevel, strategy, Z_NULL);
+             }
+            break;
         case WRAP_GZIP_BASIC:
         case WRAP_GZIP_BUFFERS:
             if (all_params_default) {
@@ -350,6 +367,22 @@ void zlib_test(
         } else {
             err = deflateInit2(&stream, level, Z_DEFLATED,
                     windowBits, memLevel, strategy);
+        }
+        EXPECT_EQ(err, Z_OK);
+
+
+
+
+        // set header if gzip
+        switch (wrapper) {
+        case WRAP_GZIP_NULL:
+            err = deflateSetHeader(&stream, Z_NULL);
+            break;
+        case WRAP_GZIP_BASIC:
+        case WRAP_GZIP_BUFFERS:
+            err = deflateSetHeader(&stream, &head_in);
+            break;
+        default: break;
         }
         EXPECT_EQ(err, Z_OK);
 
@@ -393,6 +426,10 @@ void zlib_test(
             flush_type = Z_FULL_FLUSH;
             max_in = 10000;
             max_out = 10000;
+        }
+        if(scenarios & SCENARIO_TINY) {
+            max_out = 4;
+            max_in = 4;
         }
 
         int cycles = 0;
@@ -540,7 +577,7 @@ void zlib_test(
         uInt max_in = (uInt)-1;
         uInt max_out = (uInt)-1;
         uLong bytes_left_dest =  uncompressed_buf_len;
-        uLong bytes_left_source =  compressed_buf_len;
+        uLong bytes_left_source =  compressed_buf_len_out;
 
 //
 //        stream_inf.next_in = (z_const Bytef *) compressed_buf;
@@ -558,7 +595,7 @@ void zlib_test(
         stream.zfree = z_static_free;
         stream.opaque = (voidpf) &mem_inf;
 
-        err = inflateInit(&stream);
+        err = inflateInit2(&stream, windowBits);
         EXPECT_EQ(err, Z_OK);
 
 //        if(scenarios & SCENARIO_DICTIONARY) {
@@ -615,11 +652,17 @@ void zlib_test(
             }
 
             if (err == Z_DATA_ERROR) {
+                if (stream.msg != Z_NULL) {
+                    printf("msg: %s\n", stream.msg);
+                }
                 // try to find a new flush point
                 err = inflateSync(&stream);
                 printf("data error. inflateSync returned %d\n", err);
                 printf("stream.avail_in = %d. stream.avail_out = %d.\n",
                         stream.avail_in, stream.avail_out);
+                if (stream.msg != Z_NULL) {
+                    printf("msg: %s\n", stream.msg);
+                }
             }
 
         } while (err == Z_OK);
@@ -865,6 +908,10 @@ TEST_F(ZlibTest, FullFlushCorrupt) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH | SCENARIO_CORRUPT);
 }
 
+TEST_F(ZlibTest, TinyOutput) {
+    zlib_test_alice(WRAP_GZIP_BUFFERS, SCENARIO_TINY);
+}
+
 TEST_F(ZlibTest, CompressSafeErrors) {
     printf("test errors in compress_safe\n");
 
@@ -1029,6 +1076,87 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
 
 
 }
+
+TEST_F(ZlibTest, CRC32Combine) {
+    unsigned char buf[] = { 5, 7, 21, 17, 35, 77, 201, 170, 85, 14 };
+
+    unsigned int crc3;
+    unsigned int crc7;
+    unsigned int crc4;
+    unsigned int crc6;
+    unsigned int crc37;
+    unsigned int crc46;
+
+    crc3 = crc32(0, NULL, 0);
+    crc3 = crc32(crc3, buf, 3);
+
+    crc7 = crc32(0, NULL, 0);
+    crc7 = crc32(crc7, buf+3, 7);
+
+    crc4 = crc32(0, NULL, 0);
+    crc4 = crc32(crc4, buf, 4);
+
+    crc6 = crc32(0, NULL, 0);
+    crc6 = crc32(crc6, buf+4, 6);
+
+    crc37 = crc32_combine64(crc3, crc7, 7);
+
+    crc46 = crc32_combine(crc4, crc6, 6);
+
+    EXPECT_EQ(crc37, crc46);
+
+
+    unsigned int adler1;
+    unsigned int adler9;
+    unsigned int adler3;
+    unsigned int adler7;
+    unsigned int adler4;
+    unsigned int adler6;
+    unsigned int adler19;
+    unsigned int adler37;
+    unsigned int adler46;
+
+    adler1 = adler32(0, NULL, 0);
+    adler1 = adler32(adler1, buf, 1);
+
+    adler9 = adler32(0, NULL, 0);
+    adler9 = adler32(adler9, buf+1, 9);
+
+    adler3 = adler32(0, NULL, 0);
+    adler3 = adler32(adler3, buf, 3);
+
+    adler7 = adler32(0, NULL, 0);
+    adler7 = adler32(adler7, buf+3, 7);
+
+    adler4 = adler32(0, NULL, 0);
+    adler4 = adler32(adler4, buf, 4);
+
+    adler6 = adler32(0, NULL, 0);
+    adler6 = adler32(adler6, buf+4, 6);
+
+    adler19 = adler32_combine(adler1, adler9, 9);
+
+    adler37 = adler32_combine(adler3, adler7, 7);
+
+    adler46 = adler32_combine64(adler4, adler6, 6);
+
+    EXPECT_EQ(adler37, adler46);
+    EXPECT_EQ(adler19, adler46);
+
+    // adler greater than BASE
+    (void)adler32(65522, buf, 1);
+    (void)adler32(65522, buf, 2);
+
+    unsigned char buf2[] = { 20, 10 };
+    (void)adler32(65500, buf, 2);
+
+    // combine should have len >= 0
+    EXPECT_EQ(adler32_combine(87, 42, -1), 0xffffffff);
+
+
+
+}
+
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
