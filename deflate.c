@@ -387,12 +387,14 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
         return Z_STREAM_ERROR;
     s = strm->state;
     wrap = s->wrap;
-    if (wrap == 2 || (wrap == 1 && s->status != INIT_STATE) || s->lookahead)
+    if (wrap == 2 || (wrap == 1 && s->status != INIT_STATE) || s->lookahead) {
         return Z_STREAM_ERROR;
+    }
 
     /* when using zlib wrappers, compute Adler-32 for provided dictionary */
-    if (wrap == 1)
+    if (wrap == 1) {
         strm->adler = adler32(strm->adler, dictionary, dictLength);
+    }
     s->wrap = 0;                    /* avoid computing Adler-32 in read_buf */
 
     /* if dictionary would fill window, just replace the history */

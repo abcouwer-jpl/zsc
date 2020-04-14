@@ -75,6 +75,11 @@ typedef enum {
     SCENARIO_PARTIAL_FLUSH = 1 << 6, // do partial flush
     SCENARIO_NO_FLUSH = 1 << 7, // do no flush
     SCENARIO_SYNC_FLUSH = 1 << 8, // do sync flush
+    SCENARIO_RESET = 1 << 9, // reset streams
+
+
+    SCENARIO_DICTIONARY_WOULD_FILL_WINDOW = (1<< 31) +
+            SCENARIO_DICTIONARY + SCENARIO_TINY,
 
 } ZlibTestScenario;
 
@@ -112,14 +117,39 @@ char *corpus_files[NUM_CORPUS] = {
 };
 
 
-static z_const char hello[] = "hello, hello!";
-/* "hello world" would be more standard, but the repeated "hello"
- * stresses the compression code better, sorry...
- */
+//static z_const char hello[] = "hello, hello!";
+///* "hello world" would be more standard, but the repeated "hello"
+// * stresses the compression code better, sorry...
+// */
+//
+//static const char dictionary[] = "hello";
+//static uLong dictId;    /* Adler32 value of the dictionary */
 
-static const char dictionary[] = "hello";
-static uLong dictId;    /* Adler32 value of the dictionary */
 
+static const Bytef * alice_dictionary = (const Bytef *)
+        "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+                "like" "know" "in a" "one" "said Alice" "little" "of the"
+                "said the" "Alice" "said";
+
+static const Bytef * big_dictionary = (const Bytef *)
+    "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+    "like" "know" "in a" "one" "said Alice" "little" "of the"
+    "said the" "Alice" "said"
+    "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+    "like" "know" "in a" "one" "said Alice" "little" "of the"
+    "said the" "Alice" "said"
+    "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+    "like" "know" "in a" "one" "said Alice" "little" "of the"
+    "said the" "Alice" "said"
+    "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+    "like" "know" "in a" "one" "said Alice" "little" "of the"
+    "said the" "Alice" "said"
+    "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+    "like" "know" "in a" "one" "said Alice" "little" "of the"
+    "said the" "Alice" "said"
+    "queen" "time" "thought" "could" "and the" "in the" "would" "went"
+    "like" "know" "in a" "one" "said Alice" "little" "of the"
+    "said the" "Alice" "said";
 
 // The fixture for testing zlib.
 class ZlibTest : public ::testing::Test {
@@ -241,25 +271,29 @@ void zlib_test(
     head_out.extra = (Byte *)malloc(80);
     head_out.extra_max = 80;
 
-    const Bytef * dictionary = (const Bytef *)
-            "queen"
-                    "time"
-                    "thought"
-                    "could"
-                    "and the"
-                    "in the"
-                    "would"
-                    "went"
-                    "like"
-                    "know"
-                    "in a"
-                    "one"
-                    "said Alice"
-                    "little"
-                    "of the"
-                    "said the"
-                    "Alice"
-                    "said";
+//    const Bytef * dictionary = (const Bytef *)
+//            "queen"
+//                    "time"
+//                    "thought"
+//                    "could"
+//                    "and the"
+//                    "in the"
+//                    "would"
+//                    "went"
+//                    "like"
+//                    "know"
+//                    "in a"
+//                    "one"
+//                    "said Alice"
+//                    "little"
+//                    "of the"
+//                    "said the"
+//                    "Alice"
+//                    "said";
+    const Bytef * dictionary = alice_dictionary;
+    if (scenarios == SCENARIO_DICTIONARY_WOULD_FILL_WINDOW) {
+        dictionary = big_dictionary;
+    }
     int dictLength = strlen((char*) dictionary);
 
     // adjust window bits
@@ -402,134 +436,146 @@ void zlib_test(
         }
         EXPECT_EQ(err, Z_OK);
 
-        // set header if gzip
-        switch (wrapper) {
-        case WRAP_GZIP_NULL:
-            err = deflateSetHeader(&stream, Z_NULL);
-            break;
-        case WRAP_GZIP_BASIC:
-        case WRAP_GZIP_BUFFERS:
-            err = deflateSetHeader(&stream, &head_in);
-            break;
-        default: break;
-        }
-        EXPECT_EQ(err, Z_OK);
-
-
-        if(scenarios & SCENARIO_DICTIONARY) {
-            printf("setting dictionary\n");
-            err = deflateSetDictionary(&stream, dictionary, dictLength);
-            EXPECT_EQ(err, Z_OK);
+        int times_compress = 1;
+        if (scenarios & SCENARIO_RESET) {
+            times_compress = 2;
         }
 
-        unsigned pending_bytes;
-        int pending_bits;
-        if(scenarios & SCENARIO_PENDING) {
-            err = deflatePending(&stream,&pending_bytes, &pending_bits);
-            EXPECT_EQ(err, Z_OK);
-            printf("pending bytes: %u pending bits: %d.\n",
-                    pending_bytes, pending_bits);
-        }
-
-        if(scenarios & SCENARIO_PARAMS) {
-            err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
-            EXPECT_EQ(err, Z_OK);
-        }
-
-
-        uInt max_in = (uInt)-1;
-        uInt max_out = (uInt)-1;
-        uLong bytes_left_dest =  compressed_buf_len_out;
-        uLong bytes_left_source =  source_buf_len;
-
-
-        stream.next_out = compressed_buf;
-        stream.avail_out = 0;
-        stream.next_in = source_buf;
-        stream.avail_in = 0;
-
-        int flush_type = Z_NO_FLUSH;
-
-
-        if(scenarios & SCENARIO_NO_FLUSH) {
-            printf("doing no flush\n");
-            flush_type = Z_NO_FLUSH;
-            max_in = 10000;
-            max_out = 10000;
-        } else if(scenarios & SCENARIO_FULL_FLUSH) {
-            printf("doing full flush\n");
-            flush_type = Z_FULL_FLUSH;
-            max_in = 10000;
-            max_out = 10000;
-        } else if(scenarios & SCENARIO_PARTIAL_FLUSH) {
-            printf("doing partial flush\n");
-            flush_type = Z_PARTIAL_FLUSH;
-            max_in = 10000;
-            max_out = 10000;
-        } else if(scenarios & SCENARIO_SYNC_FLUSH) {
-            printf("doing sync flush\n");
-            flush_type = Z_SYNC_FLUSH;
-            max_in = 10000;
-            max_out = 10000;
-        }
-
-        if(scenarios & SCENARIO_TINY) {
-            max_out = 4;
-            max_in = 4;
-        }
-
-        int cycles = 0;
         do {
-            cycles++;
-            if (stream.avail_out == 0) {
-                // provide more output
-                stream.avail_out =
-                        bytes_left_dest > (uLong) max_out ?
-                                max_out : (uInt) bytes_left_dest;
-                bytes_left_dest -= stream.avail_out;
+            // set header if gzip
+            switch (wrapper) {
+            case WRAP_GZIP_NULL:
+                err = deflateSetHeader(&stream, Z_NULL);
+                break;
+            case WRAP_GZIP_BASIC:
+                case WRAP_GZIP_BUFFERS:
+                err = deflateSetHeader(&stream, &head_in);
+                break;
+            default:
+                break;
             }
-            if (stream.avail_in == 0) {
-                stream.avail_in =
-                        bytes_left_source > (uLong) max_in ?
-                                max_in : (uInt) bytes_left_source;
-                bytes_left_source -= stream.avail_in;
-            }
-            err = deflate(&stream, bytes_left_source ? flush_type : Z_FINISH);
-        } while (err == Z_OK);
-
-        if(cycles > 1) {
-            printf("%d cycles\n", cycles);
-        }
-
-        compressed_buf_len_out = stream.total_out;
-
-//        // compress in one fell swoop
-//        printf("deflating\n");
-//        err = deflate(&stream, Z_FINISH);
-//        EXPECT_EQ(err, Z_STREAM_END);
-//
-//        compressed_buf_len_out = stream.total_out;
-//
-//        if(scenarios & SCENARIO_PENDING) {
-//            err = deflatePending(&stream,&pending_bytes, &pending_bits);
-//            EXPECT_EQ(err, Z_OK);
-//            printf("pending bytes: %u pending bits: %d.\n",
-//                    pending_bytes, pending_bits);
-//        }
-
-
-        if(scenarios & SCENARIO_DICTIONARY) {
-            Bytef * dictionary_out = (Bytef *) malloc(32768);
-            ASSERT_NE(dictionary_out, (Bytef*)NULL);
-
-            uInt dict_out_len = 0;
-
-            printf("getting dictionary\n");
-            err = deflateGetDictionary(&stream, dictionary_out, &dict_out_len);
             EXPECT_EQ(err, Z_OK);
 
-            free(dictionary_out);
-        }
+            if (scenarios & SCENARIO_DICTIONARY) {
+                printf("setting dictionary\n");
+                err = deflateSetDictionary(&stream, dictionary, dictLength);
+                EXPECT_EQ(err, Z_OK);
+            }
+
+            unsigned pending_bytes;
+            int pending_bits;
+            if (scenarios & SCENARIO_PENDING) {
+                err = deflatePending(&stream, &pending_bytes, &pending_bits);
+                EXPECT_EQ(err, Z_OK);
+                printf("pending bytes: %u pending bits: %d.\n",
+                        pending_bytes, pending_bits);
+            }
+
+            if (scenarios & SCENARIO_PARAMS) {
+                err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
+                EXPECT_EQ(err, Z_OK);
+            }
+
+            uInt max_in = (uInt) -1;
+            uInt max_out = (uInt) -1;
+            uLong bytes_left_dest = compressed_buf_len_out;
+            uLong bytes_left_source = source_buf_len;
+
+            stream.next_out = compressed_buf;
+            stream.avail_out = 0;
+            stream.next_in = source_buf;
+            stream.avail_in = 0;
+
+            int flush_type = Z_NO_FLUSH;
+
+            if (scenarios & SCENARIO_NO_FLUSH) {
+                printf("doing no flush\n");
+                flush_type = Z_NO_FLUSH;
+                max_in = 10000;
+                max_out = 10000;
+            } else if (scenarios & SCENARIO_FULL_FLUSH) {
+                printf("doing full flush\n");
+                flush_type = Z_FULL_FLUSH;
+                max_in = 10000;
+                max_out = 10000;
+            } else if (scenarios & SCENARIO_PARTIAL_FLUSH) {
+                printf("doing partial flush\n");
+                flush_type = Z_PARTIAL_FLUSH;
+                max_in = 10000;
+                max_out = 10000;
+            } else if (scenarios & SCENARIO_SYNC_FLUSH) {
+                printf("doing sync flush\n");
+                flush_type = Z_SYNC_FLUSH;
+                max_in = 10000;
+                max_out = 10000;
+            }
+
+            if (scenarios & SCENARIO_TINY) {
+                max_out = 4;
+                max_in = 4;
+            }
+
+            int cycles = 0;
+            do {
+                cycles++;
+                if (stream.avail_out == 0) {
+                    // provide more output
+                    stream.avail_out =
+                            bytes_left_dest > (uLong) max_out ?
+                                    max_out : (uInt) bytes_left_dest;
+                    bytes_left_dest -= stream.avail_out;
+                }
+                if (stream.avail_in == 0) {
+                    stream.avail_in =
+                            bytes_left_source > (uLong) max_in ?
+                                    max_in : (uInt) bytes_left_source;
+                    bytes_left_source -= stream.avail_in;
+                }
+                err = deflate(&stream,
+                        bytes_left_source ? flush_type : Z_FINISH);
+            } while (err == Z_OK);
+
+            if (cycles > 1) {
+                printf("%d cycles\n", cycles);
+            }
+
+            compressed_buf_len_out = stream.total_out;
+
+            if (scenarios & SCENARIO_DICTIONARY) {
+                Bytef * dictionary_out = (Bytef *) malloc(32768);
+                ASSERT_NE(dictionary_out, (Bytef* )NULL);
+                memset(dictionary_out, 0, 32768);
+
+                uInt dict_out_len = 0;
+
+                printf("getting dictionary\n");
+                err = deflateGetDictionary(&stream, dictionary_out,
+                        &dict_out_len);
+                EXPECT_EQ(err, Z_OK);
+
+                int print_out = dict_out_len < 512 ? dict_out_len : 512;
+                printf("Dictionary of length %u, printing %d:\n", dict_out_len,
+                        print_out);
+                for (int i = 0; i < print_out; i++) {
+                    if (isprint(dictionary_out[i])) {
+                        printf("%c", dictionary_out[i]);
+                    } else {
+                        printf(" %#x ", dictionary_out[i]);
+                    }
+                }
+                printf("\n");
+
+                free(dictionary_out);
+            }
+
+            times_compress--;
+
+            if (times_compress > 0) {
+                printf("reseting deflate stream\n");
+                err = deflateReset(&stream);
+                EXPECT_EQ(err, Z_OK);
+            }
+        } while (times_compress > 0);
 
         err = deflateEnd(&stream);
         EXPECT_EQ(err, Z_OK);
@@ -642,35 +688,16 @@ void zlib_test(
         }
         EXPECT_EQ(err, Z_OK);
 
+        int times_decompress = 1;
+        if(scenarios & SCENARIO_RESET) {
+            times_decompress = 2;
+        }
 
-        int cycles = 0;
         do {
-            cycles++;
-            printf("inflate cycle %d\n", cycles);
 
-            if (stream.avail_out == 0) {
-                stream.avail_out =
-                        bytes_left_dest > (uLong) max_out ?
-                                max_out : (uInt) bytes_left_dest;
-                bytes_left_dest -= stream.avail_out;
-            }
-            if (stream.avail_in == 0) {
-                stream.avail_in =
-                        bytes_left_source > (uLong) max_in ?
-                                max_in : (uInt) bytes_left_source;
-                bytes_left_source -= stream.avail_in;
-            }
-            printf("before: stream.avail_in = %d. stream.avail_out = %d.\n",
-                    stream.avail_in, stream.avail_out);
-            err = inflate(&stream, Z_SYNC_FLUSH); //Z_NO_FLUSH);//Z_BLOCK);
-            printf("after:  stream.avail_in = %d. stream.avail_out = %d.\n",
-                    stream.avail_in, stream.avail_out);
-
-            if (err == Z_NEED_DICT) {
-                EXPECT_TRUE(scenarios & SCENARIO_DICTIONARY);
-                printf("inflate() returned Z_NEED_DICT. adler-32 val = %lu. "
-                        "setting dictionary for inflate\n",
-                        stream.adler);
+            // for raw inflate, dictionary can be set any time
+            if( (scenarios & SCENARIO_DICTIONARY) && wrapper == WRAP_NONE) {
+                printf("after init, setting dictionary for raw inflate\n");
                 err = inflateSetDictionary(&stream, dictionary, dictLength);
                 EXPECT_EQ(err, Z_OK);
                 if (stream.msg != Z_NULL) {
@@ -678,50 +705,97 @@ void zlib_test(
                 }
             }
 
-            if (err == Z_DATA_ERROR) {
-                if (stream.msg != Z_NULL) {
-                    printf("msg: %s\n", stream.msg);
+            int cycles = 0;
+            do {
+                cycles++;
+                printf("inflate cycle %d\n", cycles);
+
+                if (stream.avail_out == 0) {
+                    stream.avail_out =
+                            bytes_left_dest > (uLong) max_out ?
+                                    max_out : (uInt) bytes_left_dest;
+                    bytes_left_dest -= stream.avail_out;
                 }
-                // try to find a new flush point
-                err = inflateSync(&stream);
-                printf("data error. inflateSync returned %d\n", err);
-                printf("stream.avail_in = %d. stream.avail_out = %d.\n",
+                if (stream.avail_in == 0) {
+                    stream.avail_in =
+                            bytes_left_source > (uLong) max_in ?
+                                    max_in : (uInt) bytes_left_source;
+                    bytes_left_source -= stream.avail_in;
+                }
+                printf("before: stream.avail_in = %d. stream.avail_out = %d.\n",
                         stream.avail_in, stream.avail_out);
-                if (stream.msg != Z_NULL) {
-                    printf("msg: %s\n", stream.msg);
+                err = inflate(&stream, Z_NO_FLUSH);//Z_BLOCK);
+                printf("after:  stream.avail_in = %d. stream.avail_out = %d.\n",
+                        stream.avail_in, stream.avail_out);
+
+                if (err == Z_NEED_DICT) {
+                    EXPECT_TRUE(scenarios & SCENARIO_DICTIONARY);
+                    printf("inflate() returned Z_NEED_DICT. adler-32 val = %lu. "
+                            "setting dictionary for inflate\n",
+                            stream.adler);
+                    err = inflateSetDictionary(&stream, dictionary, dictLength);
+                    EXPECT_EQ(err, Z_OK);
+                    if (stream.msg != Z_NULL) {
+                        printf("msg: %s\n", stream.msg);
+                    }
                 }
 
+                if (err == Z_DATA_ERROR) {
+                    printf("data error.\n");
+                    if (stream.msg != Z_NULL) {
+                        printf("msg: %s\n", stream.msg);
+                    }
+                    // try to find a new flush point
+                    err = inflateSync(&stream);
+                    printf("inflateSync returned %d\n", err);
+                    printf("stream.avail_in = %d. stream.avail_out = %d.\n",
+                            stream.avail_in, stream.avail_out);
+                    if (stream.msg != Z_NULL) {
+                        printf("msg: %s\n", stream.msg);
+                    }
+
+                }
+
+                bool at_sync_point = inflateSyncPoint(&stream);
+                EXPECT_FALSE(at_sync_point);
+
+            } while (err == Z_OK);
+
+            if(cycles>1) {
+                printf("cycles = %d\n", cycles);
             }
 
-            bool at_sync_point = inflateSyncPoint(&stream);
-            EXPECT_FALSE(at_sync_point);
-
-        } while (err == Z_OK);
-
-        if(cycles>1) {
-            printf("cycles = %d\n", cycles);
-        }
-
-        if(scenarios & SCENARIO_CORRUPT) {
-            EXPECT_EQ(err, Z_DATA_ERROR);
-        } else {
-            EXPECT_EQ(err, Z_STREAM_END);
-            if(err != Z_STREAM_END) {
-                printf("msg: %s\n", stream.msg);
+            if(scenarios & SCENARIO_CORRUPT) {
+                EXPECT_EQ(err, Z_DATA_ERROR);
+            } else {
+                EXPECT_EQ(err, Z_STREAM_END);
+                if(err != Z_STREAM_END) {
+                    printf("msg: %s\n", stream.msg);
+                }
             }
-        }
-        uncompressed_buf_len_out = stream.total_out;
+            uncompressed_buf_len_out = stream.total_out;
 
-        if(scenarios & SCENARIO_DICTIONARY) {
-            Bytef * dictionary_out_inf = (Bytef *) malloc(32768);
-            ASSERT_NE(dictionary_out_inf, (Bytef*)NULL);
-            uInt dict_out_inf_len = 0;
-            printf("getting dictionary\n");
-            err = inflateGetDictionary(&stream, dictionary_out_inf,
-                    &dict_out_inf_len);
-            EXPECT_EQ(err, Z_OK);
-            free(dictionary_out_inf);
-        }
+            if(scenarios & SCENARIO_DICTIONARY) {
+                Bytef * dictionary_out_inf = (Bytef *) malloc(32768);
+                ASSERT_NE(dictionary_out_inf, (Bytef*)NULL);
+                uInt dict_out_inf_len = 0;
+                printf("getting dictionary\n");
+                err = inflateGetDictionary(&stream, dictionary_out_inf,
+                        &dict_out_inf_len);
+                EXPECT_EQ(err, Z_OK);
+                free(dictionary_out_inf);
+            }
+
+            times_decompress--;
+
+
+            if(times_decompress > 0) {
+                printf("reseting inflate stream\n");
+                err = inflateReset(&stream);
+                EXPECT_EQ(err, Z_OK);
+            }
+        } while (times_decompress > 0);
+
 
         err = inflateEnd(&stream);
         EXPECT_EQ(err, Z_OK);
@@ -1061,6 +1135,29 @@ TEST_F(ZlibTest, TinyOutput) {
     zlib_test_alice(WRAP_GZIP_BUFFERS, SCENARIO_TINY);
 }
 
+TEST_F(ZlibTest, DictionaryWouldFillWindow) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_DICTIONARY_WOULD_FILL_WINDOW);
+}
+
+TEST_F(ZlibTest, NoWrapDictionaryWouldFillWindow) {
+    zlib_test_alice(WRAP_NONE, SCENARIO_DICTIONARY_WOULD_FILL_WINDOW);
+}
+
+
+TEST_F(ZlibTest, NoWrapReset) {
+    zlib_test_alice(WRAP_NONE, SCENARIO_RESET);
+}
+
+TEST_F(ZlibTest, Reset) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_RESET);
+}
+
+TEST_F(ZlibTest, GzipReset) {
+    zlib_test_alice(WRAP_GZIP_BASIC, SCENARIO_RESET);
+}
+
+
+
 TEST_F(ZlibTest, CompressSafeErrors) {
     printf("test errors in compress_safe\n");
 
@@ -1321,6 +1418,9 @@ TEST_F(ZlibTest, DeflateErrors) {
     err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
             DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
     EXPECT_EQ(err, Z_MEM_ERROR);
+
+
+
 
     printf("deflate fns should fail with null stream\n");
     // FIXME make assert eventually
