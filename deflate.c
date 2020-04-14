@@ -485,6 +485,7 @@ int ZEXPORT deflateResetKeep (strm)
         s->wrap == 2 ? GZIP_STATE :
 #endif
         s->wrap ? INIT_STATE : BUSY_STATE;
+    printf("s->wrap = %d\n", s->wrap);
     strm->adler =
 #ifdef GZIP
         s->wrap == 2 ? crc32(0L, Z_NULL, 0) :
@@ -949,6 +950,7 @@ int ZEXPORT deflate (strm, flush)
 
     /* Write the header */
     if (s->status == INIT_STATE) {
+        printf("write zlib header\n");
         /* zlib header */
         uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
         uInt level_flags;
@@ -984,6 +986,7 @@ int ZEXPORT deflate (strm, flush)
     }
 #ifdef GZIP
     if (s->status == GZIP_STATE) {
+        printf("write gzip header\n");
         /* gzip header */
         strm->adler = crc32(0L, Z_NULL, 0);
         put_byte(s, 31);
@@ -2281,6 +2284,7 @@ local block_state deflate_huff(s, flush)
         if (s->lookahead == 0) {
             fill_window(s);
             if (s->lookahead == 0) {
+                Trace((stdout,"s->lookahead == 0\n"));
                 if (flush == Z_NO_FLUSH)
                     return need_more;
                 break;      /* flush the current block */

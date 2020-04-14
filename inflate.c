@@ -85,6 +85,9 @@
 #include "inflate.h"
 #include "inffast.h"
 
+//FIXME REMOVE
+#include <stdio.h>
+
 #ifdef MAKEFIXED
 #  ifndef BUILDFIXED
 #    define BUILDFIXED
@@ -682,7 +685,8 @@ int flush;
     in = have;
     out = left;
     ret = Z_OK;
-    for (;;)
+    for (;;) {
+        printf("mode:%u\n", state->mode);
         switch (state->mode) {
         case HEAD:
             if (state->wrap == 0) {
@@ -879,9 +883,11 @@ int flush;
         case TYPE:
             if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
         case TYPEDO:
+            printf("typedo\n");
             if (state->last) {
                 BYTEBITS();
                 state->mode = CHECK;
+                printf("typedo -> check\n");
                 break;
             }
             NEEDBITS(3);
@@ -892,14 +898,17 @@ int flush;
                 Tracev((stderr, "inflate:     stored block%s\n",
                         state->last ? " (last)" : ""));
                 state->mode = STORED;
+                printf("typedo -> stored\n");
                 break;
             case 1:                             /* fixed block */
                 fixedtables(state);
                 Tracev((stderr, "inflate:     fixed codes block%s\n",
                         state->last ? " (last)" : ""));
                 state->mode = LEN_;             /* decode codes */
+                printf("typedo -> len_\n");
                 if (flush == Z_TREES) {
                     DROPBITS(2);
+                    printf("leave\n");
                     goto inf_leave;
                 }
                 break;
@@ -907,12 +916,15 @@ int flush;
                 Tracev((stderr, "inflate:     dynamic codes block%s\n",
                         state->last ? " (last)" : ""));
                 state->mode = TABLE;
+                printf("typedo -> table\n");
                 break;
             case 3:
                 strm->msg = (char *)"invalid block type";
+                printf("typedo -> bad\n");
                 state->mode = BAD;
             }
             DROPBITS(2);
+            printf("typedo break\n");
             break;
         case STORED:
             BYTEBITS();                         /* go to byte boundary */
@@ -933,6 +945,7 @@ int flush;
         case COPY:
             copy = state->length;
             if (copy) {
+                printf("1 copy: %u have: %u left: %u\n", copy, have, left);
                 if (copy > have) copy = have;
                 if (copy > left) copy = left;
                 if (copy == 0) goto inf_leave;
@@ -942,6 +955,7 @@ int flush;
                 left -= copy;
                 put += copy;
                 state->length -= copy;
+                printf("2 copy: %u have: %u left: %u\n", copy, have, left);
                 break;
             }
             Tracev((stderr, "inflate:       stored end\n"));
@@ -1273,7 +1287,7 @@ int flush;
         default:
             return Z_STREAM_ERROR;
         }
-
+    }
     /*
        Return from inflate(), updating the total counts and the check value.
        If there was no progress during the inflate() call, return a buffer
@@ -1299,8 +1313,10 @@ int flush;
     strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
                       (state->mode == TYPE ? 128 : 0) +
                       (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
-    if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+    if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK) {
         ret = Z_BUF_ERROR;
+        printf("mode = %d\n", state->mode);
+    }
     return ret;
 }
 

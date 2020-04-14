@@ -72,6 +72,7 @@ typedef enum {
     SCENARIO_TINY = 1 << 5, // tiny buffers require more flushing
     SCENARIO_PARTIAL_FLUSH = 1 << 6, // do partial flush
     SCENARIO_NO_FLUSH = 1 << 7, // do no flush
+    SCENARIO_SYNC_FLUSH = 1 << 8, // do sync flush
 
 } ZlibTestScenario;
 
@@ -193,8 +194,8 @@ void zlib_test(
 
     // if all params are default, we'll use more basic functions
     bool all_params_default =
-            (/*level == Z_DEFAULT_COMPRESSION
-             &&*/ windowBits == DEF_WBITS
+            ( wrapper != WRAP_NONE
+             && windowBits == DEF_WBITS
              && memLevel == DEF_MEM_LEVEL
              && strategy == Z_DEFAULT_STRATEGY);
 
@@ -257,6 +258,8 @@ void zlib_test(
         // if not already encoded, signify no wrapper
         if (windowBits > 0) {
             windowBits = -windowBits;
+            printf("Changed windowbits to %d, signifying no wrapper.\n",
+                    windowBits);
         }
         break;
     case WRAP_ZLIB: // do nothing
@@ -300,6 +303,9 @@ void zlib_test(
         }
         break;
     }
+
+    // FIXME function underestimate when breaking into segments
+    compressed_buf_len += 1000;
 
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
@@ -376,6 +382,8 @@ void zlib_test(
         stream.zfree = z_static_free;
         stream.opaque = (voidpf) &mem;
 
+        printf("deflateInit with windowBits=%d\n", windowBits);
+
         if (all_params_default) {
             err = deflateInit(&stream, level);
         } else {
@@ -383,9 +391,6 @@ void zlib_test(
                     windowBits, memLevel, strategy);
         }
         EXPECT_EQ(err, Z_OK);
-
-
-
 
         // set header if gzip
         switch (wrapper) {
@@ -438,7 +443,7 @@ void zlib_test(
 
         if(scenarios & SCENARIO_NO_FLUSH) {
             printf("doing no flush\n");
-            flush_type = Z_FULL_FLUSH;
+            flush_type = Z_NO_FLUSH;
             max_in = 10000;
             max_out = 10000;
         } else if(scenarios & SCENARIO_FULL_FLUSH) {
@@ -447,11 +452,17 @@ void zlib_test(
             max_in = 10000;
             max_out = 10000;
         } else if(scenarios & SCENARIO_PARTIAL_FLUSH) {
-            printf("doing full flush\n");
+            printf("doing partial flush\n");
             flush_type = Z_PARTIAL_FLUSH;
             max_in = 10000;
             max_out = 10000;
+        } else if(scenarios & SCENARIO_SYNC_FLUSH) {
+            printf("doing sync flush\n");
+            flush_type = Z_SYNC_FLUSH;
+            max_in = 10000;
+            max_out = 10000;
         }
+
         if(scenarios & SCENARIO_TINY) {
             max_out = 4;
             max_in = 4;
@@ -623,31 +634,12 @@ void zlib_test(
         err = inflateInit2(&stream, windowBits);
         EXPECT_EQ(err, Z_OK);
 
-//        if(scenarios & SCENARIO_DICTIONARY) {
-//            // inflate should report dictionary needed
-//            err = inflate(&stream, Z_NO_FLUSH);
-//            EXPECT_EQ(err, Z_NEED_DICT);
-//            if (stream.msg != Z_NULL) {
-//                printf("msg: %s\n", stream.msg);
-//            }
-//            printf("setting dictionary\n");
-//            err = inflateSetDictionary(&stream, dictionary, dictLength);
-//            EXPECT_EQ(err, Z_OK);
-//            if (stream.msg != Z_NULL) {
-//                printf("msg: %s\n", stream.msg);
-//            }
-//        }
 
-//        // inflate
-//        err = inflate(&stream, Z_FINISH);
-//        uncompressed_buf_len_out = stream.total_out;
-//        EXPECT_EQ(err, Z_STREAM_END);
-//        if (stream.msg != Z_NULL) {
-//            printf("msg: %s\n", stream.msg);
-//        }
-
-
+        int cycles = 0;
         do {
+            cycles++;
+            printf("inflate cycle %d\n", cycles);
+
             if (stream.avail_out == 0) {
                 stream.avail_out =
                         bytes_left_dest > (uLong) max_out ?
@@ -662,13 +654,15 @@ void zlib_test(
             }
             printf("before: stream.avail_in = %d. stream.avail_out = %d.\n",
                     stream.avail_in, stream.avail_out);
-            err = inflate(&stream, Z_NO_FLUSH);
+            err = inflate(&stream, Z_NO_FLUSH);//Z_BLOCK);
             printf("after:  stream.avail_in = %d. stream.avail_out = %d.\n",
                     stream.avail_in, stream.avail_out);
 
             if (err == Z_NEED_DICT) {
                 EXPECT_TRUE(scenarios & SCENARIO_DICTIONARY);
-                printf("setting dictionary\n");
+                printf("inflate() returned Z_NEED_DICT. adler-32 val = %u. "
+                        "setting dictionary for inflate\n",
+                        stream.adler);
                 err = inflateSetDictionary(&stream, dictionary, dictLength);
                 EXPECT_EQ(err, Z_OK);
                 if (stream.msg != Z_NULL) {
@@ -692,10 +686,17 @@ void zlib_test(
 
         } while (err == Z_OK);
 
+        if(cycles>1) {
+            printf("cycles = %d\n", cycles);
+        }
+
         if(scenarios & SCENARIO_CORRUPT) {
             EXPECT_EQ(err, Z_DATA_ERROR);
         } else {
             EXPECT_EQ(err, Z_STREAM_END);
+            if(err != Z_STREAM_END) {
+                printf("msg: %s\n", stream.msg);
+            }
         }
         uncompressed_buf_len_out = stream.total_out;
 
@@ -827,9 +828,10 @@ TEST_F(ZlibTest, Version) {
     // Neil's unit testing was conducted on machine where
     // sizeof(uInt) = 4, sizeof(uLong) = 8,
     // sizeof(voidpf) = 8, sizeof(z_off_t) = 8,
+    // allow debug flag
     // results may not hold for different machine
     // FIXME test on more machines
-    EXPECT_EQ(compile_flags, 0xA9);
+    EXPECT_TRUE(compile_flags == 0xA9 || compile_flags == 0x1A9);
 }
 
 
@@ -902,6 +904,15 @@ TEST_F(ZlibTest, CorpusNoComp) {
     }
 }
 
+TEST_F(ZlibTest, CorpusNoFlushNoComp) {
+    for (int j = 0; j < NUM_CORPUS; j++) {
+        printf("\n");
+        zlib_test_file(corpus_files[j], WRAP_ZLIB, SCENARIO_NO_FLUSH,
+                Z_NO_COMPRESSION);
+    }
+}
+
+
 TEST_F(ZlibTest, CorpusLevels) {
     for (int j = 0; j < NUM_CORPUS; j++) {
         printf("\n");
@@ -959,6 +970,11 @@ TEST_F(ZlibTest, PartialFlush) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_PARTIAL_FLUSH);
 }
 
+TEST_F(ZlibTest, SyncFlush) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_SYNC_FLUSH);
+}
+
+
 TEST_F(ZlibTest, NoFlush) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_NO_FLUSH);
 }
@@ -973,6 +989,53 @@ TEST_F(ZlibTest, NoFlushRLE) {
             DEF_WBITS, DEF_MEM_LEVEL, Z_RLE);
 }
 
+TEST_F(ZlibTest, FullFlushRLE) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH, Z_DEFAULT_COMPRESSION,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_RLE);
+}
+
+TEST_F(ZlibTest, FullFlushHuff) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH, Z_DEFAULT_COMPRESSION,
+            DEF_WBITS, DEF_MEM_LEVEL, Z_HUFFMAN_ONLY);
+}
+
+TEST_F(ZlibTest, FullFlushFast) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH, Z_BEST_SPEED);
+}
+
+TEST_F(ZlibTest, NoFlushFast) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_NO_FLUSH, Z_BEST_SPEED);
+}
+
+
+
+TEST_F(ZlibTest, NoFlushNoComp) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_NO_FLUSH, Z_NO_COMPRESSION);
+}
+
+TEST_F(ZlibTest, PartialFlushNoComp) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_PARTIAL_FLUSH, Z_NO_COMPRESSION);
+}
+
+TEST_F(ZlibTest, SyncFlushNoComp) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_SYNC_FLUSH, Z_NO_COMPRESSION);
+}
+
+TEST_F(ZlibTest, FullFlushNoComp) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH, Z_NO_COMPRESSION);
+}
+
+TEST_F(ZlibTest, NoWrapPartialFlushNoComp) {
+    zlib_test_alice(WRAP_NONE, SCENARIO_PARTIAL_FLUSH, Z_NO_COMPRESSION);
+}
+
+TEST_F(ZlibTest, NoWrapSyncFlushNoComp) {
+    zlib_test_alice(WRAP_NONE, SCENARIO_SYNC_FLUSH, Z_NO_COMPRESSION);
+}
+
+TEST_F(ZlibTest, NoWrapFullFlushNoComp) {
+    zlib_test_alice(WRAP_NONE, SCENARIO_FULL_FLUSH, Z_NO_COMPRESSION);
+}
 
 TEST_F(ZlibTest, Corrupt) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_CORRUPT);
