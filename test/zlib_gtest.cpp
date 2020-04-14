@@ -15,6 +15,8 @@
 #  include <stdlib.h>
 #endif
 
+
+
 #if defined(VMS) || defined(RISCOS)
 #  define TESTFILE "foo-gz"
 #else
@@ -77,6 +79,14 @@ typedef enum {
 } ZlibTestScenario;
 
 enum {NUM_CORPUS = 20}; //keep in sync
+
+// FIXME try again or delete
+//// expose local functions
+//extern unsigned long crc32_big(unsigned long crc,
+//        const unsigned char FAR *buf, z_size_t len);
+//extern unsigned long crc32_little(unsigned long crc,
+//        const unsigned char FAR *buf, z_size_t len);
+
 
 char *corpus_files[NUM_CORPUS] = {
         (char*)"corpus/cantrbry/alice29.txt",
@@ -557,6 +567,7 @@ void zlib_test(
     err = uncompressGetMinWorkBufSize(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (Byte *)Z_NULL);
 
     printf("Work buf size: %lu.\n",
             work_buf_len);
@@ -615,23 +626,20 @@ void zlib_test(
         uLong bytes_left_dest =  uncompressed_buf_len;
         uLong bytes_left_source =  compressed_buf_len_out;
 
-//
-//        stream_inf.next_in = (z_const Bytef *) compressed_buf;
-//          stream_inf.avail_in = compressed_buf_len;
-//          stream_inf.next_out = uncompressed_buf;
-//          stream_inf.avail_out = uncompressed_buf_len;
-
         stream.next_in = (z_const Bytef *) compressed_buf;
         stream.avail_in = 0;
         stream.next_out = uncompressed_buf;
         stream.avail_out = 0;
-
-
         stream.zalloc = z_static_alloc;
         stream.zfree = z_static_free;
         stream.opaque = (voidpf) &mem_inf;
 
-        err = inflateInit2(&stream, windowBits);
+        if (windowBits == DEF_WBITS
+                && wrapper == WRAP_ZLIB) {
+            err = inflateInit(&stream);
+        } else {
+            err = inflateInit2(&stream, windowBits);
+        }
         EXPECT_EQ(err, Z_OK);
 
 
@@ -654,13 +662,13 @@ void zlib_test(
             }
             printf("before: stream.avail_in = %d. stream.avail_out = %d.\n",
                     stream.avail_in, stream.avail_out);
-            err = inflate(&stream, Z_NO_FLUSH);//Z_BLOCK);
+            err = inflate(&stream, Z_SYNC_FLUSH); //Z_NO_FLUSH);//Z_BLOCK);
             printf("after:  stream.avail_in = %d. stream.avail_out = %d.\n",
                     stream.avail_in, stream.avail_out);
 
             if (err == Z_NEED_DICT) {
                 EXPECT_TRUE(scenarios & SCENARIO_DICTIONARY);
-                printf("inflate() returned Z_NEED_DICT. adler-32 val = %u. "
+                printf("inflate() returned Z_NEED_DICT. adler-32 val = %lu. "
                         "setting dictionary for inflate\n",
                         stream.adler);
                 err = inflateSetDictionary(&stream, dictionary, dictLength);
@@ -682,7 +690,11 @@ void zlib_test(
                 if (stream.msg != Z_NULL) {
                     printf("msg: %s\n", stream.msg);
                 }
+
             }
+
+            bool at_sync_point = inflateSyncPoint(&stream);
+            EXPECT_FALSE(at_sync_point);
 
         } while (err == Z_OK);
 
@@ -1351,6 +1363,106 @@ TEST_F(ZlibTest, DeflateErrors) {
 
 }
 
+TEST_F(ZlibTest, InflatePrime) {
+
+    int err;
+
+    err = inflatePrime(Z_NULL, 5, 31);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    int windowBits = -15;
+
+    uLong work_buf_len;
+    Byte * work_buf;
+
+    err = uncompressGetMinWorkBufSize(&work_buf_len);
+    EXPECT_EQ(err, Z_OK);
+    work_buf = (Byte *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (Byte *)Z_NULL);
+
+    z_static_mem mem_inf;
+    mem_inf.work = work_buf;
+    mem_inf.workLen = work_buf_len;
+    mem_inf.workAlloced = 0;
+
+    z_stream stream;
+
+//    uInt max_in = (uInt)-1;
+//    uInt max_out = (uInt)-1;
+//    uLong bytes_left_dest =  uncompressed_buf_len;
+//    uLong bytes_left_source =  compressed_buf_len_out;
+//
+//    stream.next_in = (z_const Bytef *) compressed_buf;
+//    stream.avail_in = 0;
+//    stream.next_out = uncompressed_buf;
+//    stream.avail_out = 0;
+
+    stream.next_in = Z_NULL;
+    stream.avail_in = 0;
+    stream.zalloc = z_static_alloc;
+    stream.zfree = z_static_free;
+    stream.opaque = (voidpf) &mem_inf;
+
+    err = inflateInit2(&stream, windowBits);
+    EXPECT_EQ(err, Z_OK);
+
+    err = inflatePrime(&stream, 5, 31);
+    EXPECT_EQ(err, Z_OK);
+    err = inflatePrime(&stream, -1, 0);
+    EXPECT_EQ(err, Z_OK);
+
+    // can't do more than 16 bits at a time
+    err = inflatePrime(&stream, 17, 42);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    // can't accumulate more than 32 bits
+    err = inflatePrime(&stream, 16, 42);
+    EXPECT_EQ(err, Z_OK);
+    err = inflatePrime(&stream, 15, 42);
+    EXPECT_EQ(err, Z_OK);
+    err = inflatePrime(&stream, 1, 1);
+    EXPECT_EQ(err, Z_OK);
+    err = inflatePrime(&stream, 1, 1);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+
+    free(work_buf);
+
+
+}
+
+TEST_F(ZlibTest, InflateUndocumented) {
+    printf("cover undocumented inflate functions\n");
+
+    int err;
+
+    err = inflateUndermine(Z_NULL, 42);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateValidate(Z_NULL, true);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    long mark;
+
+    mark = inflateMark(Z_NULL);
+    EXPECT_EQ(mark, -(1L << 16));
+
+    unsigned long codes_used;
+
+    codes_used = inflateCodesUsed(Z_NULL);
+    EXPECT_EQ(codes_used, (unsigned long)-1);
+
+
+}
+
+TEST_F(ZlibTest, GetCRCTable) {
+    const z_crc_t * table = get_crc_table();
+    EXPECT_EQ(table[0], 0x00000000UL);
+    EXPECT_EQ(table[1], 0x77073096UL);
+    EXPECT_EQ(table[255], 0x2d02ef8dUL);
+
+}
+
 
 TEST_F(ZlibTest, CRC32Combine) {
     unsigned char buf[] = { 5, 7, 21, 17, 35, 77, 201, 170, 85, 14 };
@@ -1379,6 +1491,15 @@ TEST_F(ZlibTest, CRC32Combine) {
     crc46 = crc32_combine(crc4, crc6, 6);
 
     EXPECT_EQ(crc37, crc46);
+
+// FIXME try again or delete
+//    crc3 = crc32_big(0, NULL, 0);
+//    crc3 = crc32_big(crc3, buf, 3);
+//
+//    crc3 = crc32_little(0, NULL, 0);
+//    crc3 = crc32_little(crc3, buf, 3);
+
+
 
 
     unsigned int adler1;

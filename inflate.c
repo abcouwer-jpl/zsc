@@ -205,9 +205,12 @@ int stream_size;
     struct inflate_state FAR *state;
 
     if (version == Z_NULL || version[0] != ZLIB_VERSION[0] ||
-        stream_size != (int)(sizeof(z_stream)))
+        stream_size != (int)(sizeof(z_stream))){
         return Z_VERSION_ERROR;
-    if (strm == Z_NULL) return Z_STREAM_ERROR;
+    }
+    if (strm == Z_NULL) {
+        return Z_STREAM_ERROR;
+    }
     strm->msg = Z_NULL;                 /* in case we return an error */
     // modified Neil Abcouwer for zlib-safe - dynamic allocation disallowed
     // FIXME ASSERT
@@ -219,7 +222,9 @@ int stream_size;
     }
     state = (struct inflate_state FAR *)
             ZALLOC(strm, 1, sizeof(struct inflate_state));
-    if (state == Z_NULL) return Z_MEM_ERROR;
+    if (state == Z_NULL) {
+        return Z_MEM_ERROR;
+    }
     Tracev((stderr, "inflate: allocated\n"));
     strm->state = (struct internal_state FAR *)state;
     state->strm = strm;
@@ -284,14 +289,18 @@ int value;
 {
     struct inflate_state FAR *state;
 
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
     if (bits < 0) {
         state->hold = 0;
         state->bits = 0;
         return Z_OK;
     }
-    if (bits > 16 || state->bits + (uInt)bits > 32) return Z_STREAM_ERROR;
+    if (bits > 16 || state->bits + (uInt)bits > 32) {
+        return Z_STREAM_ERROR;
+    }
     value &= (1L << bits) - 1;
     state->hold += (unsigned)value << state->bits;
     state->bits += (uInt)bits;
@@ -696,8 +705,9 @@ int flush;
             NEEDBITS(16);
 #ifdef GUNZIP
             if ((state->wrap & 2) && hold == 0x8b1f) {  /* gzip header */
-                if (state->wbits == 0)
+                if (state->wbits == 0) {
                     state->wbits = 15;
+                }
                 state->check = crc32(0L, Z_NULL, 0);
                 CRC2(state->check, hold);
                 INITBITS();
@@ -705,8 +715,9 @@ int flush;
                 break;
             }
             state->flags = 0;           /* expect zlib header */
-            if (state->head != Z_NULL)
+            if (state->head != Z_NULL) {
                 state->head->done = -1;
+            }
             if (!(state->wrap & 1) ||   /* check if zlib header allowed */
 #else
             if (
@@ -723,8 +734,9 @@ int flush;
             }
             DROPBITS(4);
             len = BITS(4) + 8;
-            if (state->wbits == 0)
+            if (state->wbits == 0) {
                 state->wbits = len;
+            }
             if (len > 15 || len > state->wbits) {
                 strm->msg = (char *)"invalid window size";
                 state->mode = BAD;
@@ -1555,6 +1567,8 @@ z_streamp source;
     return Z_OK;
 }
 #endif
+
+
 
 int ZEXPORT inflateUndermine(strm, subvert)
 z_streamp strm;

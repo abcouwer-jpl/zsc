@@ -1007,6 +1007,12 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
            s->compressed_len-7*last));
 }
 
+/*modified Neil Abcouwer for zlib-safe
+ _tr_tally is done inline when DEGUG is not defined
+ and this code is unused
+ see deflate.h */
+#ifdef ZLIB_DEBUG
+
 /* ===========================================================================
  * Save the match info and tally the frequency counts. Return true if
  * the current block must be flushed.
@@ -1057,6 +1063,7 @@ int ZLIB_INTERNAL _tr_tally (s, dist, lc)
      * 64K-1 bytes.
      */
 }
+#endif
 
 /* ===========================================================================
  * Send the block data compressed using the given Huffman trees

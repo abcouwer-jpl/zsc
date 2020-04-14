@@ -6,7 +6,7 @@ set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
 project(zlib)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-long-long -pedantic -Werror -Wno-unused-local-typedefs -DZLIB_DEBUG")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-long-long -pedantic -Werror -Wno-unused-local-typedefs")
 
 set(VERSION "1.2.11.f-abcouwer-safety-v0")
 
@@ -225,6 +225,11 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
 endif()
 
 
+# if only test and not coverage, set debug flag
+#if (CMAKE_BUILD_TYPE STREQUAL "Test")
+#    add_definitions(-DZLIB_DEBUG=)
+#endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
   # build the unit tests
   set(CMAKE_BUILD_TYPE "Test")
@@ -250,6 +255,8 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Test")
   set(CMAKE_BUILD_TYPE "Debug")
   add_definitions(-DSTATIC=)
+  # make "local"s (statics) visible
+  add_definitions(-Dlocal=)
   set(ENV{CTEST_OUTPUT_ON_FAILURE} TRUE)
 
   include(CTest)
@@ -262,7 +269,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(cantrbry
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/cantrbry.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/cantrbry.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
           BINARY_DIR        ""
@@ -280,7 +287,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(artificl
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/artificl.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/artificl.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl"
           BINARY_DIR        ""
@@ -298,7 +305,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(large
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/large.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/large.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/large"
           BINARY_DIR        ""
@@ -316,7 +323,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(calgary
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/calgary.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/calgary.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary"
           BINARY_DIR        ""
@@ -402,6 +409,15 @@ endif()
 #target_link_libraries(example_gtest zlib gtest_main)
 #add_test(NAME example_gtest_test COMMAND example_gtest)
 
-add_executable(zlib_gtest test/zlib_gtest.cpp)
-target_link_libraries(zlib_gtest zlib gtest_main)
+#add_executable(zlib_gtest test/zlib_gtest.cpp)
+#target_link_libraries(zlib_gtest zlib gtest_main)
+
+add_executable(zlib_gtest test/zlib_gtest.cpp ${ZLIB_SRCS} ${ZLIB_ASMS}  ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+target_link_libraries(zlib_gtest gtest_main)
+
+
+
+
 add_test(NAME zlib_gtest_test COMMAND zlib_gtest)
+
+

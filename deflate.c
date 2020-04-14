@@ -51,6 +51,9 @@
 
 #include "deflate.h"
 
+//FIXME REMOVE
+#include <stdio.h>
+
 const char deflate_copyright[] =
    " deflate 1.2.11.f Copyright 1995-2017 Jean-loup Gailly and Mark Adler, Modifications Neil Abcouwer ";
 /*
