@@ -68,7 +68,7 @@ typedef enum {
     SCENARIO_BASIC = 0, // use simplified functions
     SCENARIO_DICTIONARY = 1 << 0, // set and get dictionaries
     SCENARIO_PENDING = 1 << 1,    // do get pending
-    SCENARIO_PARAMS = 1 << 2,     // adjust params
+    SCENARIO_TUNE = 1 << 2,    // do deflate tune
     SCENARIO_FULL_FLUSH = 1 << 3, // flush in portions
     SCENARIO_CORRUPT = 1 << 4, // corrupted portion
     SCENARIO_TINY = 1 << 5, // tiny buffers require more flushing
@@ -76,8 +76,9 @@ typedef enum {
     SCENARIO_NO_FLUSH = 1 << 7, // do no flush
     SCENARIO_SYNC_FLUSH = 1 << 8, // do sync flush
     SCENARIO_RESET = 1 << 9, // reset streams
+    SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL = 1 << 10,
 
-
+    SCENARIO_PARAMS = (1 << 30) + SCENARIO_FULL_FLUSH,     // adjust params
     SCENARIO_DICTIONARY_WOULD_FILL_WINDOW = (1<< 31) +
             SCENARIO_DICTIONARY + SCENARIO_TINY,
 
@@ -227,15 +228,15 @@ void zlib_test(
 //    ASSERT_TRUE(nread <= source_buf_len);
 //    source_buf_len = nread;
 
-    if (scenarios & SCENARIO_TINY) {
+    if ( (scenarios & SCENARIO_TINY)
+            || (scenarios & SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL)) {
         windowBits = 9;
         memLevel = 1;
     }
 
     // if all params are default, we'll use more basic functions
     bool all_params_default =
-            ( wrapper != WRAP_NONE
-             && windowBits == DEF_WBITS
+            ( windowBits == DEF_WBITS
              && memLevel == DEF_MEM_LEVEL
              && strategy == Z_DEFAULT_STRATEGY);
 
@@ -259,10 +260,73 @@ void zlib_test(
     head_in.comment = Z_NULL;
     head_in.hcrc = true;
     if (wrapper == WRAP_GZIP_BUFFERS) {
-        head_in.comment = (Bytef*) "I am the man with no name.";
-        head_in.name = (Bytef*) "Zapp Brannigan.";
-        head_in.extra = (Bytef*) "Hello.";
+        int len;
+        if(scenarios & SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL) {
+            len = 1000;
+        } else {
+            len = 50;
+        }
+
+        head_in.comment = (Byte *) malloc(len);
+        head_in.name = (Byte *) malloc(len);
+        head_in.extra = (Byte *) malloc(len);
+        head_in.extra_len = len;
+
+        sprintf((char*)head_in.comment,"I am the man with no name.");
+        sprintf((char*)head_in.name,"Zapp Brannigan.");
+        sprintf((char*)head_in.extra,"Hello.");
         head_in.extra_len = strlen((char*) head_in.extra);
+
+        if(scenarios & SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL) {
+            for(int j = 0; j < len-1; j++) {
+                head_in.comment[j] = 'A';
+                head_in.name[j] = 'A';
+                head_in.extra[j] = 'A';
+            }
+            head_in.comment[len-1] = '\0';
+            head_in.name[len-1] = '\0';
+            head_in.extra[len-1] = '\0';
+            head_in.extra_len = len;
+        }
+
+//            head_in.comment = (Bytef*)
+//                    "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name."
+//        "I am the man with no name.""I am the man with no name.";
+//            head_in.name = (Bytef*) "Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan.""Zapp Brannigan."
+//                "Zapp Brannigan.""Zapp Brannigan.";
+//            head_in.extra = (Bytef*) "Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                        "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello."
+//                "Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.""Hello.";
+//            head_in.extra_len = strlen((char*) head_in.extra);
+//        } else {
+//            head_in.comment = (Bytef*) "I am the man with no name.";
+//            head_in.name = (Bytef*) "Zapp Brannigan.";
+//            head_in.extra = (Bytef*) "Hello.";
+//            head_in.extra_len = strlen((char*) head_in.extra);
+//        }
     }
     head_out.name = (Byte *)malloc(80);
     head_out.name_max = 80;
@@ -271,25 +335,6 @@ void zlib_test(
     head_out.extra = (Byte *)malloc(80);
     head_out.extra_max = 80;
 
-//    const Bytef * dictionary = (const Bytef *)
-//            "queen"
-//                    "time"
-//                    "thought"
-//                    "could"
-//                    "and the"
-//                    "in the"
-//                    "would"
-//                    "went"
-//                    "like"
-//                    "know"
-//                    "in a"
-//                    "one"
-//                    "said Alice"
-//                    "little"
-//                    "of the"
-//                    "said the"
-//                    "Alice"
-//                    "said";
     const Bytef * dictionary = alice_dictionary;
     if (scenarios == SCENARIO_DICTIONARY_WOULD_FILL_WINDOW) {
         dictionary = big_dictionary;
@@ -355,9 +400,11 @@ void zlib_test(
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
 
-    err = all_params_default ?
-            compressGetMinWorkBufSize(&work_buf_len) :
-            compressGetMinWorkBufSize2(windowBits, memLevel, &work_buf_len);
+    if(all_params_default && wrapper == WRAP_ZLIB){
+        err = compressGetMinWorkBufSize(&work_buf_len);
+    } else {
+        err = compressGetMinWorkBufSize2(windowBits, memLevel, &work_buf_len);
+    }
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Bytef*)NULL);
@@ -428,7 +475,7 @@ void zlib_test(
 
         printf("deflateInit with windowBits=%d\n", windowBits);
 
-        if (all_params_default) {
+        if (all_params_default && wrapper == WRAP_ZLIB) {
             err = deflateInit(&stream, level);
         } else {
             err = deflateInit2(&stream, level, Z_DEFLATED,
@@ -436,10 +483,19 @@ void zlib_test(
         }
         EXPECT_EQ(err, Z_OK);
 
+        if(scenarios & SCENARIO_TUNE) {
+            err = deflateTune(&stream, 4, 5, 16, 16);
+            EXPECT_EQ(err, Z_OK);
+        }
+
+        unsigned pending_bytes;
+        int pending_bits;
+
         int times_compress = 1;
         if (scenarios & SCENARIO_RESET) {
             times_compress = 2;
         }
+        bool changed_params = false;
 
         do {
             // set header if gzip
@@ -462,8 +518,7 @@ void zlib_test(
                 EXPECT_EQ(err, Z_OK);
             }
 
-            unsigned pending_bytes;
-            int pending_bits;
+
             if (scenarios & SCENARIO_PENDING) {
                 err = deflatePending(&stream, &pending_bytes, &pending_bits);
                 EXPECT_EQ(err, Z_OK);
@@ -471,10 +526,11 @@ void zlib_test(
                         pending_bytes, pending_bits);
             }
 
-            if (scenarios & SCENARIO_PARAMS) {
-                err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
-                EXPECT_EQ(err, Z_OK);
-            }
+//            if ( (scenarios & SCENARIO_PARAMS) && !changed_params) {
+//                err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
+//                EXPECT_EQ(err, Z_OK);
+//                changed_params = true;
+//            }
 
             uInt max_in = (uInt) -1;
             uInt max_out = (uInt) -1;
@@ -510,6 +566,11 @@ void zlib_test(
                 max_out = 10000;
             }
 
+            if(scenarios & SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL) {
+                max_in = 80;
+                max_out = 80;
+            }
+
             if (scenarios & SCENARIO_TINY) {
                 max_out = 4;
                 max_in = 4;
@@ -533,6 +594,22 @@ void zlib_test(
                 }
                 err = deflate(&stream,
                         bytes_left_source ? flush_type : Z_FINISH);
+
+
+                if ( (scenarios == SCENARIO_PARAMS) && !changed_params) {
+                    printf("Changing params\n");
+                    if (stream.avail_out == 0) {
+                        // provide more output
+                        stream.avail_out =
+                                bytes_left_dest > (uLong) max_out ?
+                                        max_out : (uInt) bytes_left_dest;
+                        bytes_left_dest -= stream.avail_out;
+                    }
+                    err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
+                    EXPECT_EQ(err, Z_OK);
+                    changed_params = true;
+                }
+
             } while (err == Z_OK);
 
             if (cycles > 1) {
@@ -669,13 +746,11 @@ void zlib_test(
 
         uInt max_in = (uInt)-1;
         uInt max_out = (uInt)-1;
-        uLong bytes_left_dest =  uncompressed_buf_len;
-        uLong bytes_left_source =  compressed_buf_len_out;
 
         stream.next_in = (z_const Bytef *) compressed_buf;
         stream.avail_in = 0;
-        stream.next_out = uncompressed_buf;
-        stream.avail_out = 0;
+//        stream.next_out = uncompressed_buf;
+//        stream.avail_out = 0;
         stream.zalloc = z_static_alloc;
         stream.zfree = z_static_free;
         stream.opaque = (voidpf) &mem_inf;
@@ -694,6 +769,13 @@ void zlib_test(
         }
 
         do {
+            uLong bytes_left_dest =  uncompressed_buf_len;
+            uLong bytes_left_source =  compressed_buf_len_out;
+
+            stream.next_in = (z_const Bytef *) compressed_buf;
+            stream.avail_in = 0;
+            stream.next_out = uncompressed_buf;
+            stream.avail_out = 0;
 
             // for raw inflate, dictionary can be set any time
             if( (scenarios & SCENARIO_DICTIONARY) && wrapper == WRAP_NONE) {
@@ -847,6 +929,9 @@ void zlib_test(
     free(uncompressed_buf);
 
 
+    free(head_in.name);
+    free(head_in.comment);
+    free(head_in.extra);
     free(head_out.name);
     free(head_out.comment);
     free(head_out.extra);
@@ -932,6 +1017,9 @@ TEST_F(ZlibTest, CompressGzip) {
 TEST_F(ZlibTest, CompressGzipAlloced) {
     zlib_test_alice(WRAP_GZIP_BUFFERS);
 }
+
+
+
 
 TEST_F(ZlibTest, CompressGzipNull) {
     zlib_test_alice(WRAP_GZIP_NULL);
@@ -1044,9 +1132,19 @@ TEST_F(ZlibTest, Pending) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_PENDING);
 }
 
+TEST_F(ZlibTest, Tune) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_TUNE);
+}
+
+
 TEST_F(ZlibTest, Params) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_PARAMS);
 }
+
+TEST_F(ZlibTest, ParamsFullFlushFromNoCompression) {
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_PARAMS, Z_NO_COMPRESSION);
+}
+
 
 TEST_F(ZlibTest, FullFlush) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH);
@@ -1154,6 +1252,10 @@ TEST_F(ZlibTest, Reset) {
 
 TEST_F(ZlibTest, GzipReset) {
     zlib_test_alice(WRAP_GZIP_BASIC, SCENARIO_RESET);
+}
+
+TEST_F(ZlibTest, BigHeaderBufferSmallAvail) {
+    zlib_test_alice(WRAP_GZIP_BUFFERS, SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL);
 }
 
 
@@ -1458,6 +1560,61 @@ TEST_F(ZlibTest, DeflateErrors) {
 
     err = deflate(Z_NULL, Z_NO_FLUSH);
     EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    free(work_buf);
+
+}
+
+
+TEST_F(ZlibTest, DeflatePrime) {
+
+    int err;
+
+    err = deflatePrime(Z_NULL, 5, 31);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    int windowBits = -15;
+
+    uLong work_buf_len;
+    Byte * work_buf;
+
+    Byte outbuf[256];
+
+
+    err = compressGetMinWorkBufSize(&work_buf_len);
+    EXPECT_EQ(err, Z_OK);
+    work_buf = (Byte *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (Byte *)Z_NULL);
+
+    z_static_mem mem_inf;
+    mem_inf.work = work_buf;
+    mem_inf.workLen = work_buf_len;
+    mem_inf.workAlloced = 0;
+
+    z_stream stream;
+
+    stream.next_in = Z_NULL;
+    stream.avail_in = 0;
+    stream.zalloc = z_static_alloc;
+    stream.zfree = z_static_free;
+    stream.opaque = (voidpf) &mem_inf;
+
+    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits,
+            DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    EXPECT_EQ(err, Z_OK);
+
+    stream.next_out = outbuf;
+    stream.avail_out = 256;
+
+    err = deflatePrime(&stream,5, 31);
+    EXPECT_EQ(err, Z_OK);
+
+    err = deflatePrime(&stream,11, 31);
+    EXPECT_EQ(err, Z_OK);
+
+    err = deflatePrime(&stream,1, 1);
+    EXPECT_EQ(err, Z_OK);
+
 
     free(work_buf);
 
