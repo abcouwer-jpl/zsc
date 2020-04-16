@@ -8,9 +8,6 @@
 #include "inflate.h"
 #include "inffast.h"
 
-//FIXME remove
-#include <stdio.h>
-
 #ifdef ASMINF
 #  pragma message("Assembler code may have bugs -- use at your own risk")
 #else
@@ -154,7 +151,6 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                     hold += (unsigned long)(*in++) << bits;
                     bits += 8;
                     if (bits < op) {
-                        printf("dodist: bits < op a second time\n");
                         hold += (unsigned long)(*in++) << bits;
                         bits += 8;
                     }
@@ -204,7 +200,6 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                     if (wnext == 0) {           /* very common case */
                         from += wsize - op;
                         if (op < len) {         /* some from window */
-                            printf("inffast: op < len\n");
                             len -= op;
                             do {
                                 *out++ = *from++;
@@ -222,7 +217,6 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                             } while (--op);
                             from = window;
                             if (wnext < len) {  /* some from start of window */
-                                printf("inffast: wnext < len\n");
                                 op = wnext;
                                 len -= op;
                                 do {

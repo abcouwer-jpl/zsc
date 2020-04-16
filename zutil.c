@@ -199,8 +199,6 @@ voidpf z_static_alloc(voidpf opaque, uInt items, uInt size)
 
     new_ptr = (voidpf) (mem->work + mem->workAlloced);
     mem->workAlloced += bytes;
-//    printf("Compress allocated %lu bytes, total %lu.\n",
-//            bytes, mem->workAlloced);
     return new_ptr;
 }
 

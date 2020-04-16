@@ -5,7 +5,11 @@
 
 /* @(#) $Id$ */
 
+#include "zutil.h"
 #include "zlib.h"
+#include "deflate.h"
+#include "inftrees.h"
+#include "inflate.h"
 #include "gtest/gtest.h"
 
 #include <stdio.h>
@@ -80,10 +84,10 @@ typedef enum {
     SCENARIO_INFLATE_BLOCK = 1 << 11, // inflate stops on block boundaries
     SCENARIO_BIG_DICTIONARY = 1 << 12, // use big dictionary
     SCENARIO_PARAMS = 1 << 13, // change params after first block deflate
+    SCENARIO_INFLATE_BITS0 = 1 << 14, // use wsize of compressed stream
 
-//    SCENARIO_PARAMS = (1 << 30) + SCENARIO_FULL_FLUSH,     // adjust params
-//    SCENARIO_DICTIONARY_WOULD_FILL_WINDOW = SCENARIO_BIG_DICTIONARY +
-//            SCENARIO_DICTIONARY + SCENARIO_TINY,
+
+    //    SCENARIO_RESET_DIFF_BITS = 1 << 14 // change windowbits during reset
 
 } ZlibTestScenario;
 
@@ -222,6 +226,10 @@ void zlib_test(
     if (scenarios & SCENARIO_BIG_DICTIONARY) {
         scenarios |= SCENARIO_DICTIONARY;
     }
+//    if(scenarios & SCENARIO_RESET_DIFF_BITS) {
+//        scenarios |= SCENARIO_RESET;
+//        windowBits = 12;
+//    }
 
     if ( (scenarios & SCENARIO_TINY)
             || (scenarios & SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL)) {
@@ -365,6 +373,8 @@ void zlib_test(
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Bytef*)NULL);
     compressed_buf_len_out = compressed_buf_len;
+    // fill work buffer with garbage
+    memset((void*)work_buf, 0xa5,work_buf_len);
 
     printf("Compressed buf size: %lu. Work buf size: %lu.\n",
             compressed_buf_len, work_buf_len);
@@ -625,6 +635,15 @@ void zlib_test(
     printf("Compressed to size: %lu.\n",
             compressed_buf_len_out);
 
+    printf("Compressed buffer:\n");
+    for (int i = 0; i < (compressed_buf_len_out < 240 ? compressed_buf_len_out : 240); i++) {
+        printf("%02x ", compressed_buf[i]);
+        if(i%24 == 23) {
+            printf("\n");
+        }
+    }
+    printf("...\n");
+
 
     if(scenarios & SCENARIO_CORRUPT) {
         printf("Corrupting compressed buffer\n");
@@ -638,11 +657,12 @@ void zlib_test(
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Byte *)Z_NULL);
+    // fill work buffer with garbage
+    memset((void*)work_buf, 0x5a,work_buf_len);
 
-    printf("Work buf size: %lu.\n",
+    printf("Uncompress. Work buf size: %lu.\n",
             work_buf_len);
 
-    //compressed_buf_len_out = compressed_buf_len;
     uLong uncompressed_buf_len_out = uncompressed_buf_len;
 
 
@@ -701,8 +721,14 @@ void zlib_test(
         stream.zfree = z_static_free;
         stream.opaque = (voidpf) &mem_inf;
 
-        if (windowBits == DEF_WBITS
-                && wrapper == WRAP_ZLIB) {
+        if (scenarios & SCENARIO_INFLATE_BITS0) {
+            if (wrapper == WRAP_ZLIB) {
+                err = inflateInit2(&stream, 0); // use wsize of compressed stream
+            } else {
+                err = inflateInit2(&stream, 16 + 0); // use wsize of compressed stream
+            }
+        } else if (windowBits == DEF_WBITS
+                   && wrapper == WRAP_ZLIB) {
             err = inflateInit(&stream);
         } else {
             err = inflateInit2(&stream, windowBits);
@@ -843,7 +869,11 @@ void zlib_test(
 
             if(times_decompress > 0) {
                 printf("reseting inflate stream\n");
-                err = inflateReset(&stream);
+//                if(scenarios & SCENARIO_RESET_DIFF_BITS) {
+//                    err = inflateReset2(&stream, DEF_WBITS);
+//                } else {
+                    err = inflateReset(&stream);
+//                }
                 EXPECT_EQ(err, Z_OK);
             }
         } while (times_decompress > 0);
@@ -867,6 +897,9 @@ void zlib_test(
             }
         }
         EXPECT_EQ(nbad, 0);
+        if(nbad == 0) {
+            printf("Decompression successful.\n");
+        }
     } else {
         printf("Input:\n");
         for (int i = 0; i < (source_buf_len < 240 ? source_buf_len : 240); i++) {
@@ -890,9 +923,6 @@ void zlib_test(
         printf("...\n");
     }
 
-
-//    EXPECT_EQ(head.time, head_out.time);
-//    EXPECT_EQ(0, strcmp((char*)head_out.name, (char*)head.name));
 
     free(work_buf);
     free(compressed_buf);
@@ -1253,6 +1283,10 @@ TEST_F(ZlibTest, ResetInflateBlock) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_RESET | SCENARIO_INFLATE_BLOCK);
 }
 
+//TEST_F(ZlibTest, ResetDiffBitsInflateBlock) {
+//    zlib_test_alice(WRAP_ZLIB, SCENARIO_RESET_DIFF_BITS | SCENARIO_INFLATE_BLOCK);
+//}
+
 
 TEST_F(ZlibTest, GzipReset) {
     zlib_test_alice(WRAP_GZIP_BASIC, SCENARIO_RESET);
@@ -1266,6 +1300,15 @@ TEST_F(ZlibTest, BigHeaderBufferSmallAvail) {
     zlib_test_alice(WRAP_GZIP_BUFFERS, SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL);
 }
 
+TEST_F(ZlibTest, InflateWindowBits0) {
+    // default to window size from buffer
+    zlib_test_alice(WRAP_ZLIB, SCENARIO_INFLATE_BITS0);
+}
+
+TEST_F(ZlibTest, GZipInflateWindowBits0) {
+    // default to 15 for gzip
+    zlib_test_alice(WRAP_GZIP_BASIC, SCENARIO_INFLATE_BITS0);
+}
 
 
 TEST_F(ZlibTest, CompressSafeErrors) {
@@ -1461,7 +1504,7 @@ TEST_F(ZlibTest, DeflateErrors) {
 
     printf("null alloc gives error\n");
 
-    uLong work_buf_size = (uLong)(-1);
+    uLong work_buf_size = (uLong)(10000);
     err = deflateGetMinWorkBufSize(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
@@ -1578,24 +1621,272 @@ TEST_F(ZlibTest, InflateErrors) {
 
     int err;
 
-    err = inflate(Z_NULL, Z_SYNC_FLUSH);
+    printf("null version gives error\n");
+    err = inflateInit2_(Z_NULL, DEF_WBITS,
+            Z_NULL, sizeof(z_stream));
+    EXPECT_EQ(err, Z_VERSION_ERROR);
+
+    printf("bad version gives error\n");
+    err = inflateInit2_(Z_NULL, DEF_WBITS,
+            "2.0.0.0", sizeof(z_stream));
+    EXPECT_EQ(err, Z_VERSION_ERROR);
+
+    printf("bad stream size gives error\n");
+    err = inflateInit2_(Z_NULL, DEF_WBITS,
+            ZLIB_VERSION, sizeof(z_stream)+1);
+    EXPECT_EQ(err, Z_VERSION_ERROR);
+
+    printf("null stream gives error\n");
+    err = inflateInit2(Z_NULL, DEF_WBITS);
     EXPECT_EQ(err, Z_STREAM_ERROR);
 
-    z_static_mem mem_inf;
-    mem_inf.work = Z_NULL;
-    mem_inf.workLen = 0;
-    mem_inf.workAlloced = 0;
+
+    printf("null alloc gives error\n");
+
+    uLong work_buf_size = (uLong)(10000);
+    err = deflateGetMinWorkBufSize(DEF_WBITS, DEF_MEM_LEVEL,
+            &work_buf_size);
+    ASSERT_EQ(err, Z_OK);
+    Bytef *work_buf = (Bytef*)malloc(work_buf_size);
+    ASSERT_NE(work_buf, (Bytef*)NULL);
+
+    uLong out_buf_size = (uLong)(10000);
+    Bytef *out_buf = (Bytef*)malloc(out_buf_size);
+    ASSERT_NE(out_buf, (Bytef*)NULL);
+
+
+    z_static_mem mem;
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
 
     z_stream stream;
+    stream.zalloc = (alloc_func)Z_NULL;
+    stream.zfree = (free_func)Z_NULL;
+    stream.opaque = (voidpf) Z_NULL;
+
+    err = inflateInit2(&stream, DEF_WBITS);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    printf("null free gives error\n");
     stream.zalloc = z_static_alloc;
-    stream.zfree = z_static_free;
-    stream.opaque = (voidpf) &mem_inf;
+    err = inflateInit2(&stream, DEF_WBITS);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
 
-    stream.state = Z_NULL;
 
+    printf("null allocation gives error\n");
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
+    stream.zfree = (free_func)z_static_free;
+    stream.opaque = (voidpf)&mem;
+    err = inflateInit2(&stream, DEF_WBITS);
+    EXPECT_EQ(err, Z_MEM_ERROR);
+
+    printf("init with bad windowbits gives error\n");
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)z_static_alloc;
+    stream.zfree = (free_func)z_static_free;
+    stream.opaque = (voidpf)&mem;
+    err = inflateInit2(&stream, 2);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    memset(&mem, 0, sizeof(mem));
+    mem.work = work_buf;
+    mem.workLen = work_buf_size;
+    mem.workAlloced = 0;
+    memset(&stream, 0, sizeof(stream));
+    stream.zalloc = (alloc_func)z_static_alloc;
+    stream.zfree = (free_func)z_static_free;
+    stream.opaque = (voidpf)&mem;
+    err = inflateInit2(&stream, DEF_WBITS);
+    EXPECT_EQ(err, Z_OK);
+
+
+    printf("reset with different windowbits and allocated window gives error\n");
+    struct inflate_state FAR *state;
+    state = (struct inflate_state FAR *)stream.state;
+    state->window = work_buf;
+    err = inflateReset2(&stream, DEF_WBITS-1);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+
+    printf("null stream gives error\n");
     err = inflate(Z_NULL, Z_SYNC_FLUSH);
     EXPECT_EQ(err, Z_STREAM_ERROR);
 
+    printf("stream with null state gives error\n");
+
+    z_stream stream_null_state;
+    stream.zalloc = (alloc_func)z_static_alloc;
+    stream.zfree = (free_func)z_static_free;
+    stream.opaque = (voidpf)&mem;
+    stream_null_state.state = Z_NULL;
+    err = inflate(&stream_null_state, Z_SYNC_FLUSH);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+
+    printf("incorrect header check\n");
+
+    uInt header = (Z_DEFLATED + ((DEF_WBITS-8)<<4)) << 8;
+    uInt level_flags = 2;
+    header |= (level_flags << 6);
+    header += 31 - (header % 31);
+    header++; // BAD!
+    Byte header_arr[2];
+    header_arr[0] = (Byte)(header >> 8);
+    header_arr[1] = (Byte)(header & 0xFF);
+    printf("header = 0x%02x 0x%02x\n", header_arr[0], header_arr[1]);
+
+    uLong out_buf_len_out = out_buf_size;
+    uLong source_len_out = 2;
+    err = uncompressSafe(out_buf, &out_buf_len_out,
+            header_arr, &source_len_out,
+                            work_buf, work_buf_size);
+    EXPECT_EQ(err, Z_DATA_ERROR);
+
+    printf("unknown compression method\n");
+
+    header = (5 /* BAD*/ + ((DEF_WBITS-8)<<4)) << 8;
+    level_flags = 2;
+    header |= (level_flags << 6);
+    header += 31 - (header % 31);
+    header_arr[0] = (Byte)(header >> 8);
+    header_arr[1] = (Byte)(header & 0xFF);
+
+    printf("header = 0x%02x 0x%02x\n", header_arr[0], header_arr[1]);
+
+    out_buf_len_out = out_buf_size;
+    source_len_out = 2;
+    err = uncompressSafe(out_buf, &out_buf_len_out,
+            header_arr, &source_len_out,
+                            work_buf, work_buf_size);
+    EXPECT_EQ(err, Z_DATA_ERROR);
+
+    printf("bad window size\n");
+
+    header = (Z_DEFLATED + ((16/*BAD*/-8)<<4)) << 8;
+    level_flags = 2;
+    header |= (level_flags << 6);
+    header += 31 - (header % 31);
+    header_arr[0] = (Byte)(header >> 8);
+    header_arr[1] = (Byte)(header & 0xFF);
+
+    printf("header = 0x%02x 0x%02x\n", header_arr[0], header_arr[1]);
+
+    out_buf_len_out = out_buf_size;
+    source_len_out = 2;
+    err = uncompressSafe(out_buf, &out_buf_len_out,
+            header_arr, &source_len_out,
+                            work_buf, work_buf_size);
+    EXPECT_EQ(err, Z_DATA_ERROR);
+
+
+    printf("incorrect header check, gzip\n");
+
+    Byte header_arr4[4];
+    header_arr4[0] = 31;
+    header_arr4[1] = 139+1;
+    header_arr4[2] = 8;
+    header_arr4[3] = 0;
+    printf("header = 0x%02x 0x%02x 0x%02x 0x%02x\n",
+            header_arr4[0], header_arr4[1], header_arr4[2], header_arr4[3]);
+
+    out_buf_len_out = out_buf_size;
+    source_len_out = 4;
+    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+            header_arr4, &source_len_out,
+                            work_buf, work_buf_size, Z_NULL);
+    EXPECT_EQ(err, Z_DATA_ERROR);
+
+    printf("unknown compression method, gzip\n");
+
+    header_arr4[0] = 31;
+    header_arr4[1] = 139;
+    header_arr4[2] = 5;
+    header_arr4[3] = 0;
+    printf("header = 0x%02x 0x%02x 0x%02x 0x%02x\n",
+            header_arr4[0], header_arr4[1], header_arr4[2], header_arr4[3]);
+
+    out_buf_len_out = out_buf_size;
+    source_len_out = 4;
+    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+            header_arr4, &source_len_out,
+                            work_buf, work_buf_size, Z_NULL);
+    EXPECT_EQ(err, Z_DATA_ERROR);
+
+    printf("unknown gzip flags\n");
+
+    header_arr4[0] = 31;
+    header_arr4[1] = 139;
+    header_arr4[2] = 8;
+    header_arr4[3] = 255;
+    printf("header = 0x%02x 0x%02x 0x%02x 0x%02x\n",
+            header_arr4[0], header_arr4[1], header_arr4[2], header_arr4[3]);
+
+    out_buf_len_out = out_buf_size;
+    source_len_out = 4;
+    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+            header_arr4, &source_len_out,
+            work_buf, work_buf_size, Z_NULL);
+    EXPECT_EQ(err, Z_DATA_ERROR);
+
+//    printf("bad gzip crc\n");
+//
+//    Byte header_arr_bad_crc[] = { 31, 139, 8, 2,
+//            0, 0, 0, 0, // time
+//            0, // level
+//            0, // os
+//
+//            };
+//    header_arr4[0] = 31;
+//    header_arr4[1] = 139 + 1;
+//    header_arr4[2] = 8;
+//    header_arr4[3] = 0;
+//    printf("header = 0x%02x 0x%02x 0x%02x 0x%02x\n",
+//            header_arr4[0], header_arr4[1], header_arr4[2], header_arr4[3]);
+//
+//    out_buf_len_out = out_buf_size;
+//    source_len_out = 4;
+//    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+//            header_arr4, &source_len_out,
+//            work_buf, work_buf_size, Z_NULL);
+//    EXPECT_EQ(err, Z_DATA_ERROR);
+
+    printf("null stream as function input\n");
+    err = inflateEnd(Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateValidate(Z_NULL, 0);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateUndermine(Z_NULL, 0);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateSyncPoint(Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateGetHeader(Z_NULL, Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateSetDictionary(Z_NULL,Z_NULL, 0);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+    err = inflateEnd(Z_NULL);
+    EXPECT_EQ(err, Z_STREAM_ERROR);
+
+
+
+    free(work_buf);
+    free(out_buf);
 
 }
 

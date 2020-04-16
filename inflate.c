@@ -85,9 +85,6 @@
 #include "inflate.h"
 #include "inffast.h"
 
-//FIXME REMOVE
-#include <stdio.h>
-
 #ifdef MAKEFIXED
 #  ifndef BUILDFIXED
 #    define BUILDFIXED
@@ -185,8 +182,12 @@ int windowBits;
     if (windowBits && (windowBits < 8 || windowBits > 15))
         return Z_STREAM_ERROR;
     if (state->window != Z_NULL && state->wbits != (unsigned)windowBits) {
-        ZFREE(strm, state->window);
-        state->window = Z_NULL;
+        // modified Neil Abcouwer for zlib-safe
+        // supporting this case (which would be rare) would require
+        // a much more complicated way of handling static memory
+        return Z_STREAM_ERROR;
+//        ZFREE(strm, state->window);
+//        state->window = Z_NULL;
     }
 
     /* update state and reset the rest of it */
@@ -440,7 +441,6 @@ z_streamp strm;
 const Bytef *end;
 unsigned copy;
 {
-    printf("updatewindow()\n");
     struct inflate_state FAR *state;
     unsigned dist;
 
@@ -696,7 +696,6 @@ int flush;
     out = left;
     ret = Z_OK;
     for (;;) {
-        printf("mode:%u\n", state->mode);
         switch (state->mode) {
         case HEAD:
             if (state->wrap == 0) {
@@ -896,11 +895,9 @@ int flush;
         case TYPE:
             if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
         case TYPEDO:
-            printf("typedo\n");
             if (state->last) {
                 BYTEBITS();
                 state->mode = CHECK;
-                printf("typedo -> check\n");
                 break;
             }
             NEEDBITS(3);
@@ -911,17 +908,14 @@ int flush;
                 Tracev((stderr, "inflate:     stored block%s\n",
                         state->last ? " (last)" : ""));
                 state->mode = STORED;
-                printf("typedo -> stored\n");
                 break;
             case 1:                             /* fixed block */
                 fixedtables(state);
                 Tracev((stderr, "inflate:     fixed codes block%s\n",
                         state->last ? " (last)" : ""));
                 state->mode = LEN_;             /* decode codes */
-                printf("typedo -> len_\n");
                 if (flush == Z_TREES) {
                     DROPBITS(2);
-                    printf("leave\n");
                     goto inf_leave;
                 }
                 break;
@@ -929,15 +923,12 @@ int flush;
                 Tracev((stderr, "inflate:     dynamic codes block%s\n",
                         state->last ? " (last)" : ""));
                 state->mode = TABLE;
-                printf("typedo -> table\n");
                 break;
             case 3:
                 strm->msg = (char *)"invalid block type";
-                printf("typedo -> bad\n");
                 state->mode = BAD;
             }
             DROPBITS(2);
-            printf("typedo break\n");
             break;
         case STORED:
             BYTEBITS();                         /* go to byte boundary */
@@ -952,13 +943,14 @@ int flush;
                     state->length));
             INITBITS();
             state->mode = COPY_;
-            if (flush == Z_TREES) goto inf_leave;
+            if (flush == Z_TREES) {
+                goto inf_leave;
+            }
         case COPY_:
             state->mode = COPY;
         case COPY:
             copy = state->length;
             if (copy) {
-                printf("1 copy: %u have: %u left: %u\n", copy, have, left);
                 if (copy > have) copy = have;
                 if (copy > left) copy = left;
                 if (copy == 0) goto inf_leave;
@@ -968,7 +960,6 @@ int flush;
                 left -= copy;
                 put += copy;
                 state->length -= copy;
-                printf("2 copy: %u have: %u left: %u\n", copy, have, left);
                 break;
             }
             Tracev((stderr, "inflate:       stored end\n"));
@@ -1226,7 +1217,6 @@ int flush;
 #endif
                 }
                 if (copy > state->wnext) {
-                    printf("inflate: copy > state->wnext\n");
                     copy -= state->wnext;
                     from = state->window + (state->wsize - copy);
                 }
@@ -1311,25 +1301,26 @@ int flush;
   inf_leave:
     RESTORE();
     if (state->wsize || (out != strm->avail_out && state->mode < BAD &&
-            (state->mode < CHECK || flush != Z_FINISH)))
+            (state->mode < CHECK || flush != Z_FINISH))) {
         if (updatewindow(strm, strm->next_out, out - strm->avail_out)) {
             state->mode = MEM;
             return Z_MEM_ERROR;
         }
+    }
     in -= strm->avail_in;
     out -= strm->avail_out;
     strm->total_in += in;
     strm->total_out += out;
     state->total += out;
-    if ((state->wrap & 4) && out)
+    if ((state->wrap & 4) && out) {
         strm->adler = state->check =
             UPDATE(state->check, strm->next_out - out, out);
+    }
     strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
                       (state->mode == TYPE ? 128 : 0) +
                       (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK) {
         ret = Z_BUF_ERROR;
-        printf("mode = %d\n", state->mode);
     }
     return ret;
 }
@@ -1338,10 +1329,13 @@ int ZEXPORT inflateEnd(strm)
 z_streamp strm;
 {
     struct inflate_state FAR *state;
-    if (inflateStateCheck(strm))
+    if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
-    if (state->window != Z_NULL) ZFREE(strm, state->window);
+    if (state->window != Z_NULL) {
+        ZFREE(strm, state->window);
+    }
     ZFREE(strm, strm->state);
     strm->state = Z_NULL;
     Tracev((stderr, "inflate: end\n"));
@@ -1381,17 +1375,21 @@ uInt dictLength;
     int ret;
 
     /* check state */
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
-    state = (struct inflate_state FAR *)strm->state;
-    if (state->wrap != 0 && state->mode != DICT)
+    if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
+    }
+    state = (struct inflate_state FAR *)strm->state;
+    if (state->wrap != 0 && state->mode != DICT) {
+        return Z_STREAM_ERROR;
+    }
 
     /* check for correct dictionary identifier */
     if (state->mode == DICT) {
         dictid = adler32(0L, Z_NULL, 0);
         dictid = adler32(dictid, dictionary, dictLength);
-        if (dictid != state->check)
+        if (dictid != state->check) {
             return Z_DATA_ERROR;
+        }
     }
 
     /* copy dictionary to window using updatewindow(), which will amend the
@@ -1413,7 +1411,9 @@ gz_headerp head;
     struct inflate_state FAR *state;
 
     /* check state */
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
     if ((state->wrap & 2) == 0) return Z_STREAM_ERROR;
 
@@ -1445,12 +1445,13 @@ unsigned len;
     got = *have;
     next = 0;
     while (next < len && got < 4) {
-        if ((int)(buf[next]) == (got < 2 ? 0 : 0xff))
+        if ((int)(buf[next]) == (got < 2 ? 0 : 0xff)) {
             got++;
-        else if (buf[next])
+        } else if (buf[next]) {
             got = 0;
-        else
+        } else {
             got = 4 - got;
+        }
         next++;
     }
     *have = got;
@@ -1466,9 +1467,13 @@ z_streamp strm;
     struct inflate_state FAR *state;
 
     /* check parameters */
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
-    if (strm->avail_in == 0 && state->bits < 8) return Z_BUF_ERROR;
+    if (strm->avail_in == 0 && state->bits < 8) {
+        return Z_BUF_ERROR;
+    }
 
     /* if first time, start search in bit buffer */
     if (state->mode != SYNC) {
@@ -1492,7 +1497,9 @@ z_streamp strm;
     strm->total_in += len;
 
     /* return no joy or set up to restart inflate() on a new block */
-    if (state->have != 4) return Z_DATA_ERROR;
+    if (state->have != 4) {
+        return Z_DATA_ERROR;
+    }
     in = strm->total_in;  out = strm->total_out;
     inflateReset(strm);
     strm->total_in = in;  strm->total_out = out;
@@ -1513,7 +1520,9 @@ z_streamp strm;
 {
     struct inflate_state FAR *state;
 
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
     return state->mode == STORED && state->bits == 0;
 }
@@ -1578,7 +1587,9 @@ int subvert;
 {
     struct inflate_state FAR *state;
 
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
 #ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
     state->sane = !subvert;
@@ -1596,7 +1607,9 @@ int check;
 {
     struct inflate_state FAR *state;
 
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
     if (check)
         state->wrap |= 4;
@@ -1610,8 +1623,9 @@ z_streamp strm;
 {
     struct inflate_state FAR *state;
 
-    if (inflateStateCheck(strm))
+    if (inflateStateCheck(strm)) {
         return -(1L << 16);
+    }
     state = (struct inflate_state FAR *)strm->state;
     return (long)(((unsigned long)((long)state->back)) << 16) +
         (state->mode == COPY ? state->length :
@@ -1622,7 +1636,9 @@ unsigned long ZEXPORT inflateCodesUsed(strm)
 z_streamp strm;
 {
     struct inflate_state FAR *state;
-    if (inflateStateCheck(strm)) return (unsigned long)-1;
+    if (inflateStateCheck(strm)) {
+        return (unsigned long)-1;
+    }
     state = (struct inflate_state FAR *)strm->state;
     return (unsigned long)(state->next - state->codes);
 }
