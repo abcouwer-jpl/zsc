@@ -440,6 +440,7 @@ z_streamp strm;
 const Bytef *end;
 unsigned copy;
 {
+    printf("updatewindow()\n");
     struct inflate_state FAR *state;
     unsigned dist;
 
@@ -1225,6 +1226,7 @@ int flush;
 #endif
                 }
                 if (copy > state->wnext) {
+                    printf("inflate: copy > state->wnext\n");
                     copy -= state->wnext;
                     from = state->window + (state->wsize - copy);
                 }
