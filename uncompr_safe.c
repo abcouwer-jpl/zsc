@@ -84,8 +84,42 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
         }
     }
 
-    // inflate in one swoop
-    err = inflate(&stream, Z_FINISH);
+
+    int got_data_err = 0;
+    int cycles = 0;
+    do {
+        printf("inflate cycle %d. before: avail_in=%u, out=%u",
+                cycles, stream.avail_in, stream.avail_out);
+        err = inflate(&stream, Z_NO_FLUSH);
+        printf(" after: avail_in=%u, out=%u\n",
+                stream.avail_in, stream.avail_out);
+        if (err == Z_DATA_ERROR) {
+            // there was probably some corruption in the buffer
+            got_data_err = 1;
+            // FIXME warn
+            printf("data error.\n");
+            if (stream.msg != Z_NULL) {
+                printf("msg: %s\n", stream.msg);
+            }
+            // try to find a new flush point to recover some partial data
+            err = inflateSync(&stream);
+            printf(" after sync: avail_in=%u, out=%u\n",
+                    stream.avail_in, stream.avail_out);
+
+            if (err == Z_OK) {
+                printf("found new flush point\n");
+            } else {
+
+                printf("inflateSync() returned %d, "
+                        "could not find a new flush point.\n", err);
+            }
+        }
+        cycles++;
+    } while (err == Z_OK);
+
+//    // inflate in one swoop
+//    err = inflate(&stream, Z_FINISH);
+
     *destLen = stream.total_out;
     *sourceLen = stream.total_in;
 
@@ -101,6 +135,10 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
 
     err = inflateEnd(&stream);
     // FIXME warn if bad
+
+    if (err == Z_OK && got_data_err) {
+        err = Z_DATA_ERROR;
+    }
 
     return err;
 }

@@ -34,6 +34,8 @@
     } \
 }
 
+#define MIN(A,B) ( ((A) <= (B)) ? (A) : (B) )
+
 #ifndef DEF_WBITS
 #  define DEF_WBITS MAX_WBITS
 #endif
@@ -213,23 +215,21 @@ void zlib_test(
         int level = Z_DEFAULT_COMPRESSION,
         int windowBits = DEF_WBITS,
         int memLevel = DEF_MEM_LEVEL,
-        int strategy = Z_DEFAULT_STRATEGY)
+        int strategy = Z_DEFAULT_STRATEGY,
+        int max_block_size = 10000)
 {
 
     printf("Zlib Test: buf_len = %d, wrapper = %d, scenarios = %#lx, "
-            "level = %d, windowbits = %d, memLevel = %d, strategy = %d.\n",
+            "level = %d, windowbits = %d, memLevel = %d, strategy = %d, "
+            "max block size = %d.\n",
             source_buf_len, wrapper, scenarios,
-            level, windowBits, memLevel, strategy);
+            level, windowBits, memLevel, strategy, max_block_size);
 
     int err;
 
     if (scenarios & SCENARIO_BIG_DICTIONARY) {
         scenarios |= SCENARIO_DICTIONARY;
     }
-//    if(scenarios & SCENARIO_RESET_DIFF_BITS) {
-//        scenarios |= SCENARIO_RESET;
-//        windowBits = 12;
-//    }
 
     if ( (scenarios & SCENARIO_TINY)
             || (scenarios & SCENARIO_BIG_HEADER_BUFFERS_SMALL_AVAIL)) {
@@ -330,39 +330,43 @@ void zlib_test(
     // get max output size
     switch(wrapper) {
     case WRAP_NONE:
-        err = compressGetMaxOutputSize2(source_buf_len, windowBits, memLevel,
-                &compressed_buf_len);
+        err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
+                windowBits, memLevel, &compressed_buf_len);
         break;
     case WRAP_ZLIB:
         if(all_params_default) {
-            err = compressGetMaxOutputSize(source_buf_len, &compressed_buf_len);
+            err = compressGetMaxOutputSize(source_buf_len, max_block_size,
+                    &compressed_buf_len);
         } else {
-            err = compressGetMaxOutputSize2(source_buf_len, windowBits,
-                    memLevel, &compressed_buf_len);
+            err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
+                    windowBits, memLevel, &compressed_buf_len);
         }
         break;
     case WRAP_GZIP_NULL:
-        err = compressGetMaxOutputSizeGzip2(source_buf_len, windowBits,
-                memLevel, Z_NULL, &compressed_buf_len);
+        err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
+                windowBits, memLevel, Z_NULL, &compressed_buf_len);
         break;
     case WRAP_GZIP_BASIC:
     case WRAP_GZIP_BUFFERS:
         if(all_params_default) {
-            err = compressGetMaxOutputSizeGzip(source_buf_len, &head_in,
-                    &compressed_buf_len);
+            err = compressGetMaxOutputSizeGzip(source_buf_len, max_block_size,
+                    &head_in, &compressed_buf_len);
         } else {
-            err = compressGetMaxOutputSizeGzip2(source_buf_len, windowBits,
-                memLevel, &head_in, &compressed_buf_len);
+            err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
+                    windowBits, memLevel, &head_in, &compressed_buf_len);
         }
         break;
     }
-
-    // FIXME function underestimate when breaking into segments
-    compressed_buf_len += 1000;
-
     EXPECT_EQ(err, Z_OK);
+
+
+//    // FIXME function underestimate when breaking into segments
+//    compressed_buf_len += 1000;
+
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
+
+    // get work buf
 
     if(all_params_default && wrapper == WRAP_ZLIB){
         err = compressGetMinWorkBufSize(&work_buf_len);
@@ -379,23 +383,24 @@ void zlib_test(
     printf("Compressed buf size: %lu. Work buf size: %lu.\n",
             compressed_buf_len, work_buf_len);
 
-    if(scenarios == SCENARIO_BASIC) {
-        // use compress fn
+    if(scenarios == SCENARIO_BASIC
+            || (all_params_default && (scenarios & SCENARIO_CORRUPT))) {
+        printf("Using compress function\n");
         switch (wrapper) {
         case WRAP_NONE:
             err = compressSafe2(compressed_buf, &compressed_buf_len_out,
-                    source_buf, source_buf_len,
+                    source_buf, source_buf_len, max_block_size,
                     work_buf, work_buf_len, level,
                     windowBits, memLevel, strategy);
             break;
         case WRAP_ZLIB:
             if (all_params_default) {
                 err = compressSafe(compressed_buf, &compressed_buf_len_out,
-                        source_buf, source_buf_len,
+                        source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level);
             } else {
                 err = compressSafe2(compressed_buf, &compressed_buf_len_out,
-                        source_buf, source_buf_len,
+                        source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level,
                         windowBits, memLevel, strategy);
             }
@@ -403,11 +408,11 @@ void zlib_test(
         case WRAP_GZIP_NULL:
             if (all_params_default) {
                  err = compressSafeGzip(compressed_buf, &compressed_buf_len_out,
-                         source_buf, source_buf_len,
+                         source_buf, source_buf_len, max_block_size,
                          work_buf, work_buf_len, level, Z_NULL);
              } else {
                  err = compressSafeGzip2(compressed_buf, &compressed_buf_len_out,
-                         source_buf, source_buf_len,
+                         source_buf, source_buf_len, max_block_size,
                          work_buf, work_buf_len, level,
                          windowBits, memLevel, strategy, Z_NULL);
              }
@@ -416,18 +421,18 @@ void zlib_test(
         case WRAP_GZIP_BUFFERS:
             if (all_params_default) {
                 err = compressSafeGzip(compressed_buf, &compressed_buf_len_out,
-                        source_buf, source_buf_len,
+                        source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level, &head_in);
             } else {
                 err = compressSafeGzip2(compressed_buf, &compressed_buf_len_out,
-                        source_buf, source_buf_len,
+                        source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level,
                         windowBits, memLevel, strategy, &head_in);
             }
             break;
         }
     } else {
-        // use deflate fns
+        printf("Using deflate functions\n");
 
         z_static_mem mem;
         mem.work = work_buf;
@@ -491,12 +496,6 @@ void zlib_test(
                 printf("pending bytes: %u pending bits: %d.\n",
                         pending_bytes, pending_bits);
             }
-
-//            if ( (scenarios & SCENARIO_PARAMS) && !changed_params) {
-//                err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
-//                EXPECT_EQ(err, Z_OK);
-//                changed_params = true;
-//            }
 
             uInt max_in = (uInt) -1;
             uInt max_out = (uInt) -1;
@@ -636,13 +635,37 @@ void zlib_test(
             compressed_buf_len_out);
 
     printf("Compressed buffer:\n");
-    for (int i = 0; i < (compressed_buf_len_out < 240 ? compressed_buf_len_out : 240); i++) {
-        printf("%02x ", compressed_buf[i]);
-        if(i%24 == 23) {
-            printf("\n");
+    for (int i = 0; i < MIN(compressed_buf_len_out,200); i++) {
+        if(i%20 == 0) {
+            printf("\n%04d: ", i);
         }
+        printf("%02x ", compressed_buf[i]);
     }
-    printf("...\n");
+    printf("\n...\n");
+
+    if(max_block_size < compressed_buf_len_out) {
+
+        for (int i = max_block_size-100;
+                i < max_block_size+100;
+                i++) {
+            if(i%20 == 0) {
+                printf("\n%04d: ", i);
+            }
+            printf("%02x ", compressed_buf[i]);
+        }
+        printf("\n...\n");
+    }
+    for (int i = compressed_buf_len_out-100; i < compressed_buf_len_out; i++) {
+        if(i%20 == 0) {
+            printf("\n%04d: ", i);
+        }
+        printf("%02x ", compressed_buf[i]);
+    }
+    printf("\n...\n");
+
+
+
+
 
 
     if(scenarios & SCENARIO_CORRUPT) {
@@ -667,7 +690,11 @@ void zlib_test(
 
 
 
-    if (scenarios == SCENARIO_BASIC) {
+    if (scenarios == SCENARIO_BASIC
+            || (all_params_default && (scenarios & SCENARIO_CORRUPT))) {
+
+        printf("Using uncompress function\n");
+
         switch (wrapper) {
         case WRAP_NONE:
             err = uncompressSafe2(uncompressed_buf, &uncompressed_buf_len_out,
@@ -700,9 +727,15 @@ void zlib_test(
             break;
         }
 
-        EXPECT_EQ(err, Z_OK);
+        if(scenarios & SCENARIO_CORRUPT) {
+            EXPECT_EQ(err, Z_DATA_ERROR);
+        } else {
+            EXPECT_EQ(err, Z_OK);
+        }
 
     } else {
+
+        printf("Using inflate functions\n");
 
         z_static_mem mem_inf;
         mem_inf.work = work_buf;
@@ -1333,8 +1366,9 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     uLong work_buf_len;
     Byte * work_buf;
     uLong compressed_buf_len_out;
+    int max_block_size = 10000;
 
-    err = compressGetMaxOutputSize(source_buf_len, &compressed_buf_len);
+    err = compressGetMaxOutputSize(source_buf_len, max_block_size, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
@@ -1348,14 +1382,14 @@ TEST_F(ZlibTest, CompressSafeErrors) {
 
     printf("bad window and mem level\n");
     err = compressSafe2(compressed_buf, &compressed_buf_len_out,
-            source_buf, source_buf_len,
+            source_buf, source_buf_len, max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, 42, 1337, Z_DEFAULT_STRATEGY);
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
 
     printf("bad strategy\n");
     err = compressSafe2(compressed_buf, &compressed_buf_len_out,
-            source_buf, source_buf_len,
+            source_buf, source_buf_len, max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, DEF_WBITS, DEF_MEM_LEVEL, 42);
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
@@ -1363,7 +1397,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
 
     printf("work buf size = 0\n");
     err = compressSafe(compressed_buf, &compressed_buf_len_out,
-            source_buf, source_buf_len,
+            source_buf, source_buf_len, max_block_size,
             work_buf, 0, Z_DEFAULT_COMPRESSION);
     EXPECT_EQ(err, Z_MEM_ERROR);
     printf("zError:%s\n", zError(err));
@@ -1371,7 +1405,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     printf("output buf size small\n");
     compressed_buf_len_out = 42;
     err = compressSafe(compressed_buf, &compressed_buf_len_out,
-            source_buf, source_buf_len,
+            source_buf, source_buf_len, max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION);
     EXPECT_EQ(err, Z_BUF_ERROR);
     printf("zError:%s\n", zError(err));
@@ -1404,8 +1438,10 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     uLong work_buf_len;
     Byte * work_buf;
     uLong compressed_buf_len_out;
+    int max_block_size = 10000;
 
-    err = compressGetMaxOutputSize(source_buf_len, &compressed_buf_len);
+    err = compressGetMaxOutputSize(source_buf_len, max_block_size,
+            &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
@@ -1418,7 +1454,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     compressed_buf_len_out = compressed_buf_len;
 
     err = compressSafe(compressed_buf, &compressed_buf_len_out,
-            source_buf, source_buf_len,
+            source_buf, source_buf_len,  max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION);
     EXPECT_EQ(err, Z_OK);
 

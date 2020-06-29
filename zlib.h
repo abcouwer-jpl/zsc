@@ -254,9 +254,7 @@ ZEXTERN const char * ZEXPORT zlibVersion OF((void));
 ZEXTERN int ZEXPORT deflateInit OF((z_streamp strm, int level));
 
      Initializes the internal stream state for compression.  The fields
-   zalloc, zfree and opaque must be initialized before by the caller.  If
-   zalloc and zfree are set to Z_NULL, deflateInit updates them to use default
-   allocation functions.
+   zalloc, zfree and opaque must be initialized before by the caller.
 
      The compression level must be Z_DEFAULT_COMPRESSION, or between 0 and 9:
    1 gives best speed, 9 gives best compression, 0 gives no compression at all
@@ -1322,6 +1320,7 @@ ZEXTERN int ZEXPORT compressSafe OF((Bytef *dest,
                                      uLongf *destLen,
                                      const Bytef *source,
                                      uLong sourceLen,
+                                     uLong maxBlockLen,
                                      Bytef *work,
                                      uLong workLen,
                                      int level));
@@ -1330,6 +1329,7 @@ ZEXTERN int ZEXPORT compressSafeGzip OF((Bytef *dest,
                                          uLongf *destLen,
                                          const Bytef *source,
                                          uLong sourceLen,
+                                         uLong maxBlockLen,
                                          Bytef *work,
                                          uLong workLen,
                                          int level,
@@ -1339,6 +1339,7 @@ ZEXTERN int ZEXPORT compressSafe2 OF((Bytef *dest,
                                       uLongf *destLen,
                                       const Bytef *source,
                                       uLong sourceLen,
+                                      uLong maxBlockLen,
                                       Bytef *work,
                                       uLong workLen,
                                       int level,
@@ -1350,6 +1351,7 @@ ZEXTERN int ZEXPORT compressSafeGzip2 OF((Bytef *dest,
                                           uLongf *destLen,
                                           const Bytef *source,
                                           uLong sourceLen,
+                                          uLong maxBlockLen,
                                           Bytef *work,
                                           uLong workLen,
                                           int level,
@@ -1365,22 +1367,26 @@ ZEXTERN int ZEXPORT compressGetMinWorkBufSize2 OF((int windowBits,
                                                  uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSize OF((uLong sourceLen,
-        uLongf *size_out));
+                uLong maxBlockLen,
+                uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip OF((uLong sourceLen,
-                                                    gz_headerp gz_header,
-                                                    uLongf *size_out));
+                uLong maxBlockLen,
+                gz_headerp gz_header,
+                uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSize2 OF((uLong sourceLen,
-                                                 int windowBits,
-                                                 int memLevel,
-                                                 uLongf *size_out));
+                uLong maxBlockLen,
+                int windowBits,
+                int memLevel,
+                uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip2 OF((uLong sourceLen,
-                                                     int windowBits,
-                                                     int memLevel,
-                                                     gz_headerp gz_head,
-                                                     uLongf *size_out));
+                uLong maxBlockLen,
+                int windowBits,
+                int memLevel,
+                gz_headerp gz_head,
+                uLongf *size_out));
 
 
 ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
