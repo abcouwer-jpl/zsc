@@ -101,7 +101,6 @@ set(ZLIB_PUBLIC_HDRS
 set(ZLIB_PRIVATE_HDRS
     crc32.h
     deflate.h
-    gzguts.h
     inffast.h
     inffixed.h
     inflate.h
@@ -111,20 +110,13 @@ set(ZLIB_PRIVATE_HDRS
 )
 set(ZLIB_SRCS
     adler32.c
-    compress.c
     compress_safe.c
     crc32.c
     deflate.c
-    gzclose.c
-    gzlib.c
-    gzread.c
-    gzwrite.c
     inflate.c
-    infback.c
     inftrees.c
     inffast.c
     trees.c
-    uncompr.c
     uncompr_safe.c
     zutil.c
 )
@@ -233,6 +225,11 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
 endif()
 
 
+# if only test and not coverage, set debug flag
+#if (CMAKE_BUILD_TYPE STREQUAL "Test")
+#    add_definitions(-DZLIB_DEBUG=)
+#endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
   # build the unit tests
   set(CMAKE_BUILD_TYPE "Test")
@@ -242,6 +239,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
   APPEND_COVERAGE_COMPILER_FLAGS()
   set(COVERAGE_EXCLUDES 
     '/usr/*' 
+    '${CMAKE_CURRENT_SOURCE_DIR}/gz*'
+    '${CMAKE_CURRENT_SOURCE_DIR}/compress.c'
+    '${CMAKE_CURRENT_SOURCE_DIR}/uncompr.c'
+    '${CMAKE_CURRENT_SOURCE_DIR}/infback.c*'
     '${CMAKE_CURRENT_SOURCE_DIR}/test/*'
     '${CMAKE_CURRENT_SOURCE_DIR}/build/*')
   MESSAGE( STATUS "COVERAGE_EXCLUDES: " ${COVERAGE_EXCLUDES} )
@@ -254,6 +255,8 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Test")
   set(CMAKE_BUILD_TYPE "Debug")
   add_definitions(-DSTATIC=)
+  # make "local"s (statics) visible
+  add_definitions(-Dlocal=)
   set(ENV{CTEST_OUTPUT_ON_FAILURE} TRUE)
 
   include(CTest)
@@ -266,7 +269,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(cantrbry
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/cantrbry.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/cantrbry.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
           BINARY_DIR        ""
@@ -284,7 +287,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(artificl
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/artificl.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/artificl.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl"
           BINARY_DIR        ""
@@ -302,7 +305,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(large
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/large.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/large.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/large"
           BINARY_DIR        ""
@@ -320,7 +323,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
     
       include(ExternalProject)
       ExternalProject_Add(calgary
-          GIT_REPOSITORY    https://github.jpl.nasa.gov/abcouwer/calgary.git
+          GIT_REPOSITORY    https://github.com/nabcouwer/calgary.git
           GIT_TAG           master
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary"
           BINARY_DIR        ""
@@ -378,23 +381,23 @@ endif()
 # Example binaries
 #============================================================================
 
-add_executable(example test/example.c)
-target_link_libraries(example zlib)
-add_test(example example)
+#add_executable(example test/example.c)
+#target_link_libraries(example zlib)
+#add_test(example example)
 
-add_executable(minigzip test/minigzip.c)
-target_link_libraries(minigzip zlib)
+#add_executable(minigzip test/minigzip.c)
+#target_link_libraries(minigzip zlib)
 
-if(HAVE_OFF64_T)
-    add_executable(example64 test/example.c)
-    target_link_libraries(example64 zlib)
-    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
-    add_test(example64 example64)
+#if(HAVE_OFF64_T)
+#    add_executable(example64 test/example.c)
+#    target_link_libraries(example64 zlib)
+#    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+#    add_test(example64 example64)
 
-    add_executable(minigzip64 test/minigzip.c)
-    target_link_libraries(minigzip64 zlib)
-    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
-endif()
+#    add_executable(minigzip64 test/minigzip.c)
+#    target_link_libraries(minigzip64 zlib)
+#    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+#endif()
 
 
 
@@ -402,10 +405,19 @@ endif()
 # gtest binaries
 #============================================================================
 
-add_executable(example_gtest test/example_gtest.cpp)
-target_link_libraries(example_gtest zlib gtest_main)
-add_test(NAME example_gtest_test COMMAND example_gtest)
+#add_executable(example_gtest test/example_gtest.cpp)
+#target_link_libraries(example_gtest zlib gtest_main)
+#add_test(NAME example_gtest_test COMMAND example_gtest)
 
-add_executable(zlib_gtest test/zlib_gtest.cpp)
-target_link_libraries(zlib_gtest zlib gtest_main)
+#add_executable(zlib_gtest test/zlib_gtest.cpp)
+#target_link_libraries(zlib_gtest zlib gtest_main)
+
+add_executable(zlib_gtest test/zlib_gtest.cpp ${ZLIB_SRCS} ${ZLIB_ASMS}  ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+target_link_libraries(zlib_gtest gtest_main)
+
+
+
+
 add_test(NAME zlib_gtest_test COMMAND zlib_gtest)
+
+

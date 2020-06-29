@@ -24,3 +24,14 @@
 /configure.log
 
 .DS_Store
+
+# ignore eclipse files
+.cproject
+.project
+.settings
+
+# ignore out of source build
+build
+
+# ignore CMake generated zconf file
+zconf.h.included

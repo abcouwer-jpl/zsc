@@ -6,61 +6,141 @@
 /* @(#) $Id$ */
 
 #define ZLIB_INTERNAL
-#include "zlib.h"
+#include "zutil.h"
 
 // FIXME REMOVE
 #include <stdio.h>
 
-typedef struct uncompress_safe_static_mem_s {
-    Bytef *work; // work buffer
-    uLong workLen; // work length
-    uLong workAlloced; // work length allocated
-} uncompress_safe_static_mem;
+#define GZIP_CODE (16)
 
-// allocate from the work buffer
-voidpf uncompress_safe_static_alloc(voidpf opaque, uInt items, uInt size)
+// get the bounded size of the work buffer
+int ZEXPORT uncompressGetMinWorkBufSize2(windowBits, size_out)
+    int windowBits;
+    uLongf *size_out;
 {
-    voidpf new_ptr = Z_NULL;
-    uncompress_safe_static_mem* mem = (uncompress_safe_static_mem*) opaque;
-    // FIXME assert not null
-    uLong bytes = items * size;
+    return inflateGetMinWorkBufSize2(windowBits, size_out);
+}
 
-    // FIXME assert mult didn't overflow
+// get the bounded size of the work buffer
+int ZEXPORT uncompressGetMinWorkBufSize(size_out)
+    uLongf *size_out;
+{
+    return inflateGetMinWorkBufSize(size_out);
+}
 
-    // check there's enough space
-    if (mem->workAlloced + bytes > mem->workLen) {
-        // FIXME warn?
-        return Z_NULL;
+int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
+        windowBits, gz_head)
+    Bytef *dest;
+    uLongf *destLen;
+    const Bytef *source;
+    uLong *sourceLen;
+    Bytef *work; // work buffer
+    uLong workLen;
+    int windowBits;
+    gz_headerp gz_head;
+{
+    // check if workbuffer is large enough
+    uLong min_work_buf_size = (uLong)(-1);
+
+    int err = uncompressGetMinWorkBufSize2(windowBits, &min_work_buf_size);
+    if (err != Z_OK) {
+        return err;
+    }
+    if (workLen < min_work_buf_size) {
+        // work buffer is smaller than bound
+        // FIXME warn
+        printf("work buffer is smaller than bound.\n");
+        return Z_MEM_ERROR;
+        // FIXME could adjust windowBits until it works?
     }
 
-    new_ptr = (voidpf) (mem->work + mem->workAlloced);
-    mem->workAlloced += bytes;
-    // FIXME remove
-    printf("Uncompress allocated %lu bytes, total %lu.\n",
-            bytes, mem->workAlloced);
-    return new_ptr;
-}
+    z_static_mem mem;
+    zmemzero(&mem, sizeof(mem));
+    mem.work = work;
+    mem.workLen = workLen;
+    mem.workAlloced = 0;
 
-void uncompress_safe_static_free(void* opaque, void* addr)
-{
-    // do nothing but make compiler happy
-    (void) opaque;
-    (void) addr;
+    z_stream stream;
+    zmemzero(&stream, sizeof(stream));
+    stream.next_in = (z_const Bytef *)source;
+    stream.avail_in = *sourceLen;
+    stream.next_out = dest;
+    stream.avail_out = *destLen;
+    stream.zalloc = z_static_alloc;
+    stream.zfree = z_static_free;
+    stream.opaque = (voidpf)&mem;
+
+    err = inflateInit2(&stream, windowBits);
+    if (err != Z_OK) {
+        // might be unreachable, as windowbits is checked above
+        return err;
+    }
+
+    if(gz_head != Z_NULL) {
+        err = inflateGetHeader(&stream, gz_head);
+        if (err != Z_OK) {
+            printf("inflateGetHeader failed\n");
+            return err;
+        }
+    }
 
 
-}
+    int got_data_err = 0;
+    int cycles = 0;
+    do {
+        printf("inflate cycle %d. before: avail_in=%u, out=%u",
+                cycles, stream.avail_in, stream.avail_out);
+        err = inflate(&stream, Z_NO_FLUSH);
+        printf(" after: avail_in=%u, out=%u\n",
+                stream.avail_in, stream.avail_out);
+        if (err == Z_DATA_ERROR) {
+            // there was probably some corruption in the buffer
+            got_data_err = 1;
+            // FIXME warn
+            printf("data error.\n");
+            if (stream.msg != Z_NULL) {
+                printf("msg: %s\n", stream.msg);
+            }
+            // try to find a new flush point to recover some partial data
+            err = inflateSync(&stream);
+            printf(" after sync: avail_in=%u, out=%u\n",
+                    stream.avail_in, stream.avail_out);
 
-// get the bounded size of the work buffer
-uLong ZEXPORT uncompressSafeBoundWork2(windowBits)
-    int windowBits;
-{
-    return inflateBoundAlloc2(windowBits);
-}
+            if (err == Z_OK) {
+                printf("found new flush point\n");
+            } else {
 
-// get the bounded size of the work buffer
-uLong ZEXPORT uncompressSafeBoundWork(void)
-{
-    return inflateBoundAlloc();
+                printf("inflateSync() returned %d, "
+                        "could not find a new flush point.\n", err);
+            }
+        }
+        cycles++;
+    } while (err == Z_OK);
+
+//    // inflate in one swoop
+//    err = inflate(&stream, Z_FINISH);
+
+    *destLen = stream.total_out;
+    *sourceLen = stream.total_in;
+
+    if(err != Z_STREAM_END) {
+        printf("inflate failed\n");
+
+        // when uncompressing with inflate(Z_FINISH),
+        // Z_STREAM_END is expected, not Z_OK
+        // Z_OK may indicate there wasn't enough output space
+        (void)inflateEnd(&stream); // clean up
+        return (err == Z_OK) ? Z_MEM_ERROR : err;
+    }
+
+    err = inflateEnd(&stream);
+    // FIXME warn if bad
+
+    if (err == Z_OK && got_data_err) {
+        err = Z_DATA_ERROR;
+    }
+
+    return err;
 }
 
 int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
@@ -73,73 +153,8 @@ int ZEXPORT uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
     uLong workLen;
     int windowBits;
 {
-    // check if workbuffer is large enough
-    uLong bound = uncompressSafeBoundWork2(windowBits);
-    if (workLen < bound) {
-        // work buffer is smaller than bound
-        // FIXME warn
-        return Z_MEM_ERROR;
-        // FIXME could adjust windowBits until it works?
-    }
-
-    uncompress_safe_static_mem mem;
-    // FIXME zmemzero(&mem, sizeof(mem));
-    mem.work = work;
-    mem.workLen = workLen;
-    mem.workAlloced = 0;
-
-    z_stream stream;
-    // FIXME zmemzero(&stream, sizeof(stream));
-    int err;
-    const uInt max = (uInt)-1;
-    uLong len, left;
-    Byte buf[1];    /* for detection of incomplete stream when *destLen == 0 */
-
-    len = *sourceLen;
-    if (*destLen) {
-        left = *destLen;
-        *destLen = 0;
-    }
-    else {
-        left = 1;
-        dest = buf;
-    }
-
-    stream.next_in = (z_const Bytef *)source;
-    stream.avail_in = 0;
-    stream.zalloc = uncompress_safe_static_alloc;
-    stream.zfree = uncompress_safe_static_free;
-    stream.opaque = (voidpf)&mem;
-
-    err = inflateInit2(&stream, windowBits);
-    if (err != Z_OK) return err;
-
-    stream.next_out = dest;
-    stream.avail_out = 0;
-
-    do {
-        if (stream.avail_out == 0) {
-            stream.avail_out = left > (uLong)max ? max : (uInt)left;
-            left -= stream.avail_out;
-        }
-        if (stream.avail_in == 0) {
-            stream.avail_in = len > (uLong)max ? max : (uInt)len;
-            len -= stream.avail_in;
-        }
-        err = inflate(&stream, Z_NO_FLUSH);
-    } while (err == Z_OK);
-
-    *sourceLen -= len + stream.avail_in;
-    if (dest != buf)
-        *destLen = stream.total_out;
-    else if (stream.total_out && err == Z_BUF_ERROR)
-        left = 1;
-
-    inflateEnd(&stream);
-    return err == Z_STREAM_END ? Z_OK :
-           err == Z_NEED_DICT ? Z_DATA_ERROR  :
-           err == Z_BUF_ERROR && left + stream.avail_out ? Z_DATA_ERROR :
-           err;
+    return uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
+            windowBits, Z_NULL);
 }
 
 int ZEXPORT uncompressSafe (dest, destLen, source, sourceLen, work, workLen)
@@ -151,9 +166,21 @@ int ZEXPORT uncompressSafe (dest, destLen, source, sourceLen, work, workLen)
     uLong workLen;
 {
     return uncompressSafe2(dest, destLen, source, sourceLen, work, workLen,
-            MAX_WBITS);
+            DEF_WBITS);
 }
 
-
+int ZEXPORT uncompressSafeGzip(dest, destLen, source, sourceLen, work, workLen,
+        gz_head)
+    Bytef *dest;
+    uLongf *destLen;
+    const Bytef *source;
+    uLong *sourceLen;
+    Bytef *work; // work buffer
+    uLong workLen;
+    gz_headerp gz_head;
+{
+    return uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
+            DEF_WBITS + GZIP_CODE, gz_head);
+}
 
 

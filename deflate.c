@@ -264,20 +264,14 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     if (strm == Z_NULL) return Z_STREAM_ERROR;
 
     strm->msg = Z_NULL;
+    // modified Neil Abcouwer for zlib-safe - dynamic allocation disallowed
+    // FIXME ASSERT
     if (strm->zalloc == (alloc_func)0) {
-#ifdef Z_SOLO
         return Z_STREAM_ERROR;
-#else
-        strm->zalloc = zcalloc;
-        strm->opaque = (voidpf)0;
-#endif
     }
-    if (strm->zfree == (free_func)0)
-#ifdef Z_SOLO
+    if (strm->zfree == (free_func)0) {
         return Z_STREAM_ERROR;
-#else
-        strm->zfree = zcfree;
-#endif
+    }
 
 #ifdef FASTEST
     if (level != 0) level = 1;
@@ -302,7 +296,9 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
     s = (deflate_state *) ZALLOC(strm, 1, sizeof(deflate_state));
-    if (s == Z_NULL) return Z_MEM_ERROR;
+    if (s == Z_NULL) {
+        return Z_MEM_ERROR;
+    }
     strm->state = (struct internal_state FAR *)s;
     s->strm = strm;
     s->status = INIT_STATE;     /* to pass state test in deflateReset() */
@@ -388,12 +384,14 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
         return Z_STREAM_ERROR;
     s = strm->state;
     wrap = s->wrap;
-    if (wrap == 2 || (wrap == 1 && s->status != INIT_STATE) || s->lookahead)
+    if (wrap == 2 || (wrap == 1 && s->status != INIT_STATE) || s->lookahead) {
         return Z_STREAM_ERROR;
+    }
 
     /* when using zlib wrappers, compute Adler-32 for provided dictionary */
-    if (wrap == 1)
+    if (wrap == 1) {
         strm->adler = adler32(strm->adler, dictionary, dictLength);
+    }
     s->wrap = 0;                    /* avoid computing Adler-32 in read_buf */
 
     /* if dictionary would fill window, just replace the history */
@@ -709,14 +707,18 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
 }
 
 // find the deflate bound when there is no active stream
-uLong ZEXPORT deflateBoundDestNoStream(sourceLen,
-        windowBits, memLevel, gz_head)
+int ZEXPORT deflateBoundNoStream(sourceLen,
+        windowBits, memLevel, gz_head, size_out)
     uLong sourceLen;
     int windowBits;
     int memLevel;
     gz_headerp gz_head;
+    uLongf *size_out;
 {
-    uLong complen, wraplen;
+        // FIXME ASSERT not null
+    *size_out = (uLong)(-1);
+    uLong complen = 0;
+    uLong wraplen = 0;
     int wrap = 1;
 
     /* conservative upper bound for compressed data */
@@ -733,6 +735,13 @@ uLong ZEXPORT deflateBoundDestNoStream(sourceLen,
         windowBits -= 16;
     }
 #endif
+    // check params
+    if (memLevel < 1 || memLevel > MAX_MEM_LEVEL ||
+        windowBits < 8 || windowBits > 15 ||
+        (windowBits == 8 && wrap != 1)) {
+        return Z_STREAM_ERROR;
+    }
+
 
     /* compute wrapper length */
     switch (wrap) {
@@ -770,24 +779,35 @@ uLong ZEXPORT deflateBoundDestNoStream(sourceLen,
 
     /* if not default parameters, return conservative bound */
     uInt hash_bits = (uInt) memLevel + 7;
-    if (windowBits != 15 || hash_bits != 8 + 7)
-        return complen + wraplen;
+    if (windowBits != 15 || hash_bits != 8 + 7) {
+        *size_out = complen + wraplen;
+    } else {
+        /* default settings: return tight bound for that case */
+        *size_out = sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
+                    (sourceLen >> 25)
+                    + 13
+                    - 6
+                    + wraplen;
+    }
+    return Z_OK;
 
-    /* default settings: return tight bound for that case */
-    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
-           (sourceLen >> 25) + 13 - 6 + wraplen;
 }
 
-
-// return the bound of memory zlib will alloc
-uLong ZEXPORT deflateBoundAlloc(windowBits, memLevel)
+// given windowBits and memLevel,
+// calculate the minimum size of the work buffer required for deflation
+// return as output param
+// return error if any
+int ZEXPORT deflateGetMinWorkBufSize(windowBits, memLevel, size_out)
     int windowBits;
     int memLevel;
+    uLongf *size_out;
 {
-    // see deflateInit2_() for these allocations
+    // FIXME assert size_out not NULL
 
-    uLong bound = 0;
+    // give known value
+    *size_out = (uLongf)(-1);
 
+    // properize windowBits
     if (windowBits < 0) { /* suppress zlib wrapper */
         windowBits = -windowBits;
     }
@@ -801,18 +821,28 @@ uLong ZEXPORT deflateBoundAlloc(windowBits, memLevel)
         windowBits = 9; /* until 256-byte window bug fixed */
     }
 
+    if (memLevel < 1 || memLevel > MAX_MEM_LEVEL ||
+        windowBits < 8 || windowBits > 15) {
+        // FIXME warn
+        return Z_STREAM_ERROR;
+    }
+
+    // see deflateInit2_() for these allocations
     uInt window_size = 1 << windowBits;
     uInt hash_bits = (uInt) memLevel + 7;
     uInt hash_size = 1 << hash_bits;
     uInt lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
 
-    bound += sizeof(deflate_state);           // strm->state
-    bound += window_size * 2 * sizeof(Byte);  // strm->state->window
-    bound += window_size * 2 * sizeof(Pos);   // strm->state->prev
-    bound += hash_size * sizeof(Pos);         // strm->state->head
-    bound += lit_bufsize * (sizeof(ush) + 2); // strm->state->pending_buf
+    uLong size = 0;
+    size += sizeof(deflate_state);           // strm->state
+    size += window_size * 2 * sizeof(Byte);  // strm->state->window
+    size += window_size * 2 * sizeof(Pos);   // strm->state->prev
+    size += hash_size * sizeof(Pos);         // strm->state->head
+    size += lit_bufsize * (sizeof(ush) + 2); // strm->state->pending_buf
 
-    return bound;
+    *size_out = size;
+
+    return Z_OK;
 }
 
 
@@ -1203,6 +1233,10 @@ int ZEXPORT deflateEnd (strm)
     return status == BUSY_STATE ? Z_DATA_ERROR : Z_OK;
 }
 
+// removed Neil Abcouwer for zlib-safe
+// copying then doing allocs will spool more memory from the work buffer
+// maybe revisit
+#if 0
 /* =========================================================================
  * Copy the source state to the destination state.
  * To simplify the source, this is not supported for 16-bit MSDOS (which
@@ -1262,6 +1296,7 @@ int ZEXPORT deflateCopy (dest, source)
     return Z_OK;
 #endif /* MAXSEG_64K */
 }
+#endif
 
 /* ===========================================================================
  * Read a new buffer from the current input stream, update the adler32
@@ -2178,7 +2213,8 @@ local block_state deflate_rle(s, flush)
          */
         if (s->lookahead <= MAX_MATCH) {
             fill_window(s);
-            if (s->lookahead <= MAX_MATCH && flush == Z_NO_FLUSH) {
+            if (s->lookahead <= MAX_MATCH
+                    && flush == Z_NO_FLUSH) {
                 return need_more;
             }
             if (s->lookahead == 0) break; /* flush the current block */
@@ -2247,6 +2283,7 @@ local block_state deflate_huff(s, flush)
         if (s->lookahead == 0) {
             fill_window(s);
             if (s->lookahead == 0) {
+                Trace((stdout,"s->lookahead == 0\n"));
                 if (flush == Z_NO_FLUSH)
                     return need_more;
                 break;      /* flush the current block */
