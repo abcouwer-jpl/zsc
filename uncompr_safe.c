@@ -88,11 +88,11 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
     int got_data_err = 0;
     int cycles = 0;
     do {
-        printf("inflate cycle %d. before: avail_in=%u, out=%u",
+        printf("inflate cycle %d. before: avail_in=%u, out=%u\n",
                 cycles, stream.avail_in, stream.avail_out);
-        err = inflate(&stream, Z_NO_FLUSH);
-        printf(" after: avail_in=%u, out=%u\n",
-                stream.avail_in, stream.avail_out);
+        err = inflate(&stream, Z_FINISH);
+        printf(" after: avail_in=%u, out=%u, err = %d\n",
+                stream.avail_in, stream.avail_out, err);
         if (err == Z_DATA_ERROR) {
             // there was probably some corruption in the buffer
             got_data_err = 1;

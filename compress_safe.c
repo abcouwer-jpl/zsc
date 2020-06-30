@@ -122,7 +122,7 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen, maxBlockLen,
         }
         printf("deflate cycle %d. before: avail_in=%u, out=%u",
                 cycles, stream.avail_in, stream.avail_out);
-        err = deflate(&stream, Z_FULL_FLUSH);//Z_FINISH);
+        err = deflate(&stream, Z_FINISH); // Z_FULL_FLUSH);
 
         printf(" after: avail_in=%u, out=%u\n",
                 stream.avail_in, stream.avail_out);

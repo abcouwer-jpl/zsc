@@ -930,9 +930,7 @@ void zlib_test(
             }
         }
         EXPECT_EQ(nbad, 0);
-        if(nbad == 0) {
-            printf("Decompression successful.\n");
-        }
+        printf("Decompressed buffer had %d errors.\n", nbad);
     } else {
         printf("Input:\n");
         for (int i = 0; i < (source_buf_len < 240 ? source_buf_len : 240); i++) {
