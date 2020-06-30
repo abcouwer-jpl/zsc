@@ -76,7 +76,7 @@ int ZEXPORT uncompress2 (dest, destLen, source, sourceLen)
     else if (stream.total_out && err == Z_BUF_ERROR)
         left = 1;
 
-    inflateEnd(&stream);
+    (void)inflateEnd(&stream);
     return err == Z_STREAM_END ? Z_OK :
            err == Z_NEED_DICT ? Z_DATA_ERROR  :
            err == Z_BUF_ERROR && left + stream.avail_out ? Z_DATA_ERROR :

@@ -491,7 +491,7 @@ int ZEXPORT deflateResetKeep (strm)
 #ifdef GZIP
         s->wrap == 2 ? crc32(0L, Z_NULL, 0) :
 #endif
-        adler32(0L, Z_NULL, 0);
+    adler32(0L, Z_NULL, 0);
     s->last_flush = Z_NO_FLUSH;
 
     _tr_init(s);
@@ -595,10 +595,11 @@ int ZEXPORT deflateParams(strm, level, strategy)
     }
     if (s->level != level) {
         if (s->level == 0 && s->matches != 0) {
-            if (s->matches == 1)
+            if (s->matches == 1) {
                 slide_hash(s);
-            else
+            } else {
                 CLEAR_HASH(s);
+            }
             s->matches = 0;
         }
         s->level = level;
@@ -1864,7 +1865,7 @@ local block_state deflate_stored(s, flush)
          * the check value.
          */
         if (len) {
-            read_buf(s->strm, s->strm->next_out, len);
+            (void)read_buf(s->strm, s->strm->next_out, len);
             s->strm->next_out += len;
             s->strm->avail_out -= len;
             s->strm->total_out += len;
@@ -1927,7 +1928,7 @@ local block_state deflate_stored(s, flush)
     if (have > s->strm->avail_in)
         have = s->strm->avail_in;
     if (have) {
-        read_buf(s->strm, s->window + s->strstart, have);
+        (void)read_buf(s->strm, s->window + s->strstart, have);
         s->strstart += have;
     }
     if (s->high_water < s->strstart)

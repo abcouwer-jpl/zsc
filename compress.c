@@ -58,9 +58,15 @@ int ZEXPORT compress2 (dest, destLen, source, sourceLen, level)
         err = deflate(&stream, sourceLen ? Z_NO_FLUSH : Z_FINISH);
     } while (err == Z_OK);
 
+    // if got to end of stream, deflating succeeded
+    err = (err == Z_STREAM_END) ? Z_OK : err;
+
     *destLen = stream.total_out;
-    deflateEnd(&stream);
-    return err == Z_STREAM_END ? Z_OK : err;
+    int de_err = deflateEnd(&stream);
+    if(de_err != Z_OK) {
+        err = de_err;
+    }
+    return err;
 }
 
 /* ===========================================================================

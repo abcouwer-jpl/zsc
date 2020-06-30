@@ -1501,7 +1501,10 @@ z_streamp strm;
         return Z_DATA_ERROR;
     }
     in = strm->total_in;  out = strm->total_out;
-    inflateReset(strm);
+    int ir_ret = inflateReset(strm);
+    if (ir_ret != Z_OK) {
+        return ir_ret;
+    }
     strm->total_in = in;  strm->total_out = out;
     state->mode = TYPE;
     return Z_OK;
