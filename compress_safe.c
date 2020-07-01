@@ -107,25 +107,36 @@ int ZEXPORT compressSafeGzip2(dest, destLen, source, sourceLen, maxBlockLen,
     stream.next_out = dest;
     stream.avail_out = 0;
     stream.next_in = (z_const Bytef *)source;
-    stream.avail_in = sourceLen;
+    stream.avail_in = 0; //sourceLen;
 
     uLong bytes_left_dest = *destLen;
 
     int cycles = 0;
     do {
+//        int flush = Z_FINISH;
         if (stream.avail_out == 0) {
             // provide more output
             stream.avail_out =
                     bytes_left_dest < (uLong) maxBlockLen ?
                             (uInt) bytes_left_dest : maxBlockLen;
             bytes_left_dest -= stream.avail_out;
+//            flush = Z_FULL_FLUSH;
         }
-        printf("deflate cycle %d. before: avail_in=%u, out=%u",
-                cycles, stream.avail_in, stream.avail_out);
-        err = deflate(&stream, Z_FINISH); // Z_FULL_FLUSH);
+        if (stream.avail_in == 0) {
+            // provide more input
+            stream.avail_in =
+                    sourceLen < (uLong) maxBlockLen ?
+                            (uInt) sourceLen : maxBlockLen;
+            sourceLen -= stream.avail_in;
+        }
+//        int flush = (bytes_left_dest > 0) ? Z_FULL_FLUSH : Z_FINISH;
+        int flush = (sourceLen > 0) ? Z_FULL_FLUSH : Z_FINISH;
+        printf("deflate cycle %d. before: avail_in=%u, out=%u, flush = %d, ",
+                cycles, stream.avail_in, stream.avail_out, flush);
+        err = deflate(&stream, flush); // Z_FULL_FLUSH);
 
-        printf(" after: avail_in=%u, out=%u\n",
-                stream.avail_in, stream.avail_out);
+        printf(" after: avail_in=%u, out=%u, err = %d\n",
+                stream.avail_in, stream.avail_out, err);
         cycles++;
     } while (err == Z_OK);
     *destLen = stream.total_out;
@@ -244,7 +255,7 @@ int ZEXPORT compressGetMaxOutputSizeGzip2(sourceLen, maxBlockLen,
     // of size <= maxBlockLen for data protection
     // add addition bound for the each restart
     // FIXME assert not 0
-    int num_extra_blocks = (*size_out / maxBlockLen);
+    int num_extra_blocks = (*size_out / maxBlockLen) + 1;
     // four extra bytes are stored per block
     *size_out += num_extra_blocks * 4;
     return ret;

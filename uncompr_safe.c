@@ -103,8 +103,8 @@ int ZEXPORT uncompressSafeGzip2(dest, destLen, source, sourceLen, work, workLen,
             }
             // try to find a new flush point to recover some partial data
             err = inflateSync(&stream);
-            printf(" after sync: avail_in=%u, out=%u\n",
-                    stream.avail_in, stream.avail_out);
+            printf(" after sync: avail_in=%u, out=%u, err = %d\n",
+                    stream.avail_in, stream.avail_out, err);
 
             if (err == Z_OK) {
                 printf("found new flush point\n");

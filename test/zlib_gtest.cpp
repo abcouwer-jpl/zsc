@@ -35,6 +35,7 @@
 }
 
 #define MIN(A,B) ( ((A) <= (B)) ? (A) : (B) )
+#define MAX(A,B) ( ((A) >= (B)) ? (A) : (B) )
 
 #ifndef DEF_WBITS
 #  define DEF_WBITS MAX_WBITS
@@ -327,41 +328,42 @@ void zlib_test(
         break;
     }
 
+    uLong predicted_max_output_size;
     // get max output size
     switch(wrapper) {
     case WRAP_NONE:
         err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
-                windowBits, memLevel, &compressed_buf_len);
+                windowBits, memLevel, &predicted_max_output_size);
         break;
     case WRAP_ZLIB:
         if(all_params_default) {
             err = compressGetMaxOutputSize(source_buf_len, max_block_size,
-                    &compressed_buf_len);
+                    &predicted_max_output_size);
         } else {
             err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
-                    windowBits, memLevel, &compressed_buf_len);
+                    windowBits, memLevel, &predicted_max_output_size);
         }
         break;
     case WRAP_GZIP_NULL:
         err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
-                windowBits, memLevel, Z_NULL, &compressed_buf_len);
+                windowBits, memLevel, Z_NULL, &predicted_max_output_size);
         break;
     case WRAP_GZIP_BASIC:
     case WRAP_GZIP_BUFFERS:
         if(all_params_default) {
             err = compressGetMaxOutputSizeGzip(source_buf_len, max_block_size,
-                    &head_in, &compressed_buf_len);
+                    &head_in, &predicted_max_output_size);
         } else {
             err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
-                    windowBits, memLevel, &head_in, &compressed_buf_len);
+                    windowBits, memLevel, &head_in, &predicted_max_output_size);
         }
         break;
     }
     EXPECT_EQ(err, Z_OK);
 
 
-//    // FIXME function underestimate when breaking into segments
-//    compressed_buf_len += 1000;
+    printf("max_output calculated at %d.\n", predicted_max_output_size);
+    compressed_buf_len = predicted_max_output_size;
 
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
@@ -431,6 +433,10 @@ void zlib_test(
             }
             break;
         }
+        EXPECT_EQ(err, Z_OK);
+
+        EXPECT_LE(compressed_buf_len_out, predicted_max_output_size);
+
     } else {
         printf("Using deflate functions\n");
 
@@ -634,6 +640,27 @@ void zlib_test(
     printf("Compressed to size: %lu.\n",
             compressed_buf_len_out);
 
+    // sync search
+    unsigned got = 0;
+    unsigned next = 0;
+    int first_sync_loc = -1;
+    while (next < compressed_buf_len_out) {
+        if ((int)(compressed_buf[next]) == (got < 2 ? 0 : 0xff)) {
+            got++;
+            if(got == 4) {
+                printf("Found 0 0 0xFF 0xFF pattern at position %d.\n", next - 3);
+                if (first_sync_loc == -1) {
+                    first_sync_loc = next - 3;
+                }
+            }
+        } else if (compressed_buf[next]) {
+            got = 0;
+        } else {
+            got = 4 - got;
+        }
+        next++;
+    }
+
     printf("Compressed buffer:\n");
     for (int i = 0; i < MIN(compressed_buf_len_out,200); i++) {
         if(i%20 == 0) {
@@ -643,19 +670,30 @@ void zlib_test(
     }
     printf("\n...\n");
 
-    if(max_block_size < compressed_buf_len_out) {
-
-        for (int i = max_block_size-100;
-                i < max_block_size+100;
-                i++) {
-            if(i%20 == 0) {
-                printf("\n%04d: ", i);
-            }
-            printf("%02x ", compressed_buf[i]);
-        }
-        printf("\n...\n");
+    if (first_sync_loc != -1) {
+        for (int i = MAX(0, first_sync_loc-100);
+                 i < MIN(first_sync_loc+100, compressed_buf_len_out);
+                 i++) {
+             if(i%20 == 0) {
+                 printf("\n%04d: ", i);
+             }
+             printf("%02x ", compressed_buf[i]);
+         }
+         printf("\n...\n");
     }
-    for (int i = compressed_buf_len_out-100; i < compressed_buf_len_out; i++) {
+//    if(max_block_size < compressed_buf_len_out) {
+//
+//        for (int i = max_block_size-100;
+//                i < max_block_size+100;
+//                i++) {
+//            if(i%20 == 0) {
+//                printf("\n%04d: ", i);
+//            }
+//            printf("%02x ", compressed_buf[i]);
+//        }
+//        printf("\n...\n");
+//    }
+    for (int i = MAX(0,compressed_buf_len_out-100); i < compressed_buf_len_out; i++) {
         if(i%20 == 0) {
             printf("\n%04d: ", i);
         }
@@ -732,6 +770,8 @@ void zlib_test(
         } else {
             EXPECT_EQ(err, Z_OK);
         }
+
+        printf("uncompressed len: %u\n", uncompressed_buf_len_out);
 
     } else {
 
