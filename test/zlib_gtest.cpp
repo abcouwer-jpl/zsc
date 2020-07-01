@@ -217,7 +217,7 @@ void zlib_test(
         int windowBits = DEF_WBITS,
         int memLevel = DEF_MEM_LEVEL,
         int strategy = Z_DEFAULT_STRATEGY,
-        int max_block_size = 10000)
+        int max_block_size = 100000)
 {
 
     printf("Zlib Test: buf_len = %d, wrapper = %d, scenarios = %#lx, "
@@ -333,37 +333,37 @@ void zlib_test(
     switch(wrapper) {
     case WRAP_NONE:
         err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
-                windowBits, memLevel, &predicted_max_output_size);
+                level, windowBits, memLevel, &predicted_max_output_size);
         break;
     case WRAP_ZLIB:
         if(all_params_default) {
             err = compressGetMaxOutputSize(source_buf_len, max_block_size,
-                    &predicted_max_output_size);
+                    level, &predicted_max_output_size);
         } else {
             err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
-                    windowBits, memLevel, &predicted_max_output_size);
+                    level, windowBits, memLevel, &predicted_max_output_size);
         }
         break;
     case WRAP_GZIP_NULL:
         err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
-                windowBits, memLevel, Z_NULL, &predicted_max_output_size);
+                level, windowBits, memLevel, Z_NULL, &predicted_max_output_size);
         break;
     case WRAP_GZIP_BASIC:
     case WRAP_GZIP_BUFFERS:
         if(all_params_default) {
             err = compressGetMaxOutputSizeGzip(source_buf_len, max_block_size,
-                    &head_in, &predicted_max_output_size);
+                    level, &head_in, &predicted_max_output_size);
         } else {
             err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
-                    windowBits, memLevel, &head_in, &predicted_max_output_size);
+                    level, windowBits, memLevel, &head_in, &predicted_max_output_size);
         }
         break;
     }
     EXPECT_EQ(err, Z_OK);
 
 
-    printf("max_output calculated at %d.\n", predicted_max_output_size);
-    compressed_buf_len = predicted_max_output_size;
+    printf("max_output calculated at %lu.\n", predicted_max_output_size);
+    compressed_buf_len = predicted_max_output_size + 1000;
 
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
@@ -435,7 +435,6 @@ void zlib_test(
         }
         EXPECT_EQ(err, Z_OK);
 
-        EXPECT_LE(compressed_buf_len_out, predicted_max_output_size);
 
     } else {
         printf("Using deflate functions\n");
@@ -635,6 +634,9 @@ void zlib_test(
 
     } // end else scenarios != SCENARIO_BASIC
 
+    EXPECT_LE(compressed_buf_len_out, predicted_max_output_size);
+
+
     free(work_buf);
 
     printf("Compressed to size: %lu.\n",
@@ -644,14 +646,19 @@ void zlib_test(
     unsigned got = 0;
     unsigned next = 0;
     int first_sync_loc = -1;
+    int sync_count = 0;
+    printf("Looking for 0 0 FF FF sync pattern:");
     while (next < compressed_buf_len_out) {
         if ((int)(compressed_buf[next]) == (got < 2 ? 0 : 0xff)) {
             got++;
             if(got == 4) {
-                printf("Found 0 0 0xFF 0xFF pattern at position %d.\n", next - 3);
-                if (first_sync_loc == -1) {
+                if (sync_count == 0) {
                     first_sync_loc = next - 3;
+                    printf(" Found at: %d", next - 3);
+                } else {
+                    printf(", %d", next - 3);
                 }
+                sync_count++;
             }
         } else if (compressed_buf[next]) {
             got = 0;
@@ -660,6 +667,12 @@ void zlib_test(
         }
         next++;
     }
+    if (sync_count == 0) {
+        printf(" Not found.\n");
+    } else {
+        printf(".\nFound %d instances.\n", sync_count);
+    }
+
 
     printf("Compressed buffer:\n");
     for (int i = 0; i < MIN(compressed_buf_len_out,200); i++) {
@@ -708,7 +721,7 @@ void zlib_test(
 
     if(scenarios & SCENARIO_CORRUPT) {
         printf("Corrupting compressed buffer\n");
-        compressed_buf[42]++;
+        compressed_buf[first_sync_loc > 0 ? first_sync_loc / 2 : 42]++;
     }
 
     uLong uncompressed_buf_len = source_buf_len;
@@ -771,7 +784,7 @@ void zlib_test(
             EXPECT_EQ(err, Z_OK);
         }
 
-        printf("uncompressed len: %u\n", uncompressed_buf_len_out);
+        printf("uncompressed len: %lu\n", uncompressed_buf_len_out);
 
     } else {
 
@@ -1288,6 +1301,9 @@ TEST_F(ZlibTest, SyncFlushNoComp) {
 
 TEST_F(ZlibTest, FullFlushNoComp) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_FULL_FLUSH, Z_NO_COMPRESSION);
+    zlib_test_alice(WRAP_GZIP_BASIC, SCENARIO_FULL_FLUSH, Z_NO_COMPRESSION);
+    zlib_test_file("corpus/large/E.coli", WRAP_ZLIB, SCENARIO_FULL_FLUSH, Z_NO_COMPRESSION);
+    zlib_test_file("corpus/large/E.coli", WRAP_GZIP_BASIC, SCENARIO_FULL_FLUSH, Z_NO_COMPRESSION);
 }
 
 TEST_F(ZlibTest, NoWrapPartialFlushNoComp) {
@@ -1398,6 +1414,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     source_buf_len = nread;
 
     int err;
+    int level = Z_DEFAULT_COMPRESSION;
 
     uLong compressed_buf_len;
     Byte * compressed_buf;
@@ -1406,7 +1423,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     uLong compressed_buf_len_out;
     int max_block_size = 10000;
 
-    err = compressGetMaxOutputSize(source_buf_len, max_block_size, &compressed_buf_len);
+    err = compressGetMaxOutputSize(source_buf_len, max_block_size, level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
@@ -1478,8 +1495,10 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     uLong compressed_buf_len_out;
     int max_block_size = 10000;
 
+    int level = Z_DEFAULT_COMPRESSION;
+
     err = compressGetMaxOutputSize(source_buf_len, max_block_size,
-            &compressed_buf_len);
+            level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
@@ -1493,7 +1512,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
 
     err = compressSafe(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len,  max_block_size,
-            work_buf, work_buf_len, Z_DEFAULT_COMPRESSION);
+            work_buf, work_buf_len, level);
     EXPECT_EQ(err, Z_OK);
 
     free(work_buf);

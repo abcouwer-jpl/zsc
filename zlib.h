@@ -802,6 +802,7 @@ ZEXTERN uLong ZEXPORT deflateBound OF((z_streamp strm,
 */
 
 ZEXTERN int ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
+                                                   int level,
                                                    int windowBits,
                                                    int memLevel,
                                                    gz_headerp gz_head,
@@ -1368,21 +1369,25 @@ ZEXTERN int ZEXPORT compressGetMinWorkBufSize2 OF((int windowBits,
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSize OF((uLong sourceLen,
                 uLong maxBlockLen,
+                int level,
                 uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip OF((uLong sourceLen,
                 uLong maxBlockLen,
+                int level,
                 gz_headerp gz_header,
                 uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSize2 OF((uLong sourceLen,
                 uLong maxBlockLen,
+                int level,
                 int windowBits,
                 int memLevel,
                 uLongf *size_out));
 
 ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip2 OF((uLong sourceLen,
                 uLong maxBlockLen,
+                int level,
                 int windowBits,
                 int memLevel,
                 gz_headerp gz_head,

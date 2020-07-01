@@ -50,7 +50,7 @@
 /* @(#) $Id$ */
 
 #include "deflate.h"
-
+#include <stdio.h>
 const char deflate_copyright[] =
    " deflate 1.2.11.f Copyright 1995-2017 Jean-loup Gailly and Mark Adler, Modifications Neil Abcouwer ";
 /*
@@ -709,8 +709,9 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
 
 // find the deflate bound when there is no active stream
 int ZEXPORT deflateBoundNoStream(sourceLen,
-        windowBits, memLevel, gz_head, size_out)
+        level, windowBits, memLevel, gz_head, size_out)
     uLong sourceLen;
+    int level;
     int windowBits;
     int memLevel;
     gz_headerp gz_head;
@@ -778,11 +779,13 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
         wraplen = 6;
     }
 
-    /* if not default parameters, return conservative bound */
+    /* if not default parameters, or not compressing, return conservative bound */
     uInt hash_bits = (uInt) memLevel + 7;
-    if (windowBits != 15 || hash_bits != 8 + 7) {
+    if (windowBits != 15 || hash_bits != 8 + 7 || level == Z_NO_COMPRESSION) {
+        printf("conservative bound\b");
         *size_out = complen + wraplen;
     } else {
+        printf("tight bound\n");
         /* default settings: return tight bound for that case */
         *size_out = sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
                     (sourceLen >> 25)
@@ -1783,7 +1786,7 @@ local void fill_window(s)
  *
  * deflate_stored() is written to minimize the number of times an input byte is
  * copied. It is most efficient with large input and output buffers, which
- * maximizes the opportunites to have a single copy from next_in to next_out.
+ * maximizes the opportunities to have a single copy from next_in to next_out.
  */
 local block_state deflate_stored(s, flush)
     deflate_state *s;
