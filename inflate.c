@@ -109,14 +109,32 @@ local int inflateStateCheck(strm)
 z_streamp strm;
 {
     struct inflate_state FAR *state;
-    if (strm == Z_NULL ||
-        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0)
+    if (strm == Z_NULL/* ||
+        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0*/)
         return 1;
     state = (struct inflate_state FAR *)strm->state;
     if (state == Z_NULL || state->strm != strm ||
         state->mode < HEAD || state->mode > SYNC)
         return 1;
     return 0;
+}
+
+local voidpf inflate_alloc(strm, items, size)
+    z_streamp strm;
+    uInt items;
+    uInt size;
+{
+    voidpf new_ptr = Z_NULL;
+    // FIXME assert stream not null
+    uLong bytes = items * size;
+    // FIXME asset no overflow
+
+    if (strm->avail_work >= bytes) {
+        new_ptr = strm->next_work;
+        strm->next_work += bytes;
+        strm->avail_work -= bytes;
+    }
+    return new_ptr;
 }
 
 int ZEXPORT inflateResetKeep(strm)
@@ -216,16 +234,11 @@ int stream_size;
         return Z_STREAM_ERROR;
     }
     strm->msg = Z_NULL;                 /* in case we return an error */
-    // modified Neil Abcouwer for zlib-safe - dynamic allocation disallowed
-    // FIXME ASSERT
-    if (strm->zalloc == (alloc_func)0) {
-        return Z_STREAM_ERROR;
-    }
-    if (strm->zfree == (free_func)0) {
-        return Z_STREAM_ERROR;
-    }
+
+    // Abcouwer ZSC -  dynamic allocation disallowed, removed functions
+
     state = (struct inflate_state FAR *)
-            ZALLOC(strm, 1, sizeof(struct inflate_state));
+        inflate_alloc(strm, 1, sizeof(struct inflate_state));
     if (state == Z_NULL) {
         return Z_MEM_ERROR;
     }
@@ -236,7 +249,7 @@ int stream_size;
     state->mode = HEAD;     /* to pass state test in inflateReset2() */
     ret = inflateReset2(strm, windowBits);
     if (ret != Z_OK) {
-        ZFREE(strm, state);
+//        ZFREE(strm, state);
         strm->state = Z_NULL;
     }
     return ret;
@@ -416,7 +429,7 @@ unsigned copy;
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {
         state->window = (unsigned char FAR *)
-                        ZALLOC(strm, 1U << state->wbits,
+        inflate_alloc(strm, 1U << state->wbits,
                                sizeof(unsigned char));
         if (state->window == Z_NULL) return 1;
     }
@@ -1309,15 +1322,13 @@ int flush;
 int ZEXPORT inflateEnd(strm)
 z_streamp strm;
 {
-    struct inflate_state FAR *state;
+//    struct inflate_state FAR *state;
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state FAR *)strm->state;
-    if (state->window != Z_NULL) {
-        ZFREE(strm, state->window);
-    }
-    ZFREE(strm, strm->state);
+
+    // Abcouwer ZSC - no dynamic allocation, removed frees
+
     strm->state = Z_NULL;
     Tracev((stderr, "inflate: end\n"));
     return Z_OK;

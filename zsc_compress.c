@@ -18,7 +18,6 @@
  */
 
 #include "zsc_pub.h"
-#include "zsc.h"
 #include "deflate.h"
 #include "zutil.h"
 
@@ -75,17 +74,10 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
         return Z_MEM_ERROR;
     }
 
-    z_static_mem mem;
-    zmemzero(&mem, sizeof(mem));
-    mem.work = work;
-    mem.work_len = work_len;
-    mem.work_alloced = 0;
-
     z_stream stream;
     zmemzero(&stream, sizeof(stream));
-    stream.zalloc = z_static_alloc;
-    stream.zfree = z_static_free;
-    stream.opaque = (voidpf)&mem;
+    stream.next_work = work;
+    stream.avail_work = work_len;
 
     // see zlib.h for description of parameters
     err = deflateInit2(&stream, level, Z_DEFLATED, window_bits, mem_level,

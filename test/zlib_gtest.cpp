@@ -198,17 +198,17 @@ class ZlibTest : public ::testing::Test {
 
 int good_allocs_allowed = 0;
 
-// a bad allocator function which only returns NULL, for testing fault cases
-voidpf zlib_test_bad_alloc(voidpf opaque, uInt items, uInt size)
-{
-    if (good_allocs_allowed > 0) {
-        good_allocs_allowed--;
-        return z_static_alloc (opaque, items, size);
-    } else {
-        return Z_NULL;
-    }
-
-}
+//// a bad allocator function which only returns NULL, for testing fault cases
+//voidpf zlib_test_bad_alloc(voidpf opaque, uInt items, uInt size)
+//{
+//    if (good_allocs_allowed > 0) {
+//        good_allocs_allowed--;
+//        return z_static_alloc (opaque, items, size);
+//    } else {
+//        return Z_NULL;
+//    }
+//
+//}
 
 void zlib_test(
         Byte * source_buf,
@@ -441,15 +441,19 @@ void zlib_test(
     } else {
         printf("Using deflate functions\n");
 
-        z_static_mem mem;
-        mem.work = work_buf;
-        mem.work_len = work_buf_len;
-        mem.work_alloced = 0;
+//        z_static_mem mem;
+//        mem.work = work_buf;
+//        mem.work_len = work_buf_len;
+//        mem.work_alloced = 0;
 
         z_stream stream;
-        stream.zalloc = z_static_alloc;
-        stream.zfree = z_static_free;
-        stream.opaque = (voidpf) &mem;
+//        stream.zalloc = z_static_alloc;
+//        stream.zfree = z_static_free;
+//        stream.opaque = (voidpf) &mem;
+
+        stream.next_work = work_buf;
+        stream.avail_work = work_buf_len;
+
 
         printf("deflateInit with windowBits=%d\n", windowBits);
 
@@ -792,10 +796,10 @@ void zlib_test(
 
         printf("Using inflate functions\n");
 
-        z_static_mem mem_inf;
-        mem_inf.work = work_buf;
-        mem_inf.work_len = work_buf_len;
-        mem_inf.work_alloced = 0;
+//        z_static_mem mem_inf;
+//        mem_inf.work = work_buf;
+//        mem_inf.work_len = work_buf_len;
+//        mem_inf.work_alloced = 0;
 
         z_stream stream;
 
@@ -805,9 +809,12 @@ void zlib_test(
         stream.next_in = (z_const Bytef *) compressed_buf;
         stream.avail_in = 0;
 
-        stream.zalloc = z_static_alloc;
-        stream.zfree = z_static_free;
-        stream.opaque = (voidpf) &mem_inf;
+        stream.next_work = work_buf;
+        stream.avail_work = work_buf_len;
+
+//        stream.zalloc = z_static_alloc;
+//        stream.zfree = z_static_free;
+//        stream.opaque = (voidpf) &mem_inf;
 
         if (scenarios & SCENARIO_INFLATE_BITS0) {
             if (wrapper == WRAP_ZLIB) {
@@ -1607,65 +1614,65 @@ TEST_F(ZlibTest, DeflateErrors) {
     ASSERT_NE(work_buf, (Bytef*)NULL);
 
 
-    z_static_mem mem;
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
-
-    z_stream stream;
-    memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)0;
-    stream.zfree = (free_func)0;
-    stream.opaque = (voidpf)0;
-
-    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-    EXPECT_EQ(err, Z_STREAM_ERROR);
-
-
-    printf("null free gives error\n");
-    memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)z_static_alloc;
-    stream.zfree = (free_func)0;
-    stream.opaque = (voidpf)0;
-
-    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-    EXPECT_EQ(err, Z_STREAM_ERROR);
-
-
-    printf("null allocation gives error\n");
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
-    memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
-    stream.zfree = (free_func)z_static_free;
-    stream.opaque = (voidpf)&mem;
-
-    good_allocs_allowed = 0;
-
-    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-    EXPECT_EQ(err, Z_MEM_ERROR);
-
-
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
-    memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
-    stream.zfree = (free_func)z_static_free;
-    stream.opaque = (voidpf)&mem;
-
-    good_allocs_allowed = 1;
-
-    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-    EXPECT_EQ(err, Z_MEM_ERROR);
+//    z_static_mem mem;
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
+//
+//    z_stream stream;
+//    memset(&stream, 0, sizeof(stream));
+//    stream.zalloc = (alloc_func)0;
+//    stream.zfree = (free_func)0;
+//    stream.opaque = (voidpf)0;
+//
+//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+//    EXPECT_EQ(err, Z_STREAM_ERROR);
+//
+//
+//    printf("null free gives error\n");
+//    memset(&stream, 0, sizeof(stream));
+//    stream.zalloc = (alloc_func)z_static_alloc;
+//    stream.zfree = (free_func)0;
+//    stream.opaque = (voidpf)0;
+//
+//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+//    EXPECT_EQ(err, Z_STREAM_ERROR);
+//
+//
+//    printf("null allocation gives error\n");
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
+//    memset(&stream, 0, sizeof(stream));
+//    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
+//    stream.zfree = (free_func)z_static_free;
+//    stream.opaque = (voidpf)&mem;
+//
+//    good_allocs_allowed = 0;
+//
+//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+//    EXPECT_EQ(err, Z_MEM_ERROR);
+//
+//
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
+//    memset(&stream, 0, sizeof(stream));
+//    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
+//    stream.zfree = (free_func)z_static_free;
+//    stream.opaque = (voidpf)&mem;
+//
+//    good_allocs_allowed = 1;
+//
+//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+//    EXPECT_EQ(err, Z_MEM_ERROR);
 
 
 
@@ -1750,58 +1757,63 @@ TEST_F(ZlibTest, InflateErrors) {
     ASSERT_NE(out_buf, (Bytef*)NULL);
 
 
-    z_static_mem mem;
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
-
-    z_stream stream;
-    stream.zalloc = (alloc_func)Z_NULL;
-    stream.zfree = (free_func)Z_NULL;
-    stream.opaque = (voidpf) Z_NULL;
-
-    err = inflateInit2(&stream, DEF_WBITS);
-    EXPECT_EQ(err, Z_STREAM_ERROR);
-
-    printf("null free gives error\n");
-    stream.zalloc = z_static_alloc;
-    err = inflateInit2(&stream, DEF_WBITS);
-    EXPECT_EQ(err, Z_STREAM_ERROR);
-
-
-    printf("null allocation gives error\n");
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
-    memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
-    stream.zfree = (free_func)z_static_free;
-    stream.opaque = (voidpf)&mem;
-    err = inflateInit2(&stream, DEF_WBITS);
-    EXPECT_EQ(err, Z_MEM_ERROR);
+//    z_static_mem mem;
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
+//
+//    z_stream stream;
+//    stream.zalloc = (alloc_func)Z_NULL;
+//    stream.zfree = (free_func)Z_NULL;
+//    stream.opaque = (voidpf) Z_NULL;
+//
+//    err = inflateInit2(&stream, DEF_WBITS);
+//    EXPECT_EQ(err, Z_STREAM_ERROR);
+//
+//    printf("null free gives error\n");
+//    stream.zalloc = z_static_alloc;
+//    err = inflateInit2(&stream, DEF_WBITS);
+//    EXPECT_EQ(err, Z_STREAM_ERROR);
+//
+//
+//    printf("null allocation gives error\n");
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
+//    memset(&stream, 0, sizeof(stream));
+//    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
+//    stream.zfree = (free_func)z_static_free;
+//    stream.opaque = (voidpf)&mem;
+//    err = inflateInit2(&stream, DEF_WBITS);
+//    EXPECT_EQ(err, Z_MEM_ERROR);
 
     printf("init with bad windowbits gives error\n");
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
+    z_stream stream;
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)z_static_alloc;
-    stream.zfree = (free_func)z_static_free;
-    stream.opaque = (voidpf)&mem;
+//    stream.zalloc = (alloc_func)z_static_alloc;
+//    stream.zfree = (free_func)z_static_free;
+//    stream.opaque = (voidpf)&mem;
+    stream.next_work = work_buf;
+    stream.avail_work = work_buf_size;
     err = inflateInit2(&stream, 2);
     EXPECT_EQ(err, Z_STREAM_ERROR);
 
-    memset(&mem, 0, sizeof(mem));
-    mem.work = work_buf;
-    mem.work_len = work_buf_size;
-    mem.work_alloced = 0;
+//    memset(&mem, 0, sizeof(mem));
+//    mem.work = work_buf;
+//    mem.work_len = work_buf_size;
+//    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
-    stream.zalloc = (alloc_func)z_static_alloc;
-    stream.zfree = (free_func)z_static_free;
-    stream.opaque = (voidpf)&mem;
+//    stream.zalloc = (alloc_func)z_static_alloc;
+//    stream.zfree = (free_func)z_static_free;
+//    stream.opaque = (voidpf)&mem;
+    stream.next_work = work_buf;
+    stream.avail_work = work_buf_size;
     err = inflateInit2(&stream, DEF_WBITS);
     EXPECT_EQ(err, Z_OK);
 
@@ -1821,9 +1833,9 @@ TEST_F(ZlibTest, InflateErrors) {
     printf("stream with null state gives error\n");
 
     z_stream stream_null_state;
-    stream.zalloc = (alloc_func)z_static_alloc;
-    stream.zfree = (free_func)z_static_free;
-    stream.opaque = (voidpf)&mem;
+//    stream.zalloc = (alloc_func)z_static_alloc;
+//    stream.zfree = (free_func)z_static_free;
+//    stream.opaque = (voidpf)&mem;
     stream_null_state.state = Z_NULL;
     err = inflate(&stream_null_state, Z_SYNC_FLUSH);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -2006,18 +2018,19 @@ TEST_F(ZlibTest, DeflatePrime) {
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Byte *)Z_NULL);
 
-    z_static_mem mem_inf;
-    mem_inf.work = work_buf;
-    mem_inf.work_len = work_buf_len;
-    mem_inf.work_alloced = 0;
+//    z_static_mem mem_inf;
+//    mem_inf.work = work_buf;
+//    mem_inf.work_len = work_buf_len;
+//    mem_inf.work_alloced = 0;
 
     z_stream stream;
-
+    stream.next_work = work_buf;
+    stream.avail_work = work_buf_len;
     stream.next_in = Z_NULL;
     stream.avail_in = 0;
-    stream.zalloc = z_static_alloc;
-    stream.zfree = z_static_free;
-    stream.opaque = (voidpf) &mem_inf;
+//    stream.zalloc = z_static_alloc;
+//    stream.zfree = z_static_free;
+//    stream.opaque = (voidpf) &mem_inf;
 
     err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits,
             DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
@@ -2057,28 +2070,20 @@ TEST_F(ZlibTest, InflatePrime) {
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Byte *)Z_NULL);
 
-    z_static_mem mem_inf;
-    mem_inf.work = work_buf;
-    mem_inf.work_len = work_buf_len;
-    mem_inf.work_alloced = 0;
+//    z_static_mem mem_inf;
+//    mem_inf.work = work_buf;
+//    mem_inf.work_len = work_buf_len;
+//    mem_inf.work_alloced = 0;
 
     z_stream stream;
 
-//    uInt max_in = (uInt)-1;
-//    uInt max_out = (uInt)-1;
-//    uLong bytes_left_dest =  uncompressed_buf_len;
-//    uLong bytes_left_source =  compressed_buf_len_out;
-//
-//    stream.next_in = (z_const Bytef *) compressed_buf;
-//    stream.avail_in = 0;
-//    stream.next_out = uncompressed_buf;
-//    stream.avail_out = 0;
-
+    stream.next_work = work_buf;
+    stream.avail_work = work_buf_len;
     stream.next_in = Z_NULL;
     stream.avail_in = 0;
-    stream.zalloc = z_static_alloc;
-    stream.zfree = z_static_free;
-    stream.opaque = (voidpf) &mem_inf;
+//    stream.zalloc = z_static_alloc;
+//    stream.zfree = z_static_free;
+//    stream.opaque = (voidpf) &mem_inf;
 
     err = inflateInit2(&stream, windowBits);
     EXPECT_EQ(err, Z_OK);

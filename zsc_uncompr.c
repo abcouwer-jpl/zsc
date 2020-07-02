@@ -18,7 +18,6 @@
  */
 
 #include "zsc_pub.h"
-#include "zsc.h"
 #include "inflate.h"
 #include "zutil.h"
 
@@ -57,21 +56,11 @@ int ZEXPORT zsc_uncompress_get_min_work_buf_size2(windowBits, size_out)
     return Z_OK;
 }
 
-//// get the bounded size of the work buffer
-//int ZEXPORT zsc_uncompress_get_min_work_buf_size2(windowBits, size_out)
-//    int windowBits;
-//    uLongf *size_out;
-//{
-//    return inflateGetMinWorkBufSize2(windowBits, size_out);
-//}
-
 int ZEXPORT inflateGetMinWorkBufSize(size_out)
     uLongf *size_out;
 {
     return zsc_uncompress_get_min_work_buf_size2(DEF_WBITS, size_out);
 }
-
-
 
 // get the bounded size of the work buffer
 int ZEXPORT zsc_uncompress_get_min_work_buf_size(size_out)
@@ -106,21 +95,10 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         // FIXME could adjust windowBits until it works?
     }
 
-    z_static_mem mem;
-    zmemzero(&mem, sizeof(mem));
-    mem.work = work;
-    mem.work_len = workLen;
-    mem.work_alloced = 0;
-
     z_stream stream;
     zmemzero(&stream, sizeof(stream));
-    stream.next_in = (z_const Bytef *)source;
-    stream.avail_in = *sourceLen;
-    stream.next_out = dest;
-    stream.avail_out = *destLen;
-    stream.zalloc = z_static_alloc;
-    stream.zfree = z_static_free;
-    stream.opaque = (voidpf)&mem;
+    stream.next_work = work;
+    stream.avail_work = workLen;
 
     err = inflateInit2(&stream, windowBits);
     if (err != Z_OK) {
@@ -136,6 +114,10 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         }
     }
 
+    stream.next_in = (z_const Bytef *)source;
+    stream.avail_in = *sourceLen;
+    stream.next_out = dest;
+    stream.avail_out = *destLen;
 
     int got_data_err = 0;
     int cycles = 0;
@@ -168,9 +150,6 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         }
         cycles++;
     } while (err == Z_OK);
-
-//    // inflate in one swoop
-//    err = inflate(&stream, Z_FINISH);
 
     *destLen = stream.total_out;
     *sourceLen = stream.total_in;

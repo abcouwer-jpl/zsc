@@ -96,6 +96,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
 set(ZLIB_PUBLIC_HDRS
     ${CMAKE_CURRENT_BINARY_DIR}/zconf.h
+    zlib_types_pub.h
     zlib.h
     zsc_pub.h
 )
@@ -108,7 +109,6 @@ set(ZLIB_PRIVATE_HDRS
     inftrees.h
     trees.h
     zutil.h
-    zsc.h
     zsc_conf_global_types.h
     zsc_conf_private.h
 )
@@ -120,7 +120,6 @@ set(ZLIB_SRCS
     inftrees.c
     inffast.c
     trees.c
-    zsc_common.c
     zsc_compress.c
     zsc_uncompr.c
     zutil.c

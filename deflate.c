@@ -224,6 +224,26 @@ local void slide_hash(s)
 #endif
 }
 
+local voidpf deflate_alloc(strm, items, size)
+    z_streamp strm;
+    uInt items;
+    uInt size;
+{
+    voidpf new_ptr = Z_NULL;
+    // FIXME assert stream not null
+    uLong bytes = items * size;
+    // FIXME asset no overflow
+
+    if (strm->avail_work >= bytes) {
+        new_ptr = strm->next_work;
+        strm->next_work += bytes;
+        strm->avail_work -= bytes;
+    }
+
+    return new_ptr;
+}
+
+
 /* ========================================================================= */
 int ZEXPORT deflateInit_(strm, level, version, stream_size)
     z_streamp strm;
@@ -264,14 +284,8 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     if (strm == Z_NULL) return Z_STREAM_ERROR;
 
     strm->msg = Z_NULL;
-    // modified Neil Abcouwer for zlib-safe - dynamic allocation disallowed
-    // FIXME ASSERT
-    if (strm->zalloc == (alloc_func)0) {
-        return Z_STREAM_ERROR;
-    }
-    if (strm->zfree == (free_func)0) {
-        return Z_STREAM_ERROR;
-    }
+
+    // Abcouwer ZSC - removed allocation functions - dynamic allocation disallowed
 
 #ifdef FASTEST
     if (level != 0) level = 1;
@@ -295,7 +309,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         return Z_STREAM_ERROR;
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
-    s = (deflate_state *) ZALLOC(strm, 1, sizeof(deflate_state));
+    s = (deflate_state *) deflate_alloc(strm, 1, sizeof(deflate_state));
     if (s == Z_NULL) {
         return Z_MEM_ERROR;
     }
@@ -314,15 +328,15 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
 
-    s->window = (Bytef *) ZALLOC(strm, s->w_size, 2*sizeof(Byte));
-    s->prev   = (Posf *)  ZALLOC(strm, s->w_size, sizeof(Pos));
-    s->head   = (Posf *)  ZALLOC(strm, s->hash_size, sizeof(Pos));
+    s->window = (Bytef *) deflate_alloc(strm, s->w_size, 2*sizeof(Byte));
+    s->prev   = (Posf *)  deflate_alloc(strm, s->w_size, sizeof(Pos));
+    s->head   = (Posf *)  deflate_alloc(strm, s->hash_size, sizeof(Pos));
 
     s->high_water = 0;      /* nothing written to s->window yet */
 
     s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
 
-    overlay = (ushf *) ZALLOC(strm, s->lit_bufsize, sizeof(ush)+2);
+    overlay = (ushf *) deflate_alloc(strm, s->lit_bufsize, sizeof(ush)+2);
     s->pending_buf = (uchf *) overlay;
     s->pending_buf_size = (ulg)s->lit_bufsize * (sizeof(ush)+2L);
 
@@ -350,8 +364,8 @@ local int deflateStateCheck (strm)
     z_streamp strm;
 {
     deflate_state *s;
-    if (strm == Z_NULL ||
-        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0)
+    if (strm == Z_NULL /*||
+        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0*/)
         return 1;
     s = strm->state;
     if (s == Z_NULL || s->strm != strm || (s->status != INIT_STATE &&
@@ -1167,17 +1181,14 @@ int ZEXPORT deflateEnd (strm)
 {
     int status;
 
-    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (deflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
 
     status = strm->state->status;
 
-    /* Deallocate in reverse order of allocations: */
-    TRY_FREE(strm, strm->state->pending_buf);
-    TRY_FREE(strm, strm->state->head);
-    TRY_FREE(strm, strm->state->prev);
-    TRY_FREE(strm, strm->state->window);
+    // Abcouwer ZSC - no dynamic allocation, removed frees
 
-    ZFREE(strm, strm->state);
     strm->state = Z_NULL;
 
     return status == BUSY_STATE ? Z_DATA_ERROR : Z_OK;
