@@ -108,18 +108,20 @@ set(ZLIB_PRIVATE_HDRS
     inftrees.h
     trees.h
     zutil.h
+    zsc.h
     zsc_conf_global_types.h
     zsc_conf_private.h
 )
 set(ZLIB_SRCS
     adler32.c
-    zsc_compress.c
     crc32.c
     deflate.c
     inflate.c
     inftrees.c
     inffast.c
     trees.c
+    zsc_common.c
+    zsc_compress.c
     zsc_uncompr.c
     zutil.c
 )

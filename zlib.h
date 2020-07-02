@@ -46,6 +46,7 @@
 
 #include "zconf.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -236,9 +237,7 @@ typedef struct z_static_mem_s {
 /* for compatibility with versions < 1.0.2 */
 
 
-ZEXTERN voidpf ZEXPORT z_static_alloc OF((voidpf opaque, uInt items, uInt size));
-ZEXTERN void ZEXPORT z_static_free OF((void* opaque, void* addr));
-// FIXME document
+
 
 
                         /* basic functions */

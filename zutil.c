@@ -183,33 +183,6 @@ void ZLIB_INTERNAL zmemzero(dest, len)
 #endif
 
 
-// allocate from the work buffer
-voidpf z_static_alloc(voidpf opaque, uInt items, uInt size)
-{
-    voidpf new_ptr = Z_NULL;
-    z_static_mem* mem = (z_static_mem*) opaque;
-    // FIXME assert not null
-    uLong bytes = items * size;
-    // FIXME assert mult didn't overflow
-
-    // check there's enough space
-    if (mem->work_alloced + bytes > mem->work_len) {
-        // FIXME warn?
-        return Z_NULL;
-    }
-
-    new_ptr = (voidpf) (mem->work + mem->work_alloced);
-    mem->work_alloced += bytes;
-    return new_ptr;
-}
-
-void z_static_free(void* opaque, void* addr)
-{
-    // do nothing but make compiler happy
-    (void) opaque;
-    (void) addr;
-}
-
 
 // Modified Neil Abcouwer for zlib-safe - no dynamic memory
 //#ifndef Z_SOLO

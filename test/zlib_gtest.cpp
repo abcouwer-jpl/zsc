@@ -8,6 +8,7 @@
 #include "zutil.h"
 #include "zlib.h"
 #include "zsc_pub.h"
+#include "zsc.h"
 #include "deflate.h"
 #include "inftrees.h"
 #include "inflate.h"

@@ -1,23 +1,24 @@
-/* compress_safe.c -- compress a memory buffer with static memory
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
  *
- * Functions for compressing with zlib in a defined way such that:
- * - There is no dynamic allocation
- *   - This requires that users provide a work buffer from which to statically
- *     allocate
- * - Compression can be limited to a certain block size, such that if the compressed
- *   output is corrupted, only that block is corrupted and the rest is recoverable.
- * - Functions are provided for getting the minimum size required for a work buffer
- *   and the maximum size the compressed buffer could be.
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
  *
- *
- *
- * 2020 Neil Abcouwer
+ * @file        zsc_compress.c
+ * @date        2020-07-01
+ * @author      Neil Abcouwer
+ * @brief       Function definitions for safety-critical compressing.
  */
 
-/* @(#) $Id$ */
-
-//#define ZLIB_INTERNAL
 #include "zsc_pub.h"
+#include "zsc.h"
 #include "deflate.h"
 #include "zutil.h"
 

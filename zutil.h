@@ -180,9 +180,8 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #endif
 
 #if defined(__BORLANDC__) && !defined(MSDOS)
-  #pragma warn -8004
-  #pragma warn -8008
-  #pragma warn -8066
+  ZSC_COMPILE_ASSERT(0, borlandc_and_not_msdos);
+  // Abcouwer ZSC - removed warn pragmas
 #endif
 
 /* provide prototypes for these when building zlib without LFS */
