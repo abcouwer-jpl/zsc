@@ -1,6 +1,6 @@
-ZLIB DATA COMPRESSION LIBRARY - flight safety version
+ZLIB DATA COMPRESSION LIBRARY - safety-critical version
 
-zlib 1.2.11.f-abcouwer-safety-v0 is a version of zlib intended 
+zlib 1.2.11.f-abcouwer-safety-critical-v0 is a version of zlib intended 
 to be safe for flight software or other safety-critical applications.
 
 See https://www.zlib.net/ for information about zlib.

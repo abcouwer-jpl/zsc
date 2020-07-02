@@ -193,13 +193,13 @@ voidpf z_static_alloc(voidpf opaque, uInt items, uInt size)
     // FIXME assert mult didn't overflow
 
     // check there's enough space
-    if (mem->workAlloced + bytes > mem->workLen) {
+    if (mem->work_alloced + bytes > mem->work_len) {
         // FIXME warn?
         return Z_NULL;
     }
 
-    new_ptr = (voidpf) (mem->work + mem->workAlloced);
-    mem->workAlloced += bytes;
+    new_ptr = (voidpf) (mem->work + mem->work_alloced);
+    mem->work_alloced += bytes;
     return new_ptr;
 }
 

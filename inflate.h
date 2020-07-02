@@ -16,6 +16,9 @@
 #  define GUNZIP
 #endif
 
+#include "zlib.h"
+#include "inftrees.h"
+
 /* Possible inflate modes between inflate() calls */
 typedef enum {
     HEAD = 16180,   /* i: waiting for magic header */

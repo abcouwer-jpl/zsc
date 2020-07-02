@@ -7,6 +7,7 @@
 
 #include "zutil.h"
 #include "zlib.h"
+#include "zsc_pub.h"
 #include "deflate.h"
 #include "inftrees.h"
 #include "inflate.h"
@@ -332,29 +333,29 @@ void zlib_test(
     // get max output size
     switch(wrapper) {
     case WRAP_NONE:
-        err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
+        err = zsc_compress_get_max_output_size2(source_buf_len, max_block_size,
                 level, windowBits, memLevel, &predicted_max_output_size);
         break;
     case WRAP_ZLIB:
         if(all_params_default) {
-            err = compressGetMaxOutputSize(source_buf_len, max_block_size,
+            err = zsc_compress_get_max_output_size(source_buf_len, max_block_size,
                     level, &predicted_max_output_size);
         } else {
-            err = compressGetMaxOutputSize2(source_buf_len, max_block_size,
+            err = zsc_compress_get_max_output_size2(source_buf_len, max_block_size,
                     level, windowBits, memLevel, &predicted_max_output_size);
         }
         break;
     case WRAP_GZIP_NULL:
-        err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
+        err = zsc_compress_get_max_output_size_gzip2(source_buf_len, max_block_size,
                 level, windowBits, memLevel, Z_NULL, &predicted_max_output_size);
         break;
     case WRAP_GZIP_BASIC:
     case WRAP_GZIP_BUFFERS:
         if(all_params_default) {
-            err = compressGetMaxOutputSizeGzip(source_buf_len, max_block_size,
+            err = zsc_compress_get_max_output_size_gzip(source_buf_len, max_block_size,
                     level, &head_in, &predicted_max_output_size);
         } else {
-            err = compressGetMaxOutputSizeGzip2(source_buf_len, max_block_size,
+            err = zsc_compress_get_max_output_size_gzip2(source_buf_len, max_block_size,
                     level, windowBits, memLevel, &head_in, &predicted_max_output_size);
         }
         break;
@@ -371,9 +372,9 @@ void zlib_test(
     // get work buf
 
     if(all_params_default && wrapper == WRAP_ZLIB){
-        err = compressGetMinWorkBufSize(&work_buf_len);
+        err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     } else {
-        err = compressGetMinWorkBufSize2(windowBits, memLevel, &work_buf_len);
+        err = zsc_compress_get_min_work_buf_size2(windowBits, memLevel, &work_buf_len);
     }
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
@@ -390,18 +391,18 @@ void zlib_test(
         printf("Using compress function\n");
         switch (wrapper) {
         case WRAP_NONE:
-            err = compressSafe2(compressed_buf, &compressed_buf_len_out,
+            err = zsc_compress2(compressed_buf, &compressed_buf_len_out,
                     source_buf, source_buf_len, max_block_size,
                     work_buf, work_buf_len, level,
                     windowBits, memLevel, strategy);
             break;
         case WRAP_ZLIB:
             if (all_params_default) {
-                err = compressSafe(compressed_buf, &compressed_buf_len_out,
+                err = zsc_compress(compressed_buf, &compressed_buf_len_out,
                         source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level);
             } else {
-                err = compressSafe2(compressed_buf, &compressed_buf_len_out,
+                err = zsc_compress2(compressed_buf, &compressed_buf_len_out,
                         source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level,
                         windowBits, memLevel, strategy);
@@ -409,11 +410,11 @@ void zlib_test(
             break;
         case WRAP_GZIP_NULL:
             if (all_params_default) {
-                 err = compressSafeGzip(compressed_buf, &compressed_buf_len_out,
+                 err = zsc_compress_gzip(compressed_buf, &compressed_buf_len_out,
                          source_buf, source_buf_len, max_block_size,
                          work_buf, work_buf_len, level, Z_NULL);
              } else {
-                 err = compressSafeGzip2(compressed_buf, &compressed_buf_len_out,
+                 err = zsc_compress_gzip2(compressed_buf, &compressed_buf_len_out,
                          source_buf, source_buf_len, max_block_size,
                          work_buf, work_buf_len, level,
                          windowBits, memLevel, strategy, Z_NULL);
@@ -422,11 +423,11 @@ void zlib_test(
         case WRAP_GZIP_BASIC:
         case WRAP_GZIP_BUFFERS:
             if (all_params_default) {
-                err = compressSafeGzip(compressed_buf, &compressed_buf_len_out,
+                err = zsc_compress_gzip(compressed_buf, &compressed_buf_len_out,
                         source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level, &head_in);
             } else {
-                err = compressSafeGzip2(compressed_buf, &compressed_buf_len_out,
+                err = zsc_compress_gzip2(compressed_buf, &compressed_buf_len_out,
                         source_buf, source_buf_len, max_block_size,
                         work_buf, work_buf_len, level,
                         windowBits, memLevel, strategy, &head_in);
@@ -441,8 +442,8 @@ void zlib_test(
 
         z_static_mem mem;
         mem.work = work_buf;
-        mem.workLen = work_buf_len;
-        mem.workAlloced = 0;
+        mem.work_len = work_buf_len;
+        mem.work_alloced = 0;
 
         z_stream stream;
         stream.zalloc = z_static_alloc;
@@ -727,7 +728,7 @@ void zlib_test(
     uLong uncompressed_buf_len = source_buf_len;
     Byte * uncompressed_buf = (Byte *) malloc(uncompressed_buf_len);
     EXPECT_NE(uncompressed_buf, (Byte * )NULL);
-    err = uncompressGetMinWorkBufSize(&work_buf_len);
+    err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Byte *)Z_NULL);
@@ -748,17 +749,17 @@ void zlib_test(
 
         switch (wrapper) {
         case WRAP_NONE:
-            err = uncompressSafe2(uncompressed_buf, &uncompressed_buf_len_out,
+            err = zsc_uncompress_safe2(uncompressed_buf, &uncompressed_buf_len_out,
                     compressed_buf, &compressed_buf_len_out,
                     work_buf, work_buf_len, windowBits);
             break;
         case WRAP_ZLIB:
             if (all_params_default) {
-                err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len);
             } else {
-                err = uncompressSafe2(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress_safe2(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len, windowBits);
             }
@@ -767,11 +768,11 @@ void zlib_test(
         case WRAP_GZIP_BASIC:
         case WRAP_GZIP_BUFFERS:
             if (all_params_default) {
-                err = uncompressSafeGzip(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress_safe_gzip(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len, &head_out);
             } else {
-                err = uncompressSafeGzip2(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress_safe_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len, windowBits, &head_out);
             }
@@ -792,8 +793,8 @@ void zlib_test(
 
         z_static_mem mem_inf;
         mem_inf.work = work_buf;
-        mem_inf.workLen = work_buf_len;
-        mem_inf.workAlloced = 0;
+        mem_inf.work_len = work_buf_len;
+        mem_inf.work_alloced = 0;
 
         z_stream stream;
 
@@ -1423,27 +1424,27 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     uLong compressed_buf_len_out;
     int max_block_size = 10000;
 
-    err = compressGetMaxOutputSize(source_buf_len, max_block_size, level, &compressed_buf_len);
+    err = zsc_compress_get_max_output_size(source_buf_len, max_block_size, level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
 
 
-    err = compressGetMinWorkBufSize(&work_buf_len);
+    err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Bytef*)NULL);
     compressed_buf_len_out = compressed_buf_len;
 
     printf("bad window and mem level\n");
-    err = compressSafe2(compressed_buf, &compressed_buf_len_out,
+    err = zsc_compress2(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len, max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, 42, 1337, Z_DEFAULT_STRATEGY);
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
 
     printf("bad strategy\n");
-    err = compressSafe2(compressed_buf, &compressed_buf_len_out,
+    err = zsc_compress2(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len, max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, DEF_WBITS, DEF_MEM_LEVEL, 42);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -1451,7 +1452,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
 
 
     printf("work buf size = 0\n");
-    err = compressSafe(compressed_buf, &compressed_buf_len_out,
+    err = zsc_compress(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len, max_block_size,
             work_buf, 0, Z_DEFAULT_COMPRESSION);
     EXPECT_EQ(err, Z_MEM_ERROR);
@@ -1459,7 +1460,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
 
     printf("output buf size small\n");
     compressed_buf_len_out = 42;
-    err = compressSafe(compressed_buf, &compressed_buf_len_out,
+    err = zsc_compress(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len, max_block_size,
             work_buf, work_buf_len, Z_DEFAULT_COMPRESSION);
     EXPECT_EQ(err, Z_BUF_ERROR);
@@ -1497,20 +1498,20 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
 
     int level = Z_DEFAULT_COMPRESSION;
 
-    err = compressGetMaxOutputSize(source_buf_len, max_block_size,
+    err = zsc_compress_get_max_output_size(source_buf_len, max_block_size,
             level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Bytef*)NULL);
 
 
-    err = compressGetMinWorkBufSize(&work_buf_len);
+    err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Bytef*)NULL);
     compressed_buf_len_out = compressed_buf_len;
 
-    err = compressSafe(compressed_buf, &compressed_buf_len_out,
+    err = zsc_compress(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len,  max_block_size,
             work_buf, work_buf_len, level);
     EXPECT_EQ(err, Z_OK);
@@ -1520,7 +1521,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     uLong uncompressed_buf_len = source_buf_len;
     Byte * uncompressed_buf = (Byte *) malloc(uncompressed_buf_len);
     EXPECT_NE(uncompressed_buf, (Byte * )NULL);
-    err = uncompressGetMinWorkBufSize(&work_buf_len);
+    err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
 
@@ -1530,7 +1531,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     printf("work buf size = 0\n");
     compressed_buf_len_out2 = compressed_buf_len_out;
     uncompressed_buf_len_out = uncompressed_buf_len;
-    err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
+    err = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
                             compressed_buf, &compressed_buf_len_out2,
                             work_buf, 0);
     EXPECT_EQ(err, Z_MEM_ERROR);
@@ -1539,7 +1540,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     printf("bad window bits arg\n");
     compressed_buf_len_out2 = compressed_buf_len_out;
     uncompressed_buf_len_out = uncompressed_buf_len;
-    err = uncompressSafe2(uncompressed_buf, &uncompressed_buf_len_out,
+    err = zsc_uncompress_safe2(uncompressed_buf, &uncompressed_buf_len_out,
                             compressed_buf, &compressed_buf_len_out2,
                             work_buf, work_buf_len, 500);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -1548,7 +1549,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     printf("output buf size small\n");
     compressed_buf_len_out2 = compressed_buf_len_out;
     uncompressed_buf_len_out = 42;
-    err = uncompressSafe(uncompressed_buf, &uncompressed_buf_len_out,
+    err = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
                             compressed_buf, &compressed_buf_len_out2,
                             work_buf, work_buf_len);
     EXPECT_EQ(err, Z_BUF_ERROR);
@@ -1559,7 +1560,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     memset(&header, 0, sizeof(header));
     compressed_buf_len_out2 = compressed_buf_len_out;
     uncompressed_buf_len_out = uncompressed_buf_len;
-    err = uncompressSafeGzip2(uncompressed_buf, &uncompressed_buf_len_out,
+    err = zsc_uncompress_safe_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
                             compressed_buf, &compressed_buf_len_out2,
                             work_buf, work_buf_len, DEF_WBITS, &header);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -1598,7 +1599,7 @@ TEST_F(ZlibTest, DeflateErrors) {
     printf("null alloc gives error\n");
 
     uLong work_buf_size = (uLong)(10000);
-    err = deflateGetMinWorkBufSize(DEF_WBITS, DEF_MEM_LEVEL,
+    err = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
     Bytef *work_buf = (Bytef*)malloc(work_buf_size);
@@ -1608,8 +1609,8 @@ TEST_F(ZlibTest, DeflateErrors) {
     z_static_mem mem;
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
 
     z_stream stream;
     memset(&stream, 0, sizeof(stream));
@@ -1636,8 +1637,8 @@ TEST_F(ZlibTest, DeflateErrors) {
     printf("null allocation gives error\n");
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
     stream.zalloc = (alloc_func)zlib_test_bad_alloc;
     stream.zfree = (free_func)z_static_free;
@@ -1652,8 +1653,8 @@ TEST_F(ZlibTest, DeflateErrors) {
 
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
     stream.zalloc = (alloc_func)zlib_test_bad_alloc;
     stream.zfree = (free_func)z_static_free;
@@ -1737,7 +1738,7 @@ TEST_F(ZlibTest, InflateErrors) {
     printf("null alloc gives error\n");
 
     uLong work_buf_size = (uLong)(10000);
-    err = deflateGetMinWorkBufSize(DEF_WBITS, DEF_MEM_LEVEL,
+    err = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
     Bytef *work_buf = (Bytef*)malloc(work_buf_size);
@@ -1751,8 +1752,8 @@ TEST_F(ZlibTest, InflateErrors) {
     z_static_mem mem;
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
 
     z_stream stream;
     stream.zalloc = (alloc_func)Z_NULL;
@@ -1771,8 +1772,8 @@ TEST_F(ZlibTest, InflateErrors) {
     printf("null allocation gives error\n");
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
     stream.zalloc = (alloc_func)zlib_test_bad_alloc;
     stream.zfree = (free_func)z_static_free;
@@ -1783,8 +1784,8 @@ TEST_F(ZlibTest, InflateErrors) {
     printf("init with bad windowbits gives error\n");
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
     stream.zalloc = (alloc_func)z_static_alloc;
     stream.zfree = (free_func)z_static_free;
@@ -1794,8 +1795,8 @@ TEST_F(ZlibTest, InflateErrors) {
 
     memset(&mem, 0, sizeof(mem));
     mem.work = work_buf;
-    mem.workLen = work_buf_size;
-    mem.workAlloced = 0;
+    mem.work_len = work_buf_size;
+    mem.work_alloced = 0;
     memset(&stream, 0, sizeof(stream));
     stream.zalloc = (alloc_func)z_static_alloc;
     stream.zfree = (free_func)z_static_free;
@@ -1841,7 +1842,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     uLong out_buf_len_out = out_buf_size;
     uLong source_len_out = 2;
-    err = uncompressSafe(out_buf, &out_buf_len_out,
+    err = zsc_uncompress(out_buf, &out_buf_len_out,
             header_arr, &source_len_out,
                             work_buf, work_buf_size);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1859,7 +1860,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 2;
-    err = uncompressSafe(out_buf, &out_buf_len_out,
+    err = zsc_uncompress(out_buf, &out_buf_len_out,
             header_arr, &source_len_out,
                             work_buf, work_buf_size);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1877,7 +1878,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 2;
-    err = uncompressSafe(out_buf, &out_buf_len_out,
+    err = zsc_uncompress(out_buf, &out_buf_len_out,
             header_arr, &source_len_out,
                             work_buf, work_buf_size);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1895,7 +1896,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 4;
-    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+    err = zsc_uncompress_safe_gzip(out_buf, &out_buf_len_out,
             header_arr4, &source_len_out,
                             work_buf, work_buf_size, Z_NULL);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1911,7 +1912,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 4;
-    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+    err = zsc_uncompress_safe_gzip(out_buf, &out_buf_len_out,
             header_arr4, &source_len_out,
                             work_buf, work_buf_size, Z_NULL);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1927,7 +1928,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 4;
-    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
+    err = zsc_uncompress_safe_gzip(out_buf, &out_buf_len_out,
             header_arr4, &source_len_out,
             work_buf, work_buf_size, Z_NULL);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1999,15 +2000,15 @@ TEST_F(ZlibTest, DeflatePrime) {
     Byte outbuf[256];
 
 
-    err = compressGetMinWorkBufSize(&work_buf_len);
+    err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Byte *)Z_NULL);
 
     z_static_mem mem_inf;
     mem_inf.work = work_buf;
-    mem_inf.workLen = work_buf_len;
-    mem_inf.workAlloced = 0;
+    mem_inf.work_len = work_buf_len;
+    mem_inf.work_alloced = 0;
 
     z_stream stream;
 
@@ -2050,15 +2051,15 @@ TEST_F(ZlibTest, InflatePrime) {
     uLong work_buf_len;
     Byte * work_buf;
 
-    err = uncompressGetMinWorkBufSize(&work_buf_len);
+    err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (Byte *)Z_NULL);
 
     z_static_mem mem_inf;
     mem_inf.work = work_buf;
-    mem_inf.workLen = work_buf_len;
-    mem_inf.workAlloced = 0;
+    mem_inf.work_len = work_buf_len;
+    mem_inf.work_alloced = 0;
 
     z_stream stream;
 

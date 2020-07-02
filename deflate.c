@@ -797,60 +797,6 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
 
 }
 
-// given windowBits and memLevel,
-// calculate the minimum size of the work buffer required for deflation
-// return as output param
-// return error if any
-int ZEXPORT deflateGetMinWorkBufSize(windowBits, memLevel, size_out)
-    int windowBits;
-    int memLevel;
-    uLongf *size_out;
-{
-    // FIXME assert size_out not NULL
-
-    // give known value
-    *size_out = (uLongf)(-1);
-
-    // properize windowBits
-    if (windowBits < 0) { /* suppress zlib wrapper */
-        windowBits = -windowBits;
-    }
-#ifdef GZIP
-    else if (windowBits > 15) {
-        windowBits -= 16;
-    }
-#endif
-
-    if (windowBits == 8) {
-        windowBits = 9; /* until 256-byte window bug fixed */
-    }
-
-    if (memLevel < 1 || memLevel > MAX_MEM_LEVEL ||
-        windowBits < 8 || windowBits > 15) {
-        // FIXME warn
-        return Z_STREAM_ERROR;
-    }
-
-    // see deflateInit2_() for these allocations
-    uInt window_size = 1 << windowBits;
-    uInt hash_bits = (uInt) memLevel + 7;
-    uInt hash_size = 1 << hash_bits;
-    uInt lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
-
-    uLong size = 0;
-    size += sizeof(deflate_state);           // strm->state
-    size += window_size * 2 * sizeof(Byte);  // strm->state->window
-    size += window_size * 2 * sizeof(Pos);   // strm->state->prev
-    size += hash_size * sizeof(Pos);         // strm->state->head
-    size += lit_bufsize * (sizeof(ush) + 2); // strm->state->pending_buf
-
-    *size_out = size;
-
-    return Z_OK;
-}
-
-
-
 /* =========================================================================
  * Put a short in the pending buffer. The 16-bit value is put in MSB order.
  * IN assertion: the stream state is correct and there is enough room in

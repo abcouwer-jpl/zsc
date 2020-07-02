@@ -8,7 +8,7 @@ project(zlib)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-long-long -pedantic -Werror -Wno-unused-local-typedefs")
 
-set(VERSION "1.2.11.f-abcouwer-safety-v0")
+set(VERSION "1.2.11.f-abcouwer-safety-critical-v0")
 
 option(ASM686 "Enable building i686 assembly implementation")
 option(AMD64 "Enable building amd64 assembly implementation")
@@ -97,6 +97,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 set(ZLIB_PUBLIC_HDRS
     ${CMAKE_CURRENT_BINARY_DIR}/zconf.h
     zlib.h
+    zsc_pub.h
 )
 set(ZLIB_PRIVATE_HDRS
     crc32.h
@@ -107,17 +108,19 @@ set(ZLIB_PRIVATE_HDRS
     inftrees.h
     trees.h
     zutil.h
+    zsc_conf_global_types.h
+    zsc_conf_private.h
 )
 set(ZLIB_SRCS
     adler32.c
-    compress_safe.c
+    zsc_compress.c
     crc32.c
     deflate.c
     inflate.c
     inftrees.c
     inffast.c
     trees.c
-    uncompr_safe.c
+    zsc_uncompr.c
     zutil.c
 )
 
@@ -253,6 +256,15 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Test")
+
+  configure_file(
+      ${CMAKE_SOURCE_DIR}/test/zsc_test_global_types.h 
+      ${CMAKE_SOURCE_DIR}/zsc_conf_global_types.h)
+      
+  configure_file(
+      ${CMAKE_SOURCE_DIR}/test/zsc_test_private.h 
+      ${CMAKE_SOURCE_DIR}/zsc_conf_private.h)
+
   set(CMAKE_BUILD_TYPE "Debug")
   add_definitions(-DSTATIC=)
   # make "local"s (statics) visible
@@ -376,47 +388,13 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif()
 
 
-
-#============================================================================
-# Example binaries
-#============================================================================
-
-#add_executable(example test/example.c)
-#target_link_libraries(example zlib)
-#add_test(example example)
-
-#add_executable(minigzip test/minigzip.c)
-#target_link_libraries(minigzip zlib)
-
-#if(HAVE_OFF64_T)
-#    add_executable(example64 test/example.c)
-#    target_link_libraries(example64 zlib)
-#    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
-#    add_test(example64 example64)
-
-#    add_executable(minigzip64 test/minigzip.c)
-#    target_link_libraries(minigzip64 zlib)
-#    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
-#endif()
-
-
-
 #============================================================================
 # gtest binaries
 #============================================================================
 
-#add_executable(example_gtest test/example_gtest.cpp)
-#target_link_libraries(example_gtest zlib gtest_main)
-#add_test(NAME example_gtest_test COMMAND example_gtest)
-
-#add_executable(zlib_gtest test/zlib_gtest.cpp)
-#target_link_libraries(zlib_gtest zlib gtest_main)
 
 add_executable(zlib_gtest test/zlib_gtest.cpp ${ZLIB_SRCS} ${ZLIB_ASMS}  ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 target_link_libraries(zlib_gtest gtest_main)
-
-
-
 
 add_test(NAME zlib_gtest_test COMMAND zlib_gtest)
 

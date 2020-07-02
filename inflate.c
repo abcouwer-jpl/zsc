@@ -250,42 +250,6 @@ int stream_size;
     return inflateInit2_(strm, DEF_WBITS, version, stream_size);
 }
 
-
-
-int ZEXPORT inflateGetMinWorkBufSize2(windowBits, size_out)
-    int windowBits;
-    uLongf *size_out;
-{
-    /* check for wrapper bits within windowBits */
-    if (windowBits < 0) {
-        windowBits = -windowBits;
-    } else {
-#ifdef GUNZIP
-        if (windowBits < 48) {
-            windowBits &= 15;
-        }
-#endif
-    }
-
-    if (windowBits && (windowBits < 8 || windowBits > 15)) {
-        // FIXME warn
-        return Z_STREAM_ERROR;
-    }
-
-    uLong size = 0;
-    size += sizeof(struct inflate_state);
-    size += (1U << windowBits) * sizeof(unsigned char);
-    *size_out = size;
-
-    return Z_OK;
-}
-
-int ZEXPORT inflateGetMinWorkBufSize(size_out)
-    uLongf *size_out;
-{
-    return inflateGetMinWorkBufSize2(DEF_WBITS, size_out);
-}
-
 int ZEXPORT inflatePrime(strm, bits, value)
 z_streamp strm;
 int bits;

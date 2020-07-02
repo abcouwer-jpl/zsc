@@ -1,6 +1,6 @@
 /* zlib.h -- interface of the 'zlib' general purpose compression library
 
-  version 1.2.11.f-abcouwer-safety-v0
+  version 1.2.11.f-abcouwer-safety-crtical-v0
 
   Neil Abcouwer, Jet Propulsion Laboratory, 2020-03
 
@@ -50,7 +50,7 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.11.f-abcouwer-safety-v0"
+#define ZLIB_VERSION "1.2.11.f-abcouwer-safety-critical-v0"
 #define ZLIB_VERNUM 0x12bf
 #define ZLIB_VER_MAJOR 1
 #define ZLIB_VER_MINOR 2
@@ -146,8 +146,8 @@ typedef gz_header FAR *gz_headerp;
 /* Simple static memory struct, for allocing from a buffer */
 typedef struct z_static_mem_s {
     Bytef *work; // work buffer
-    uLong workLen; // work length
-    uLong workAlloced; // work length allocated
+    uLong work_len; // work length
+    uLong work_alloced; // work length allocated
 } z_static_mem;
 
 /*
@@ -808,10 +808,10 @@ ZEXTERN int ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
                                                    gz_headerp gz_head,
                                                    uLongf *size_out));
 
-ZEXTERN int ZEXPORT deflateGetMinWorkBufSize OF((int windowBits,
-                                                 int memLevel,
-                                                 uLongf *size_out));
-// return the bound of memory zlib will alloc
+//ZEXTERN int ZEXPORT deflateGetMinWorkBufSize OF((int windowBits,
+//                                                 int memLevel,
+//                                                 uLongf *size_out));
+//// return the bound of memory zlib will alloc
 
 
 ZEXTERN int ZEXPORT deflatePending OF((z_streamp strm,
@@ -1025,11 +1025,11 @@ ZEXTERN int ZEXPORT inflateReset2 OF((z_streamp strm,
    the windowBits parameter is invalid.
 */
 
-ZEXTERN int ZEXPORT inflateGetMinWorkBufSize OF((uLongf *size_out));
-
-ZEXTERN int ZEXPORT inflateGetMinWorkBufSize2 OF((int windowBits,
-                                                   uLongf *size_out));
-// FIXME number of bytes allocated by inflating
+//ZEXTERN int ZEXPORT inflateGetMinWorkBufSize OF((uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT inflateGetMinWorkBufSize2 OF((int windowBits,
+//                                                   uLongf *size_out));
+//// FIXME number of bytes allocated by inflating
 
 ZEXTERN int ZEXPORT inflatePrime OF((z_streamp strm,
                                      int bits,
@@ -1316,82 +1316,82 @@ ZEXTERN uLong ZEXPORT compressBound OF((uLong sourceLen));
    compress() or compress2() call to allocate the destination buffer.
 */
 
-// FIXME comments
-ZEXTERN int ZEXPORT compressSafe OF((Bytef *dest,
-                                     uLongf *destLen,
-                                     const Bytef *source,
-                                     uLong sourceLen,
-                                     uLong maxBlockLen,
-                                     Bytef *work,
-                                     uLong workLen,
-                                     int level));
-
-ZEXTERN int ZEXPORT compressSafeGzip OF((Bytef *dest,
-                                         uLongf *destLen,
-                                         const Bytef *source,
-                                         uLong sourceLen,
-                                         uLong maxBlockLen,
-                                         Bytef *work,
-                                         uLong workLen,
-                                         int level,
-                                         gz_headerp gz_header));
-
-ZEXTERN int ZEXPORT compressSafe2 OF((Bytef *dest,
-                                      uLongf *destLen,
-                                      const Bytef *source,
-                                      uLong sourceLen,
-                                      uLong maxBlockLen,
-                                      Bytef *work,
-                                      uLong workLen,
-                                      int level,
-                                      int windowBits,
-                                      int memLevel,
-                                      int strategy));
-
-ZEXTERN int ZEXPORT compressSafeGzip2 OF((Bytef *dest,
-                                          uLongf *destLen,
-                                          const Bytef *source,
-                                          uLong sourceLen,
-                                          uLong maxBlockLen,
-                                          Bytef *work,
-                                          uLong workLen,
-                                          int level,
-                                          int windowBits,
-                                          int memLevel,
-                                          int strategy,
-                                          gz_headerp gz_header));
-
-ZEXTERN int ZEXPORT compressGetMinWorkBufSize OF((uLongf *size_out));
-
-ZEXTERN int ZEXPORT compressGetMinWorkBufSize2 OF((int windowBits,
-                                                 int memLevel,
-                                                 uLongf *size_out));
-
-ZEXTERN int ZEXPORT compressGetMaxOutputSize OF((uLong sourceLen,
-                uLong maxBlockLen,
-                int level,
-                uLongf *size_out));
-
-ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip OF((uLong sourceLen,
-                uLong maxBlockLen,
-                int level,
-                gz_headerp gz_header,
-                uLongf *size_out));
-
-ZEXTERN int ZEXPORT compressGetMaxOutputSize2 OF((uLong sourceLen,
-                uLong maxBlockLen,
-                int level,
-                int windowBits,
-                int memLevel,
-                uLongf *size_out));
-
-ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip2 OF((uLong sourceLen,
-                uLong maxBlockLen,
-                int level,
-                int windowBits,
-                int memLevel,
-                gz_headerp gz_head,
-                uLongf *size_out));
+//// FIXME comments
+//ZEXTERN int ZEXPORT compressSafe OF((Bytef *dest,
+//                                     uLongf *destLen,
+//                                     const Bytef *source,
+//                                     uLong sourceLen,
+//                                     uLong maxBlockLen,
+//                                     Bytef *work,
+//                                     uLong workLen,
+//                                     int level));
+//
+//ZEXTERN int ZEXPORT compressSafeGzip OF((Bytef *dest,
+//                                         uLongf *destLen,
+//                                         const Bytef *source,
+//                                         uLong sourceLen,
+//                                         uLong maxBlockLen,
+//                                         Bytef *work,
+//                                         uLong workLen,
+//                                         int level,
+//                                         gz_headerp gz_header));
+//
+//ZEXTERN int ZEXPORT compressSafe2 OF((Bytef *dest,
+//                                      uLongf *destLen,
+//                                      const Bytef *source,
+//                                      uLong sourceLen,
+//                                      uLong maxBlockLen,
+//                                      Bytef *work,
+//                                      uLong workLen,
+//                                      int level,
+//                                      int windowBits,
+//                                      int memLevel,
+//                                      int strategy));
+//
+//ZEXTERN int ZEXPORT compressSafeGzip2 OF((Bytef *dest,
+//                                          uLongf *destLen,
+//                                          const Bytef *source,
+//                                          uLong sourceLen,
+//                                          uLong maxBlockLen,
+//                                          Bytef *work,
+//                                          uLong workLen,
+//                                          int level,
+//                                          int windowBits,
+//                                          int memLevel,
+//                                          int strategy,
+//                                          gz_headerp gz_header));
+//
+//ZEXTERN int ZEXPORT compressGetMinWorkBufSize OF((uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT compressGetMinWorkBufSize2 OF((int windowBits,
+//                                                 int memLevel,
+//                                                 uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT compressGetMaxOutputSize OF((uLong sourceLen,
+//                uLong maxBlockLen,
+//                int level,
+//                uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip OF((uLong sourceLen,
+//                uLong maxBlockLen,
+//                int level,
+//                gz_headerp gz_header,
+//                uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT compressGetMaxOutputSize2 OF((uLong sourceLen,
+//                uLong maxBlockLen,
+//                int level,
+//                int windowBits,
+//                int memLevel,
+//                uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT compressGetMaxOutputSizeGzip2 OF((uLong sourceLen,
+//                uLong maxBlockLen,
+//                int level,
+//                int windowBits,
+//                int memLevel,
+//                gz_headerp gz_head,
+//                uLongf *size_out));
 
 
 ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
@@ -1421,42 +1421,42 @@ ZEXTERN int ZEXPORT uncompress2 OF((Bytef *dest,   uLongf *destLen,
 */
 
 
-ZEXTERN int ZEXPORT uncompressSafe OF((Bytef *dest,
-                                       uLongf *destLen,
-                                       const Bytef *source,
-                                       uLong *sourceLen,
-                                       Bytef *work,
-                                       uLong workLen));
-
-ZEXTERN int ZEXPORT uncompressSafeGzip OF((Bytef *dest,
-                                           uLongf *destLen,
-                                           const Bytef *source,
-                                           uLong *sourceLen,
-                                           Bytef *work,
-                                           uLong workLen,
-                                           gz_headerp gz_head));
-
-ZEXTERN int ZEXPORT uncompressSafe2 OF((Bytef *dest,
-                                        uLongf *destLen,
-                                        const Bytef *source,
-                                        uLong *sourceLen,
-                                        Bytef *work,
-                                        uLong workLen,
-                                        int windowBits));
-
-ZEXTERN int ZEXPORT uncompressSafeGzip2 OF((Bytef *dest,
-                                        uLongf *destLen,
-                                        const Bytef *source,
-                                        uLong *sourceLen,
-                                        Bytef *work,
-                                        uLong workLen,
-                                        int windowBits,
-                                        gz_headerp gz_head));
-
-ZEXTERN int ZEXPORT uncompressGetMinWorkBufSize OF((uLongf *size_out));
-
-ZEXTERN int ZEXPORT uncompressGetMinWorkBufSize2 OF((int windowBits,
-                                                     uLongf *size_out));
+//ZEXTERN int ZEXPORT uncompressSafe OF((Bytef *dest,
+//                                       uLongf *destLen,
+//                                       const Bytef *source,
+//                                       uLong *sourceLen,
+//                                       Bytef *work,
+//                                       uLong workLen));
+//
+//ZEXTERN int ZEXPORT uncompressSafeGzip OF((Bytef *dest,
+//                                           uLongf *destLen,
+//                                           const Bytef *source,
+//                                           uLong *sourceLen,
+//                                           Bytef *work,
+//                                           uLong workLen,
+//                                           gz_headerp gz_head));
+//
+//ZEXTERN int ZEXPORT uncompressSafe2 OF((Bytef *dest,
+//                                        uLongf *destLen,
+//                                        const Bytef *source,
+//                                        uLong *sourceLen,
+//                                        Bytef *work,
+//                                        uLong workLen,
+//                                        int windowBits));
+//
+//ZEXTERN int ZEXPORT uncompressSafeGzip2 OF((Bytef *dest,
+//                                        uLongf *destLen,
+//                                        const Bytef *source,
+//                                        uLong *sourceLen,
+//                                        Bytef *work,
+//                                        uLong workLen,
+//                                        int windowBits,
+//                                        gz_headerp gz_head));
+//
+//ZEXTERN int ZEXPORT uncompressGetMinWorkBufSize OF((uLongf *size_out));
+//
+//ZEXTERN int ZEXPORT uncompressGetMinWorkBufSize2 OF((int windowBits,
+//                                                     uLongf *size_out));
 
 
 

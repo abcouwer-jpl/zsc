@@ -4,6 +4,13 @@
 Changes in 1.2.11.f-abcouwer-safety-v0 (TBD)
 - Updated README and version info
 - Add --werror (doesn't compile) option to configure script
+- zsc functions for (de)compressing with static memory
+- zsc functions have a block size for independent compressed blocks
+- zsc functions provide work buffer sizing functions
+- Enclose some one line conditional blocks in brackets.
+- Add google test unit test cpp file
+- Unit tests generate lcov coverage reports
+- CMakeLists clones repos for testing a corpus of data in unit tests
 
 Changes in 1.2.11 (15 Jan 2017)
 - Fix deflate stored bug when pulling last block from window
