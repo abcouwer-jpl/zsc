@@ -281,7 +281,16 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         stream_size != sizeof(z_stream)) {
         return Z_VERSION_ERROR;
     }
-    if (strm == Z_NULL) return Z_STREAM_ERROR;
+    if (strm == Z_NULL) {
+        return Z_STREAM_ERROR;
+    }
+    uLong work_size = (uLong)(-1);
+    if(strm->next_work == Z_NULL
+            || deflateWorkSize2(windowBits, memLevel, &work_size) != Z_OK
+            || strm->avail_work < work_size) {
+        return Z_STREAM_ERROR;
+    }
+
 
     strm->msg = Z_NULL;
 
@@ -807,6 +816,64 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
     }
     return Z_OK;
 
+}
+
+// given window_bits and mem_level,
+// calculate the minimum size of the work buffer required for deflation
+// return as output param
+// return error if any
+int deflateWorkSize2(window_bits, mem_level, size_out)
+    int window_bits;
+    int mem_level;
+    uLongf *size_out;
+{
+    // FIXME assert size_out not NULL
+
+    // give known value
+    *size_out = (uLongf)(-1);
+
+    // properize window_bits
+    if (window_bits < 0) { /* suppress zlib wrapper */
+        window_bits = -window_bits;
+    }
+#ifdef GZIP
+    else if (window_bits > 15) {
+        window_bits -= 16;
+    }
+#endif
+
+    if (window_bits == 8) {
+        window_bits = 9; /* until 256-byte window bug fixed */
+    }
+
+    if (mem_level < 1 || mem_level > MAX_MEM_LEVEL ||
+        window_bits < 8 || window_bits > 15) {
+        // FIXME warn
+        return Z_STREAM_ERROR;
+    }
+
+    // see deflateInit2_() for these allocations
+    uInt window_size = 1 << window_bits;
+    uInt hash_bits = (uInt) mem_level + 7;
+    uInt hash_size = 1 << hash_bits;
+    uInt lit_bufsize = 1 << (mem_level + 6); /* 16K elements by default */
+
+    uLong size = 0;
+    size += sizeof(deflate_state);           // strm->state
+    size += window_size * 2 * sizeof(Byte);  // strm->state->window
+    size += window_size * 2 * sizeof(Pos);   // strm->state->prev
+    size += hash_size * sizeof(Pos);         // strm->state->head
+    size += lit_bufsize * (sizeof(ush) + 2); // strm->state->pending_buf
+
+    *size_out = size;
+
+    return Z_OK;
+}
+
+int deflateWorkSize(size_out)
+    uLongf *size_out;   // bounded size of work buffer
+{
+    return deflateWorkSize2(DEF_WBITS, DEF_MEM_LEVEL, size_out);
 }
 
 /* =========================================================================

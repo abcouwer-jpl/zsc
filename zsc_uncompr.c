@@ -18,7 +18,6 @@
  */
 
 #include "zsc_pub.h"
-#include "inflate.h"
 #include "zutil.h"
 
 
@@ -27,46 +26,18 @@
 
 #define GZIP_CODE (16)
 
-//int ZEXPORT inflateGetMinWorkBufSize2(windowBits, size_out)
 int ZEXPORT zsc_uncompress_get_min_work_buf_size2(windowBits, size_out)
     int windowBits;
     uLongf *size_out;
 {
-    /* check for wrapper bits within windowBits */
-    if (windowBits < 0) {
-        windowBits = -windowBits;
-    } else {
-#ifdef GUNZIP
-        if (windowBits < 48) {
-            windowBits &= 15;
-        }
-#endif
-    }
-
-    if (windowBits && (windowBits < 8 || windowBits > 15)) {
-        // FIXME warn
-        return Z_STREAM_ERROR;
-    }
-
-    uLong size = 0;
-    size += sizeof(struct inflate_state);
-    size += (1U << windowBits) * sizeof(unsigned char);
-    *size_out = size;
-
-    return Z_OK;
-}
-
-int ZEXPORT inflateGetMinWorkBufSize(size_out)
-    uLongf *size_out;
-{
-    return zsc_uncompress_get_min_work_buf_size2(DEF_WBITS, size_out);
+    return inflateWorkSize2(windowBits, size_out);
 }
 
 // get the bounded size of the work buffer
 int ZEXPORT zsc_uncompress_get_min_work_buf_size(size_out)
     uLongf *size_out;
 {
-    return inflateGetMinWorkBufSize(size_out);
+    return inflateWorkSize(size_out);
 }
 
 int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, workLen,

@@ -84,24 +84,16 @@
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
+#include "inffixed.h"
 
 // FIXME remove
 #include <stdio.h>
-
-#ifdef MAKEFIXED
-#  ifndef BUILDFIXED
-#    define BUILDFIXED
-#  endif
-#endif
 
 /* function prototypes */
 local int inflateStateCheck OF((z_stream * strm));
 local void fixedtables OF((struct inflate_state FAR *state));
 local int updatewindow OF((z_stream * strm, const unsigned char FAR *end,
                            unsigned copy));
-#ifdef BUILDFIXED
-   void makefixed OF((void));
-#endif
 local unsigned syncsearch OF((unsigned FAR *have, const unsigned char FAR *buf,
                               unsigned len));
 
@@ -135,6 +127,40 @@ local voidpf inflate_alloc(strm, items, size)
         strm->avail_work -= bytes;
     }
     return new_ptr;
+}
+
+int ZEXPORT inflateWorkSize2(windowBits, size_out)
+    int windowBits;
+    uLongf *size_out;
+{
+    /* check for wrapper bits within windowBits */
+    if (windowBits < 0) {
+        windowBits = -windowBits;
+    } else {
+#ifdef GUNZIP
+        if (windowBits < 48) {
+            windowBits &= 15;
+        }
+#endif
+    }
+
+    if (windowBits && (windowBits < 8 || windowBits > 15)) {
+        // FIXME warn
+        return Z_STREAM_ERROR;
+    }
+
+    uLong size = 0;
+    size += sizeof(struct inflate_state);
+    size += (1U << windowBits) * sizeof(unsigned char);
+    *size_out = size;
+
+    return Z_OK;
+}
+
+int ZEXPORT inflateWorkSize(size_out)
+    uLongf *size_out;
+{
+    return inflateWorkSize2(DEF_WBITS, size_out);
 }
 
 int ZEXPORT inflateResetKeep(strm)
@@ -233,6 +259,12 @@ int stream_size;
     if (strm == Z_NULL) {
         return Z_STREAM_ERROR;
     }
+    uLong work_size = (uLong)(-1);
+    if(strm->next_work == Z_NULL
+            || inflateWorkSize2(windowBits, &work_size) != Z_OK
+            || strm->avail_work < work_size) {
+        return Z_STREAM_ERROR;
+    }
     strm->msg = Z_NULL;                 /* in case we return an error */
 
     // Abcouwer ZSC -  dynamic allocation disallowed, removed functions
@@ -249,7 +281,6 @@ int stream_size;
     state->mode = HEAD;     /* to pass state test in inflateReset2() */
     ret = inflateReset2(strm, windowBits);
     if (ret != Z_OK) {
-//        ZFREE(strm, state);
         strm->state = Z_NULL;
     }
     return ret;
@@ -301,106 +332,13 @@ int value;
 local void fixedtables(state)
 struct inflate_state FAR *state;
 {
-#ifdef BUILDFIXED
-    static int virgin = 1;
-    static code *lenfix, *distfix;
-    static code fixed[544];
-
-    /* build fixed huffman tables if first call (may not be thread safe) */
-    if (virgin) {
-        unsigned sym, bits;
-        static code *next;
-
-        /* literal/length table */
-        sym = 0;
-        while (sym < 144) state->lens[sym++] = 8;
-        while (sym < 256) state->lens[sym++] = 9;
-        while (sym < 280) state->lens[sym++] = 7;
-        while (sym < 288) state->lens[sym++] = 8;
-        next = fixed;
-        lenfix = next;
-        bits = 9;
-        inflate_table(LENS, state->lens, 288, &(next), &(bits), state->work);
-
-        /* distance table */
-        sym = 0;
-        while (sym < 32) state->lens[sym++] = 5;
-        distfix = next;
-        bits = 5;
-        inflate_table(DISTS, state->lens, 32, &(next), &(bits), state->work);
-
-        /* do this just once */
-        virgin = 0;
-    }
-#else /* !BUILDFIXED */
-#   include "inffixed.h"
-#endif /* BUILDFIXED */
     state->lencode = lenfix;
     state->lenbits = 9;
     state->distcode = distfix;
     state->distbits = 5;
 }
 
-#ifdef MAKEFIXED
-#include <stdio.h>
 
-/*
-   Write out the inffixed.h that is #include'd above.  Defining MAKEFIXED also
-   defines BUILDFIXED, so the tables are built on the fly.  makefixed() writes
-   those tables to stdout, which would be piped to inffixed.h.  A small program
-   can simply call makefixed to do this:
-
-    void makefixed(void);
-
-    int main(void)
-    {
-        makefixed();
-        return 0;
-    }
-
-   Then that can be linked with zlib built with MAKEFIXED defined and run:
-
-    a.out > inffixed.h
- */
-void makefixed()
-{
-    unsigned low, size;
-    struct inflate_state state;
-
-    fixedtables(&state);
-    puts("    /* inffixed.h -- table for decoding fixed codes");
-    puts("     * Generated automatically by makefixed().");
-    puts("     */");
-    puts("");
-    puts("    /* WARNING: this file should *not* be used by applications.");
-    puts("       It is part of the implementation of this library and is");
-    puts("       subject to change. Applications should only use zlib.h.");
-    puts("     */");
-    puts("");
-    size = 1U << 9;
-    printf("    static const code lenfix[%u] = {", size);
-    low = 0;
-    for (;;) {
-        if ((low % 7) == 0) printf("\n        ");
-        printf("{%u,%u,%d}", (low & 127) == 99 ? 64 : state.lencode[low].op,
-               state.lencode[low].bits, state.lencode[low].val);
-        if (++low == size) break;
-        putchar(',');
-    }
-    puts("\n    };");
-    size = 1U << 5;
-    printf("\n    static const code distfix[%u] = {", size);
-    low = 0;
-    for (;;) {
-        if ((low % 6) == 0) printf("\n        ");
-        printf("{%u,%u,%d}", state.distcode[low].op, state.distcode[low].bits,
-               state.distcode[low].val);
-        if (++low == size) break;
-        putchar(',');
-    }
-    puts("\n    };");
-}
-#endif /* MAKEFIXED */
 
 /*
    Update the window with the last wsize (normally 32K) bytes written before
@@ -1522,7 +1460,7 @@ z_stream * strm;
     return state->mode == STORED && state->bits == 0;
 }
 
-// removed Neil Abcouwer for zlib-safe
+// Abcouwer ZSC
 // copying then doing allocs will spool more memory from the work buffer
 // maybe revisit
 #if 0

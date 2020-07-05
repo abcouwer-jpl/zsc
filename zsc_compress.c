@@ -18,7 +18,6 @@
  */
 
 #include "zsc_pub.h"
-#include "deflate.h"
 #include "zutil.h"
 
 
@@ -222,53 +221,13 @@ int zsc_compress_get_min_work_buf_size2(window_bits, mem_level, size_out)
     int mem_level;
     uLongf *size_out;
 {
-    // FIXME assert size_out not NULL
-
-    // give known value
-    *size_out = (uLongf)(-1);
-
-    // properize window_bits
-    if (window_bits < 0) { /* suppress zlib wrapper */
-        window_bits = -window_bits;
-    }
-#ifdef GZIP
-    else if (window_bits > 15) {
-        window_bits -= 16;
-    }
-#endif
-
-    if (window_bits == 8) {
-        window_bits = 9; /* until 256-byte window bug fixed */
-    }
-
-    if (mem_level < 1 || mem_level > MAX_MEM_LEVEL ||
-        window_bits < 8 || window_bits > 15) {
-        // FIXME warn
-        return Z_STREAM_ERROR;
-    }
-
-    // see deflateInit2_() for these allocations
-    uInt window_size = 1 << window_bits;
-    uInt hash_bits = (uInt) mem_level + 7;
-    uInt hash_size = 1 << hash_bits;
-    uInt lit_bufsize = 1 << (mem_level + 6); /* 16K elements by default */
-
-    uLong size = 0;
-    size += sizeof(deflate_state);           // strm->state
-    size += window_size * 2 * sizeof(Byte);  // strm->state->window
-    size += window_size * 2 * sizeof(Pos);   // strm->state->prev
-    size += hash_size * sizeof(Pos);         // strm->state->head
-    size += lit_bufsize * (sizeof(ush) + 2); // strm->state->pending_buf
-
-    *size_out = size;
-
-    return Z_OK;
+    return deflateWorkSize2(window_bits, mem_level, size_out);
 }
 
 int zsc_compress_get_min_work_buf_size(size_out)
     uLongf *size_out;   // bounded size of work buffer
 {
-    return zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL, size_out);
+    return deflateWorkSize(size_out);
 }
 
 int ZEXPORT zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
