@@ -195,10 +195,4 @@ typedef struct gz_header_s {
                            when writing a gzip file) */
 } gz_header;
 
-// FIXME delete
-typedef z_stream * z_streamp;
-typedef gz_header * gz_headerp;
-
-
-
 #endif

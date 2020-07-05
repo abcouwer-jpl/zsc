@@ -134,7 +134,7 @@ int zsc_compress_get_max_output_size(uLong source_len,
 int zsc_compress_get_max_output_size_gzip(uLong source_len,
         uLong max_block_len,
         int level,
-        gz_headerp gz_header,
+        gz_header * gz_header,
         uLongf *size_out);
 
 /**
@@ -184,7 +184,7 @@ int zsc_compress_get_max_output_size_gzip2(uLong source_len,
         int level,
         int window_bits,
         int mem_level,
-        gz_headerp gz_head,
+        gz_header * gz_head,
         uLongf *size_out);
 
 /**
@@ -236,7 +236,7 @@ int zsc_compress(Bytef *dest,
  * @param work_len      Length of work buffer. If less than size given by
  *                      get_min_work_buf_size(), compression will fail.
  * @param level         Compression level
- * @param gz_headerp    Pointer to a GZip header
+ * @param gz_header *    Pointer to a GZip header
  * @return Z_OK if compression succeeded, an error code otherwise.
  */
 int zsc_compress_gzip(Bytef *dest,
@@ -247,7 +247,7 @@ int zsc_compress_gzip(Bytef *dest,
         Bytef *work,
         uLong work_len,
         int level,
-        gz_headerp gz_header);
+        gz_header * gz_header);
 
 /**
  * @brief Compress a buffer with custom settings
@@ -311,7 +311,7 @@ int zsc_compress2(Bytef *dest,
  * @param mem_level     how much memory to use for internal state.
  *                      Should be in the range 1 to 9.
  * @param strategy      Compression strategy
- * @param gz_headerp    Pointer to a GZip header
+ * @param gz_header *    Pointer to a GZip header
  * @return Z_OK if compression succeeded, an error code otherwise.
  */
 int zsc_compress_gzip2(Bytef *dest,
@@ -325,7 +325,7 @@ int zsc_compress_gzip2(Bytef *dest,
         int window_bits,
         int mem_level,
         int strategy,
-        gz_headerp gz_header);
+        gz_header * gz_header);
 
 /**
  * @brief Get minimum size of a work buffer, default decompression settings
@@ -402,7 +402,7 @@ int zsc_uncompress_safe_gzip(Bytef *dest,
         uLong *source_len,
         Bytef *work,
         uLong work_len,
-        gz_headerp gz_head);
+        gz_header * gz_head);
 
 /**
  * @brief Decompress a buffer with a custom window size.
@@ -458,7 +458,7 @@ int zsc_uncompress_safe_gzip2(Bytef *dest,
         Bytef *work,
         uLong work_len,
         int window_bits,
-        gz_headerp gz_head);
+        gz_header * gz_head);
 
 #ifdef __cplusplus
 }

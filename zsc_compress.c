@@ -59,7 +59,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     int window_bits;             // window size
     int mem_level;               // memory level
     int strategy;               // compression strategy
-    gz_headerp gz_head;         // gzip header
+    gz_header * gz_head;         // gzip header
 {
         printf("zsc_compress_gzip2 source_len = %lu.\n",
                 source_len);
@@ -190,7 +190,7 @@ int ZEXPORT zsc_compress_gzip(dest, dest_len, source, source_len, max_block_len,
     Bytef *work;                // work buffer
     uLong work_len;              // work buffer length
     int level;                  // compression level
-    gz_headerp gz_head;         // gzip header
+    gz_header * gz_head;         // gzip header
 {
     return zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len,
             work, work_len, level, DEF_WBITS + GZIP_CODE,
@@ -278,7 +278,7 @@ int ZEXPORT zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
     int level;          // compression level
     int window_bits;     // window size
     int mem_level;       // memory level
-    gz_headerp gz_head; // gzip header
+    gz_header * gz_head; // gzip header
     uLongf *size_out;   // bounded size of work buffer
 {
     int ret = deflateBoundNoStream(source_len,
@@ -314,7 +314,7 @@ int ZEXPORT zsc_compress_get_max_output_size_gzip(
     uLong source_len;    // source buffer length
     uLong max_block_len;  // max length of a deflate block
     int level;          // compression level
-    gz_headerp gz_head; // gzip header
+    gz_header * gz_head; // gzip header
     uLongf *size_out;   // bounded size of work buffer
 {
     return zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
