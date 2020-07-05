@@ -57,17 +57,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
         /* common constants */
 
-#ifndef DEF_WBITS
-#  define DEF_WBITS MAX_WBITS
-#endif
-/* default windowBits for decompression. MAX_WBITS is for compression only */
-
-#if MAX_MEM_LEVEL >= 8
-#  define DEF_MEM_LEVEL 8
-#else
-#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
-#endif
-/* default memLevel */
+// Abcouwer ZSC - moved DEF_WBITS and DEF_MEM_LEVEL to zlib_types_pub.h
 
 #define STORED_BLOCK 0
 #define STATIC_TREES 1

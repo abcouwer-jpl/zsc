@@ -61,6 +61,9 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     int strategy;               // compression strategy
     gz_headerp gz_head;         // gzip header
 {
+        printf("zsc_compress_gzip2 source_len = %lu.\n",
+                source_len);
+
     // check if work buffer is large enough
     uLong min_work_buf_size = (uLong)(-1);
     int err = zsc_compress_get_min_work_buf_size2(window_bits, mem_level,
@@ -75,7 +78,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     }
 
     z_stream stream;
-    zmemzero(&stream, sizeof(stream));
+    zmemzero((Bytef*)&stream, sizeof(stream));
     stream.next_work = work;
     stream.avail_work = work_len;
 
@@ -107,7 +110,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
 
     stream.next_out = dest;
     stream.avail_out = 0;
-    stream.next_in = (z_const Bytef *)source;
+    stream.next_in = (const Bytef *)source;
     stream.avail_in = 0; //source_len;
 
     uLong bytes_left_dest = *dest_len;
@@ -142,7 +145,8 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
         cycles++;
     } while (err == Z_OK);
     *dest_len = stream.total_out;
-    printf("Compressed to %lu bytes, %d cycles, %d blocks.\n", stream.total_out, cycles, output_blocks);
+    printf("Compressed to %lu bytes, %d cycles, %d blocks.\n",
+            stream.total_out, cycles, output_blocks);
 
     if(err != Z_STREAM_END) {
         // FIXME warn

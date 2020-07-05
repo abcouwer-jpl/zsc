@@ -96,7 +96,7 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
     }
 
     z_stream stream;
-    zmemzero(&stream, sizeof(stream));
+    zmemzero((Bytef*)&stream, sizeof(stream));
     stream.next_work = work;
     stream.avail_work = workLen;
 
@@ -114,7 +114,7 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         }
     }
 
-    stream.next_in = (z_const Bytef *)source;
+    stream.next_in = (const Bytef *)source;
     stream.avail_in = *sourceLen;
     stream.next_out = dest;
     stream.avail_out = *destLen;

@@ -34,95 +34,43 @@
 #ifndef ZLIB_TYPES_PUB_H
 #define ZLIB_TYPES_PUB_H
 
-#include "zconf.h"
+#include "zsc_conf_global_types.h"
+//#include "zconf.h"
 
-// FIXME Doxygen all types
 
-typedef voidpf (*alloc_func) OF((voidpf opaque, uInt items, uInt size));
-typedef void   (*free_func)  OF((voidpf opaque, voidpf address));
-
-struct internal_state;
-
-typedef struct z_stream_s {
-    z_const Bytef *next_in;     /* next input byte */
-    uInt     avail_in;  /* number of bytes available at next_in */
-    uLong    total_in;  /* total number of input bytes read so far */
-
-    Bytef    *next_out; /* next output byte will go here */
-    uInt     avail_out; /* remaining free space at next_out */
-    uLong    total_out; /* total number of bytes output so far */
-
-    Bytef   *next_work; /* next free space in the work buffer */
-    uLong   avail_work; /* number of bytes available at next_work */
-
-    z_const char *msg;  /* last error message, NULL if no error */
-    struct internal_state FAR *state; /* not visible by applications */
-
-    int     data_type;  /* best guess about the data type: binary or text
-                           for deflate, or the decoding state for inflate */
-    uLong   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
-    uLong   reserved;   /* reserved for future use */
-} z_stream;
-
-typedef z_stream FAR *z_streamp;
-
-/*
-     gzip header information passed to and from zlib routines.  See RFC 1952
-  for more details on the meanings of these fields.
-*/
-typedef struct gz_header_s {
-    int     text;       /* true if compressed data believed to be text */
-    uLong   time;       /* modification time */
-    int     xflags;     /* extra flags (not used when writing a gzip file) */
-    int     os;         /* operating system */
-    Bytef   *extra;     /* pointer to extra field or Z_NULL if none */
-    uInt    extra_len;  /* extra field length (valid if extra != Z_NULL) */
-    uInt    extra_max;  /* space at extra (only when reading header) */
-    Bytef   *name;      /* pointer to zero-terminated file name or Z_NULL */
-    uInt    name_max;   /* space at name (only when reading header) */
-    Bytef   *comment;   /* pointer to zero-terminated comment or Z_NULL */
-    uInt    comm_max;   /* space at comment (only when reading header) */
-    int     hcrc;       /* true if there was or will be a header crc */
-    int     done;       /* true when done reading gzip header (not used
-                           when writing a gzip file) */
-} gz_header;
-
-typedef gz_header FAR *gz_headerp;
-
-/*
-     The application must update next_in and avail_in when avail_in has dropped
-   to zero.  It must update next_out and avail_out when avail_out has dropped
-   to zero.  The application must initialize zalloc, zfree and opaque before
-   calling the init function.  All other fields are set by the compression
-   library and must not be updated by the application.
-
-     The opaque value provided by the application will be passed as the first
-   parameter for calls of zalloc and zfree.  This can be useful for custom
-   memory management.  The compression library attaches no meaning to the
-   opaque value.
-
-     zalloc must return Z_NULL if there is not enough memory for the object.
-   If zlib is used in a multi-threaded application, zalloc and zfree must be
-   thread safe.  In that case, zlib is thread-safe.  When zalloc and zfree are
-   Z_NULL on entry to the initialization function, they are set to internal
-   routines that use the standard library functions malloc() and free().
-
-     On 16-bit systems, the functions zalloc and zfree must be able to allocate
-   exactly 65536 bytes, but will not be required to allocate more than this if
-   the symbol MAXSEG_64K is defined (see zconf.h).  WARNING: On MSDOS, pointers
-   returned by zalloc for objects of exactly 65536 bytes *must* have their
-   offset normalized to zero.  The default allocation function provided by this
-   library ensures this (see zutil.c).  To reduce memory requirements and avoid
-   any allocation of 64K objects, at the expense of compression ratio, compile
-   the library with -DMAX_WBITS=14 (see zconf.h).
-
-     The fields total_in and total_out can be used for statistics or progress
-   reports.  After compression, total_in holds the total size of the
-   uncompressed data and may be saved for use by the decompressor (particularly
-   if the decompressor wants to decompress everything in a single step).
-*/
 
                         /* constants */
+
+#define Z_NULL  0  /// for initializing zalloc, zfree, opaque
+
+/* The memory requirements for deflate are (in bytes):
+            (1 << (windowBits+2)) +  (1 << (memLevel+9))
+ that is: 128K for windowBits=15  +  128K for memLevel = 8  (default values)
+ plus a few kilobytes for small objects. For example, if you want to reduce
+ the default memory requirements from 256K to 128K, compile with
+     make CFLAGS="-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7"
+ Of course this will generally degrade compression (there's no free lunch).
+
+   The memory requirements for inflate are (in bytes) 1 << windowBits
+ that is, 32K for windowBits=15 (default value) plus about 7 kilobytes
+ for small objects.
+*/
+enum {
+    MAX_MEM_LEVEL = 9, ///Maximum value for memLevel in deflateInit2
+    DEF_MEM_LEVEL = 8,
+    /* Maximum value for windowBits in deflateInit2 and inflateInit2.
+     * WARNING: reducing MAX_WBITS makes minigzip unable to extract .gz files
+     * created by gzip. (Files created by minigzip can still be extracted by
+     * gzip.) */
+    MAX_WBITS = 15, /// 32K LZ77 window
+    DEF_WBITS = MAX_WBITS,
+};
+
+ZSC_COMPILE_ASSERT(DEF_MEM_LEVEL <= MAX_MEM_LEVEL, bad_def_mem_level);
+ZSC_COMPILE_ASSERT(DEF_WBITS <= DEF_WBITS, bad_def_wbits);
+
+
+
 
 /** Allowed flush values; see deflate() and inflate() below for details */
 typedef enum {
@@ -180,7 +128,77 @@ typedef enum {
     Z_DEFLATED = 8,
 } ZlibMethod;
 
+// FIXME Doxygen all types
 
-#define Z_NULL  0  /* for initializing zalloc, zfree, opaque */
+
+/*
+
+     ZSC - The application must pass a buffer to next_work (and its size to
+   avail_work) before an init function is called.
+
+     The application must update next_in and avail_in when avail_in has dropped
+   to zero.  It must update next_out and avail_out when avail_out has dropped
+   to zero.
+
+     ZSC - The z_stream originally had function pointers for allocation
+   functions. These have bee replaced with pointer to and size of a work buffer.
+
+     The fields total_in and total_out can be used for statistics or progress
+   reports.  After compression, total_in holds the total size of the
+   uncompressed data and may be saved for use by the decompressor (particularly
+   if the decompressor wants to decompress everything in a single step).
+*/
+
+struct internal_state;
+
+typedef struct z_stream_s {
+    const Bytef *next_in;     /* next input byte */
+    uInt     avail_in;  /* number of bytes available at next_in */
+    uLong    total_in;  /* total number of input bytes read so far */
+
+    Bytef    *next_out; /* next output byte will go here */
+    uInt     avail_out; /* remaining free space at next_out */
+    uLong    total_out; /* total number of bytes output so far */
+
+    // Abcouwer ZSC - removed allocation functions in favor of work buffer
+    // must be initialized before call to Init()
+    Bytef   *next_work; /* next free space in the work buffer */
+    uInt   avail_work; /* number of bytes available at next_work */
+
+    const char *msg;  /* last error message, NULL if no error */
+    struct internal_state *state; /* not visible by applications */
+
+    int     data_type;  /* best guess about the data type: binary or text
+                           for deflate, or the decoding state for inflate */
+    uLong   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
+    uLong   reserved;   /* reserved for future use */
+} z_stream;
+
+/*
+     gzip header information passed to and from zlib routines.  See RFC 1952
+  for more details on the meanings of these fields.
+*/
+typedef struct gz_header_s {
+    I16     text;       /* true if compressed data believed to be text */
+    U32   time;       /* modification time */
+    I16     xflags;     /* extra flags (not used when writing a gzip file) */
+    I16     os;         /* operating system */
+    U8   *extra;     /* pointer to extra field or Z_NULL if none */
+    U16    extra_len;  /* extra field length (valid if extra != Z_NULL) */
+    U16    extra_max;  /* space at extra (only when reading header) */
+    U8   *name;      /* pointer to zero-terminated file name or Z_NULL */
+    U16    name_max;   /* space at name (only when reading header) */
+    U8   *comment;   /* pointer to zero-terminated comment or Z_NULL */
+    U16    comm_max;   /* space at comment (only when reading header) */
+    I16     hcrc;       /* true if there was or will be a header crc */
+    I16     done;       /* true when done reading gzip header (not used
+                           when writing a gzip file) */
+} gz_header;
+
+// FIXME delete
+typedef z_stream * z_streamp;
+typedef gz_header * gz_headerp;
+
+
 
 #endif

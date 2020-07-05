@@ -796,10 +796,8 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
     /* if not default parameters, or not compressing, return conservative bound */
     uInt hash_bits = (uInt) memLevel + 7;
     if (windowBits != 15 || hash_bits != 8 + 7 || level == Z_NO_COMPRESSION) {
-        printf("conservative bound\b");
         *size_out = complen + wraplen;
     } else {
-        printf("tight bound\n");
         /* default settings: return tight bound for that case */
         *size_out = sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
                     (sourceLen >> 25)

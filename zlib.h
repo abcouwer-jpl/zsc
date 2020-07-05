@@ -44,9 +44,7 @@
 #ifndef ZLIB_H
 #define ZLIB_H
 
-#include "zconf.h"
 #include "zlib_types_pub.h"
-
 
 #ifdef __cplusplus
 extern "C" {

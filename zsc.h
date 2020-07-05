@@ -20,7 +20,7 @@
 #ifndef ZSC_H
 #define ZSC_H
 
-#include "zconf.h"
+#include "zsc_conf_types.h"
 #include "zlib.h"
 
 #ifdef __cplusplus

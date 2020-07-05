@@ -63,8 +63,7 @@
 #ifndef ZSC_PUB_H
 #define ZSC_PUB_H
 
-// FIXME replace with just a types file
-#include "zconf.h"
+#include "zsc_conf_global_types.h"
 #include "zlib.h"
 
 #ifdef __cplusplus

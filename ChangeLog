@@ -7,6 +7,10 @@ Changes in 1.2.11.f-abcouwer-safety-v0 (TBD)
 - zsc functions for (de)compressing with static memory
 - zsc functions have a block size for independent compressed blocks
 - zsc functions provide work buffer sizing functions
+- Split public headers between types and functions
+- Remove allocation functions from stream type, in favor of work buffer.
+- Use fixed size types
+- Remove types that obscure pointers
 - Enclose some one line conditional blocks in brackets.
 - Add google test unit test cpp file
 - Unit tests generate lcov coverage reports
