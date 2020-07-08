@@ -152,17 +152,17 @@ typedef enum {
 struct internal_state;
 
 typedef struct z_stream_s {
-    const Bytef *next_in;     /* next input byte */
+    const Byte *next_in;     /* next input byte */
     uInt     avail_in;  /* number of bytes available at next_in */
     uLong    total_in;  /* total number of input bytes read so far */
 
-    Bytef    *next_out; /* next output byte will go here */
+    Byte    *next_out; /* next output byte will go here */
     uInt     avail_out; /* remaining free space at next_out */
     uLong    total_out; /* total number of bytes output so far */
 
     // Abcouwer ZSC - removed allocation functions in favor of work buffer
     // must be initialized before call to Init()
-    Bytef   *next_work; /* next free space in the work buffer */
+    Byte   *next_work; /* next free space in the work buffer */
     uInt   avail_work; /* number of bytes available at next_work */
 
     const char *msg;  /* last error message, NULL if no error */

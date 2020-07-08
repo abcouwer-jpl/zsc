@@ -81,7 +81,7 @@ extern "C" {
  * @param size_out  Minimum size required for working memory
  * @return Z_OK if there was no error
  */
-int zsc_compress_get_min_work_buf_size(uLongf *size_out);
+int zsc_compress_get_min_work_buf_size(uLong *size_out);
 
 /**
  * @brief Get minimum size of a work buffer, custom compression settings
@@ -97,7 +97,7 @@ int zsc_compress_get_min_work_buf_size(uLongf *size_out);
  */
 int zsc_compress_get_min_work_buf_size2(int window_bits,
         int mem_level,
-        uLongf *size_out);
+        uLong *size_out);
 
 /**
  * @brief Get maximum theoretical size of compression output, default settings
@@ -115,7 +115,7 @@ int zsc_compress_get_min_work_buf_size2(int window_bits,
 int zsc_compress_get_max_output_size(uLong source_len,
         uLong max_block_len,
         int level,
-        uLongf *size_out);
+        uLong *size_out);
 
 /**
  * @brief Get maximum size of compression output with a gzip wrapper, default
@@ -135,7 +135,7 @@ int zsc_compress_get_max_output_size_gzip(uLong source_len,
         uLong max_block_len,
         int level,
         gz_header * gz_header,
-        uLongf *size_out);
+        uLong *size_out);
 
 /**
  * @brief Get maximum theoretical size of compression output, custom settings
@@ -159,7 +159,7 @@ int zsc_compress_get_max_output_size2(uLong source_len,
         int level,
         int window_bits,
         int mem_level,
-        uLongf *size_out);
+        uLong *size_out);
 
 /**
  * @brief Get maximum size of compression output with a gzip wrapper, custom settings
@@ -185,7 +185,7 @@ int zsc_compress_get_max_output_size_gzip2(uLong source_len,
         int window_bits,
         int mem_level,
         gz_header * gz_head,
-        uLongf *size_out);
+        uLong *size_out);
 
 /**
  * @brief Compress a buffer.
@@ -208,12 +208,12 @@ int zsc_compress_get_max_output_size_gzip2(uLong source_len,
  * @param level         Compression level
  * @return Z_OK if compression succeeded, an error code otherwise.
  */
-int zsc_compress(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_compress(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong source_len,
         uLong max_block_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         int level);
 
@@ -239,12 +239,12 @@ int zsc_compress(Bytef *dest,
  * @param gz_header *    Pointer to a GZip header
  * @return Z_OK if compression succeeded, an error code otherwise.
  */
-int zsc_compress_gzip(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_compress_gzip(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong source_len,
         uLong max_block_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         int level,
         gz_header * gz_header);
@@ -275,12 +275,12 @@ int zsc_compress_gzip(Bytef *dest,
  * @param strategy      Compression strategy
  * @return Z_OK if compression succeeded, an error code otherwise.
  */
-int zsc_compress2(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_compress2(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong source_len,
         uLong max_block_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         int level,
         int window_bits,
@@ -314,12 +314,12 @@ int zsc_compress2(Bytef *dest,
  * @param gz_header *    Pointer to a GZip header
  * @return Z_OK if compression succeeded, an error code otherwise.
  */
-int zsc_compress_gzip2(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_compress_gzip2(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong source_len,
         uLong max_block_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         int level,
         int window_bits,
@@ -335,7 +335,7 @@ int zsc_compress_gzip2(Bytef *dest,
  * @param size_out  Minimum size required for working memory
  * @return Z_OK if there was no error
  */
-int zsc_uncompress_get_min_work_buf_size(uLongf *size_out);
+int zsc_uncompress_get_min_work_buf_size(uLong *size_out);
 
 /**
  * @brief Get minimum size of a work buffer, custom window size
@@ -348,7 +348,7 @@ int zsc_uncompress_get_min_work_buf_size(uLongf *size_out);
  * @return  Z_STREAM_ERROR if parameters are improper, Z_OK otherwise
  */
 int zsc_uncompress_get_min_work_buf_size2(int window_bits,
-        uLongf *size_out);
+        uLong *size_out);
 
 /**
  * @brief Decompress a buffer.
@@ -371,11 +371,11 @@ int zsc_uncompress_get_min_work_buf_size2(int window_bits,
  *                      get_min_work_buf_size(), decompression will fail.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-int zsc_uncompress(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_uncompress(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong *source_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len);
 
 /**
@@ -396,11 +396,11 @@ int zsc_uncompress(Bytef *dest,
  * @param gz_head       Pointer to where the gzip wrapper will be saved.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-int zsc_uncompress_safe_gzip(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_uncompress_safe_gzip(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong *source_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         gz_header * gz_head);
 
@@ -423,11 +423,11 @@ int zsc_uncompress_safe_gzip(Bytef *dest,
  *                      Should be in the range 9 to 15.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-int zsc_uncompress_safe2(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_uncompress_safe2(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong *source_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         int window_bits);
 
@@ -451,11 +451,11 @@ int zsc_uncompress_safe2(Bytef *dest,
  * @param gz_head       Pointer to where the gzip wrapper will be saved.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-int zsc_uncompress_safe_gzip2(Bytef *dest,
-        uLongf *dest_len,
-        const Bytef *source,
+int zsc_uncompress_safe_gzip2(Byte *dest,
+        uLong *dest_len,
+        const Byte *source,
         uLong *source_len,
-        Bytef *work,
+        Byte *work,
         uLong work_len,
         int window_bits,
         gz_header * gz_head);

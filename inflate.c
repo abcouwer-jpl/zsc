@@ -131,7 +131,7 @@ local voidpf inflate_get_work_mem(strm, items, size)
 
 int ZEXPORT inflateWorkSize2(windowBits, size_out)
     int windowBits;
-    uLongf *size_out;
+    uLong *size_out;
 {
     /* check for wrapper bits within windowBits */
     if (windowBits < 0) {
@@ -160,7 +160,7 @@ int ZEXPORT inflateWorkSize2(windowBits, size_out)
 }
 
 int ZEXPORT inflateWorkSize(size_out)
-    uLongf *size_out;
+    uLong *size_out;
 {
     return inflateWorkSize2(DEF_WBITS, size_out);
 }
@@ -358,7 +358,7 @@ struct inflate_state FAR *state;
  */
 local int updatewindow(strm, end, copy)
 z_stream * strm;
-const Bytef *end;
+const Byte *end;
 unsigned copy;
 {
     struct inflate_state FAR *state;
@@ -753,7 +753,7 @@ int flush;
                     if (state->head != Z_NULL &&
                             state->head->name != Z_NULL &&
                             state->length < state->head->name_max)
-                        state->head->name[state->length++] = (Bytef)len;
+                        state->head->name[state->length++] = (Byte)len;
                 } while (len && copy < have);
                 if ((state->flags & 0x0200) && (state->wrap & 4))
                     state->check = crc32(state->check, next, copy);
@@ -776,7 +776,7 @@ int flush;
                     if (state->head != Z_NULL &&
                             state->head->comment != Z_NULL &&
                             state->length < state->head->comm_max)
-                        state->head->comment[state->length++] = (Bytef)len;
+                        state->head->comment[state->length++] = (Byte)len;
                 } while (len && copy < have);
                 if ((state->flags & 0x0200) && (state->wrap & 4))
                     state->check = crc32(state->check, next, copy);
@@ -1286,7 +1286,7 @@ z_stream * strm;
 
 int ZEXPORT inflateGetDictionary(strm, dictionary, dictLength)
 z_stream * strm;
-Bytef *dictionary;
+Byte *dictionary;
 uInt *dictLength;
 {
     struct inflate_state FAR *state;
@@ -1309,7 +1309,7 @@ uInt *dictLength;
 
 int ZEXPORT inflateSetDictionary(strm, dictionary, dictLength)
 z_stream * strm;
-const Bytef *dictionary;
+const Byte *dictionary;
 uInt dictLength;
 {
     struct inflate_state FAR *state;

@@ -494,7 +494,7 @@ ZEXTERN int ZEXPORT deflateInit2 OF((z_stream * strm,
 */
 
 ZEXTERN int ZEXPORT deflateSetDictionary OF((z_stream * strm,
-                                             const Bytef *dictionary,
+                                             const Byte *dictionary,
                                              uInt  dictLength));
 /*
      Initializes the compression dictionary from the given byte sequence
@@ -538,7 +538,7 @@ ZEXTERN int ZEXPORT deflateSetDictionary OF((z_stream * strm,
 */
 
 ZEXTERN int ZEXPORT deflateGetDictionary OF((z_stream * strm,
-                                             Bytef *dictionary,
+                                             Byte *dictionary,
                                              uInt  *dictLength));
 /*
      Returns the sliding dictionary being maintained by deflate.  dictLength is
@@ -667,7 +667,7 @@ ZEXTERN int ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
                                                    int windowBits,
                                                    int memLevel,
                                                    gz_header * gz_head,
-                                                   uLongf *size_out));
+                                                   uLong *size_out));
 
 
 /**
@@ -678,7 +678,7 @@ ZEXTERN int ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
  * @param size_out  Minimum size required for working memory
  * @return Z_OK if there was no error
  */
-int deflateWorkSize(uLongf *size_out);
+int deflateWorkSize(uLong *size_out);
 
 /**
  * @brief Get minimum size of a work buffer, custom compression settings
@@ -694,7 +694,7 @@ int deflateWorkSize(uLongf *size_out);
  */
 int deflateWorkSize2(int window_bits,
         int mem_level,
-        uLongf *size_out);
+        uLong *size_out);
 
 
 
@@ -820,12 +820,12 @@ ZEXTERN int ZEXPORT inflateInit2 OF((z_stream * strm,
  * @param size_out      Minimum size required for working memory
  * @return  Z_STREAM_ERROR if parameters are improper, Z_OK otherwise
  */
-ZEXTERN int ZEXPORT inflateWorkSize2(int windowBits, uLongf * size_out);
-ZEXTERN int ZEXPORT inflateWorkSize(uLongf * size_out);
+ZEXTERN int ZEXPORT inflateWorkSize2(int windowBits, uLong * size_out);
+ZEXTERN int ZEXPORT inflateWorkSize(uLong * size_out);
 
 
 ZEXTERN int ZEXPORT inflateSetDictionary OF((z_stream * strm,
-                                             const Bytef *dictionary,
+                                             const Byte *dictionary,
                                              uInt  dictLength));
 /*
      Initializes the decompression dictionary from the given uncompressed byte
@@ -848,7 +848,7 @@ ZEXTERN int ZEXPORT inflateSetDictionary OF((z_stream * strm,
 */
 
 ZEXTERN int ZEXPORT inflateGetDictionary OF((z_stream * strm,
-                                             Bytef *dictionary,
+                                             Byte *dictionary,
                                              uInt  *dictLength));
 /*
      Returns the sliding dictionary being maintained by inflate.  dictLength is
@@ -1173,7 +1173,7 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags OF((void));
    library.
 */
 
-ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Bytef *buf, uInt len));
+ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Byte *buf, uInt len));
 /*
      Update a running Adler-32 checksum with the bytes buf[0..len-1] and
    return the updated checksum.  If buf is Z_NULL, this function returns the
@@ -1192,7 +1192,7 @@ ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Bytef *buf, uInt len));
      if (adler != original_adler) error();
 */
 
-ZEXTERN uLong ZEXPORT adler32_z OF((uLong adler, const Bytef *buf,
+ZEXTERN uLong ZEXPORT adler32_z OF((uLong adler, const Byte *buf,
                                     z_size_t len));
 /*
      Same as adler32(), but with a size_t length.
@@ -1210,7 +1210,7 @@ ZEXTERN uLong ZEXPORT adler32_combine OF((uLong adler1, uLong adler2,
    negative, the result has no meaning or utility.
 */
 
-ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
+ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Byte *buf, uInt len));
 /*
      Update a running CRC-32 with the bytes buf[0..len-1] and return the
    updated CRC-32.  If buf is Z_NULL, this function returns the required
@@ -1227,7 +1227,7 @@ ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
      if (crc != original_crc) error();
 */
 
-ZEXTERN uLong ZEXPORT crc32_z OF((uLong adler, const Bytef *buf,
+ZEXTERN uLong ZEXPORT crc32_z OF((uLong adler, const Byte *buf,
                                   z_size_t len));
 /*
      Same as crc32(), but with a size_t length.

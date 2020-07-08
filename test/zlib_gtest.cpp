@@ -126,12 +126,12 @@ char *corpus_files[NUM_CORPUS] = {
 //static uLong dictId;    /* Adler32 value of the dictionary */
 
 
-static const Bytef * alice_dictionary = (const Bytef *)
+static const Byte * alice_dictionary = (const Byte *)
         "queen" "time" "thought" "could" "and the" "in the" "would" "went"
                 "like" "know" "in a" "one" "said Alice" "little" "of the"
                 "said the" "Alice" "said";
 
-static const Bytef * big_dictionary = (const Bytef *)
+static const Byte * big_dictionary = (const Byte *)
     "queen" "time" "thought" "could" "and the" "in the" "would" "went"
     "like" "know" "in a" "one" "said Alice" "little" "of the"
     "said the" "Alice" "said"
@@ -289,7 +289,7 @@ void zlib_test(
     head_out.extra = (Byte *)malloc(80);
     head_out.extra_max = 80;
 
-    const Bytef * dictionary = alice_dictionary;
+    const Byte * dictionary = alice_dictionary;
     if (scenarios & SCENARIO_BIG_DICTIONARY) {
         dictionary = big_dictionary;
     }
@@ -355,7 +355,7 @@ void zlib_test(
     compressed_buf_len = predicted_max_output_size + 1000;
 
     compressed_buf = (Byte *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (Bytef*)NULL);
+    ASSERT_NE(compressed_buf, (Byte*)NULL);
 
     // get work buf
 
@@ -366,7 +366,7 @@ void zlib_test(
     }
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Bytef*)NULL);
+    ASSERT_NE(work_buf, (Byte*)NULL);
     compressed_buf_len_out = compressed_buf_len;
     // fill work buffer with garbage
     memset((void*)work_buf, 0xa5,work_buf_len);
@@ -582,8 +582,8 @@ void zlib_test(
             compressed_buf_len_out = stream.total_out;
 
             if (scenarios & SCENARIO_DICTIONARY) {
-                Bytef * dictionary_out = (Bytef *) malloc(32768);
-                ASSERT_NE(dictionary_out, (Bytef* )NULL);
+                Byte * dictionary_out = (Byte *) malloc(32768);
+                ASSERT_NE(dictionary_out, (Byte* )NULL);
                 memset(dictionary_out, 0, 32768);
 
                 uInt dict_out_len = 0;
@@ -793,7 +793,7 @@ void zlib_test(
         uInt max_in = (uInt)-1;
         uInt max_out = (uInt)-1;
 
-        stream.next_in = (z_const Bytef *) compressed_buf;
+        stream.next_in = (z_const Byte *) compressed_buf;
         stream.avail_in = 0;
 
         stream.next_work = work_buf;
@@ -827,7 +827,7 @@ void zlib_test(
             uLong bytes_left_dest =  uncompressed_buf_len;
             uLong bytes_left_source =  compressed_buf_len_out;
 
-            stream.next_in = (z_const Bytef *) compressed_buf;
+            stream.next_in = (z_const Byte *) compressed_buf;
             stream.avail_in = 0;
             stream.next_out = uncompressed_buf;
             stream.avail_out = 0;
@@ -936,8 +936,8 @@ void zlib_test(
             uncompressed_buf_len_out = stream.total_out;
 
             if(scenarios & SCENARIO_DICTIONARY) {
-                Bytef * dictionary_out_inf = (Bytef *) malloc(32768);
-                ASSERT_NE(dictionary_out_inf, (Bytef*)NULL);
+                Byte * dictionary_out_inf = (Byte *) malloc(32768);
+                ASSERT_NE(dictionary_out_inf, (Byte*)NULL);
                 uInt dict_out_inf_len = 0;
                 printf("getting dictionary\n");
                 err = inflateGetDictionary(&stream, dictionary_out_inf,
@@ -1449,13 +1449,13 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     err = zsc_compress_get_max_output_size(source_buf_len, max_block_size, level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (Bytef*)NULL);
+    ASSERT_NE(compressed_buf, (Byte*)NULL);
 
 
     err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Bytef*)NULL);
+    ASSERT_NE(work_buf, (Byte*)NULL);
     compressed_buf_len_out = compressed_buf_len;
 
     printf("bad window and mem level\n");
@@ -1524,13 +1524,13 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
             level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
     compressed_buf = (Byte *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (Bytef*)NULL);
+    ASSERT_NE(compressed_buf, (Byte*)NULL);
 
 
     err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Bytef*)NULL);
+    ASSERT_NE(work_buf, (Byte*)NULL);
     compressed_buf_len_out = compressed_buf_len;
 
     err = zsc_compress(compressed_buf, &compressed_buf_len_out,
@@ -1624,8 +1624,8 @@ TEST_F(ZlibTest, DeflateErrors) {
     err = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
-    Bytef *work_buf = (Bytef*)malloc(work_buf_size);
-    ASSERT_NE(work_buf, (Bytef*)NULL);
+    Byte *work_buf = (Byte*)malloc(work_buf_size);
+    ASSERT_NE(work_buf, (Byte*)NULL);
 
 
 //    z_static_mem mem;
@@ -1763,12 +1763,12 @@ TEST_F(ZlibTest, InflateErrors) {
     err = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
-    Bytef *work_buf = (Bytef*)malloc(work_buf_size);
-    ASSERT_NE(work_buf, (Bytef*)NULL);
+    Byte *work_buf = (Byte*)malloc(work_buf_size);
+    ASSERT_NE(work_buf, (Byte*)NULL);
 
     uLong out_buf_size = (uLong)(10000);
-    Bytef *out_buf = (Bytef*)malloc(out_buf_size);
-    ASSERT_NE(out_buf, (Bytef*)NULL);
+    Byte *out_buf = (Byte*)malloc(out_buf_size);
+    ASSERT_NE(out_buf, (Byte*)NULL);
 
 
 //    z_static_mem mem;

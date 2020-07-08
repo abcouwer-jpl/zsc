@@ -28,25 +28,25 @@
 
 int ZEXPORT zsc_uncompress_get_min_work_buf_size2(windowBits, size_out)
     int windowBits;
-    uLongf *size_out;
+    uLong *size_out;
 {
     return inflateWorkSize2(windowBits, size_out);
 }
 
 // get the bounded size of the work buffer
 int ZEXPORT zsc_uncompress_get_min_work_buf_size(size_out)
-    uLongf *size_out;
+    uLong *size_out;
 {
     return inflateWorkSize(size_out);
 }
 
 int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, workLen,
         windowBits, gz_head)
-    Bytef *dest;
-    uLongf *destLen;
-    const Bytef *source;
+    Byte *dest;
+    uLong *destLen;
+    const Byte *source;
     uLong *sourceLen;
-    Bytef *work; // work buffer
+    Byte *work; // work buffer
     uLong workLen;
     int windowBits;
     gz_header * gz_head;
@@ -67,7 +67,7 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
     }
 
     z_stream stream;
-    zmemzero((Bytef*)&stream, sizeof(stream));
+    zmemzero((Byte*)&stream, sizeof(stream));
     stream.next_work = work;
     stream.avail_work = workLen;
 
@@ -85,7 +85,7 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         }
     }
 
-    stream.next_in = (const Bytef *)source;
+    stream.next_in = (const Byte *)source;
     stream.avail_in = *sourceLen;
     stream.next_out = dest;
     stream.avail_out = *destLen;
@@ -147,11 +147,11 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
 
 int ZEXPORT zsc_uncompress_safe2(dest, destLen, source, sourceLen, work, workLen,
         windowBits)
-    Bytef *dest;
-    uLongf *destLen;
-    const Bytef *source;
+    Byte *dest;
+    uLong *destLen;
+    const Byte *source;
     uLong *sourceLen;
-    Bytef *work; // work buffer
+    Byte *work; // work buffer
     uLong workLen;
     int windowBits;
 {
@@ -160,11 +160,11 @@ int ZEXPORT zsc_uncompress_safe2(dest, destLen, source, sourceLen, work, workLen
 }
 
 int ZEXPORT zsc_uncompress (dest, destLen, source, sourceLen, work, workLen)
-    Bytef *dest;
-    uLongf *destLen;
-    const Bytef *source;
+    Byte *dest;
+    uLong *destLen;
+    const Byte *source;
     uLong *sourceLen;
-    Bytef *work; // work buffer
+    Byte *work; // work buffer
     uLong workLen;
 {
     return zsc_uncompress_safe2(dest, destLen, source, sourceLen, work, workLen,
@@ -173,11 +173,11 @@ int ZEXPORT zsc_uncompress (dest, destLen, source, sourceLen, work, workLen)
 
 int ZEXPORT zsc_uncompress_safe_gzip(dest, destLen, source, sourceLen, work, workLen,
         gz_head)
-    Bytef *dest;
-    uLongf *destLen;
-    const Bytef *source;
+    Byte *dest;
+    uLong *destLen;
+    const Byte *source;
     uLong *sourceLen;
-    Bytef *work; // work buffer
+    Byte *work; // work buffer
     uLong workLen;
     gz_header * gz_head;
 {
