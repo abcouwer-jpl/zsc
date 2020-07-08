@@ -96,16 +96,12 @@ ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
 
 // FIXME delete
 
-typedef unsigned char  Byte;  /* 8 bits */
-typedef unsigned int   uInt;  /* 16 bits or more */
-typedef unsigned long  uLong; /* 32 bits or more */
+typedef U8  Byte;  /* 8 bits */
+typedef U32   uInt;  /* 16 bits or more */
+typedef U32  uLong; /* 32 bits or more */
 
 
-typedef void const *voidpc;
-typedef void FAR   *voidpf;
-typedef void       *voidp;
-
-typedef Z_U4 z_crc_t;
+typedef U32 z_crc_t;
 typedef unsigned long z_size_t;
 typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
 

@@ -1227,7 +1227,7 @@ ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Byte *buf, uInt len));
      if (crc != original_crc) error();
 */
 
-ZEXTERN uLong ZEXPORT crc32_z OF((uLong adler, const Byte *buf,
+ZEXTERN uLong ZEXPORT crc32_z OF((uLong crc, const Byte *buf,
                                   z_size_t len));
 /*
      Same as crc32(), but with a size_t length.

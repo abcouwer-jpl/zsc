@@ -352,7 +352,7 @@ void zlib_test(
 
 
     printf("max_output calculated at %lu.\n", predicted_max_output_size);
-    compressed_buf_len = predicted_max_output_size + 1000;
+    compressed_buf_len = predicted_max_output_size;
 
     compressed_buf = (Byte *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (Byte*)NULL);
@@ -873,7 +873,7 @@ void zlib_test(
 
                 if (err == Z_NEED_DICT) {
                     EXPECT_TRUE(scenarios & SCENARIO_DICTIONARY);
-                    printf("inflate() returned Z_NEED_DICT. adler-32 val = %lu. "
+                    printf("inflate() returned Z_NEED_DICT. adler-32 val = %u. "
                             "setting dictionary for inflate\n",
                             stream.adler);
                     err = inflateSetDictionary(&stream, dictionary, dictLength);
@@ -1078,11 +1078,12 @@ TEST_F(ZlibTest, Version) {
 
     // Neil's unit testing was conducted on machine where
     // sizeof(uInt) = 4, sizeof(uLong) = 8,
+    // (but both were switched to 32-bit)
     // sizeof(voidpf) = 8, sizeof(z_off_t) = 8,
     // allow debug flag
     // results may not hold for different machine
     // FIXME test on more machines
-    EXPECT_TRUE(compile_flags == 0xA9 || compile_flags == 0x1A9);
+    EXPECT_TRUE(compile_flags == 0xA5 || compile_flags == 0x1A5);
 }
 
 

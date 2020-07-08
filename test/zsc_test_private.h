@@ -32,7 +32,7 @@
 #define ZSC_PRIVATE static
 #endif
 
-/* ZSC was written with the philosophy that assertions be used to
+/* ZSC was developed with the philosophy that assertions be used to
    check anomalous conditions. Demosaic functions assert if inputs
    indicate there is a logic error.
    See http://spinroot.com/p10/rule5.html.
@@ -58,5 +58,17 @@
 #define ZSC_ASSERT_1(test, arg1) assert(test)
 #define ZSC_ASSERT_2(test, arg1, arg2) assert(test)
 #define ZSC_ASSERT_DBL_1(test, arg1) assert(test)
+
+
+
+// if your framework has messaging/logging infrasturcture, replace here
+// or define as nothing to disable
+// FIXME make better
+#define ZSC_WARN(fmt) printf("WARNING "fmt"\n")
+#define ZSC_WARN1(fmt, arg1) printf("WARNING "fmt"\n", arg1)
+#define ZSC_WARN2(fmt, arg1, arg2) printf("WARNING "fmt"\n", arg1, arg2)
+#define ZSC_WARN3(fmt, arg1, arg2, arg3) printf("WARNING "fmt"\n", arg1, arg2, arg3)
+
+
 
 #endif /* ZSC_CONF_PRIVATE_H */

@@ -50,7 +50,10 @@
 /* @(#) $Id$ */
 
 #include "deflate.h"
-#include <stdio.h>
+#include "zsc_conf_private.h"
+
+#include <stdio.h> // FIXME delete
+
 const char deflate_copyright[] =
    " deflate 1.2.11.f Copyright 1995-2017 Jean-loup Gailly and Mark Adler, Modifications Neil Abcouwer ";
 /*
@@ -226,12 +229,12 @@ local void slide_hash(s)
 #endif
 }
 
-local voidpf deflate_get_work_mem(strm, items, size)
+local void * deflate_get_work_mem(strm, items, size)
     z_stream * strm;
     uInt items;
     uInt size;
 {
-    voidpf new_ptr = Z_NULL;
+    void * new_ptr = Z_NULL;
     // FIXME assert stream not null
     uLong bytes = items * size;
     // FIXME asset no overflow
@@ -281,15 +284,24 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 
     if (version == Z_NULL || version[0] != my_version[0] ||
         stream_size != sizeof(z_stream)) {
+        ZSC_WARN3("deflateInit version error: %d %d %d.",
+                version == Z_NULL,
+                (version == Z_NULL) ? 0 : version[0] != my_version[0],
+                stream_size != sizeof(z_stream));
         return Z_VERSION_ERROR;
     }
     if (strm == Z_NULL) {
+        ZSC_WARN("deflateInit stream error: stream was null.");
         return Z_STREAM_ERROR;
     }
     uLong work_size = (uLong)(-1);
     if(strm->next_work == Z_NULL
             || deflateWorkSize2(windowBits, memLevel, &work_size) != Z_OK
             || strm->avail_work < work_size) {
+        ZSC_WARN3("deflateInit stream error: %d %d %d.",
+                strm->next_work == Z_NULL,
+                deflateWorkSize2(windowBits, memLevel, &work_size),
+                strm->avail_work < work_size);
         return Z_STREAM_ERROR;
     }
 

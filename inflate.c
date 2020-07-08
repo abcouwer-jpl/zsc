@@ -111,12 +111,12 @@ z_stream * strm;
     return 0;
 }
 
-local voidpf inflate_get_work_mem(strm, items, size)
+local void * inflate_get_work_mem(strm, items, size)
     z_stream * strm;
     uInt items;
     uInt size;
 {
-    voidpf new_ptr = Z_NULL;
+    void * new_ptr = Z_NULL;
     // FIXME assert stream not null
     uLong bytes = items * size;
     // FIXME asset no overflow

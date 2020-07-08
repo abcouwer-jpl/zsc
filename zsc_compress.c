@@ -19,6 +19,7 @@
 
 #include "zsc_pub.h"
 #include "zutil.h"
+#include "zsc_conf_private.h"
 
 
 //FIXME delete
@@ -60,7 +61,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     int strategy;               // compression strategy
     gz_header * gz_head;         // gzip header
 {
-        printf("zsc_compress_gzip2 source_len = %lu.\n",
+        printf("zsc_compress_gzip2 source_len = %u.\n",
                 source_len);
 
     // check if work buffer is large enough
@@ -68,11 +69,12 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     int err = zsc_compress_get_min_work_buf_size2(window_bits, mem_level,
             &min_work_buf_size);
     if (err != Z_OK) {
+        ZSC_WARN1("Could not get min work buf size, error %d.", err);
         return err;
     }
     if (work_len < min_work_buf_size) {
-        // work buffer is smaller than bound
-        // FIXME warn
+        ZSC_WARN2("Working memory (%u bytes) was smaller than required (%u bytes).",
+                work_len, min_work_buf_size);
         return Z_MEM_ERROR;
     }
 
@@ -85,6 +87,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     err = deflateInit2(&stream, level, Z_DEFLATED, window_bits, mem_level,
             strategy);
     if (err != Z_OK) {
+        ZSC_WARN1("Could not deflate init, error %d.", err);
         return err;
     }
 
@@ -92,6 +95,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     if (gz_head != Z_NULL) {
         err = deflateSetHeader(&stream, gz_head);
         if (err != Z_OK) {
+            ZSC_WARN1("Could not set deflate header, error %d.", err);
             return err;
         }
     }
@@ -102,10 +106,14 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
     err = zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
             level, window_bits, mem_level, gz_head, &bound2);
     if(err != Z_OK) {
+        ZSC_WARN1("Could not get deflate output bound, error %d.", err);
         return err;
     }
-    int dest_small = (*dest_len < bound1) || (*dest_len < bound2);
-    (void)dest_small; // FIXME make compiler happy until used for warning
+    if((*dest_len < bound1) || (*dest_len < bound2)) {
+        ZSC_WARN3("Output buffer (%u bytes) was smaller than bounds (%u/%u bytes)."
+            "Output may not fit in the buffer.",
+            *dest_len, bound1, bound2);
+    }
 
     stream.next_out = dest;
     stream.avail_out = 0;
@@ -129,7 +137,7 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
             source_len -= stream.avail_in;
         }
         int flush = (source_len > 0) ? Z_FULL_FLUSH : Z_FINISH;
-        printf("deflate cycle %d. before: bytes_left_dest = %lu source_len = %lu, "
+        printf("deflate cycle %d. before: bytes_left_dest = %u source_len = %u, "
                 "avail_in=%u, out=%u, flush = %d, ",
                 cycles, bytes_left_dest, source_len,
                 stream.avail_in, stream.avail_out, flush);
@@ -140,18 +148,19 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
         cycles++;
     } while (err == Z_OK);
     *dest_len = stream.total_out;
-    printf("Compressed to %lu bytes, %d cycles.\n",
+    printf("Compressed to %u bytes, %d cycles.\n",
             stream.total_out, cycles);
 
     if(err != Z_STREAM_END) {
-        // FIXME warn
+        ZSC_WARN1("Deflate loop ended with unexpected error code %d.", err);
         (void)deflateEnd(&stream); // clean up
         return err;
     }
 
     err = deflateEnd(&stream);
-    // FIXME warn if bad
-
+    if (err != Z_OK) {
+        ZSC_WARN1("Deflate ended with error code %d.", err);
+    }
     return err;
 }
 
@@ -236,10 +245,11 @@ int ZEXPORT zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
     gz_header * gz_head; // gzip header
     uLong *size_out;   // bounded size of work buffer
 {
-    int ret = deflateBoundNoStream(source_len,
+    int err = deflateBoundNoStream(source_len,
             level, window_bits, mem_level, gz_head, size_out);
-    if (ret != Z_OK) {
-        return ret;
+    if (err != Z_OK) {
+        ZSC_WARN1("Could not get deflate output bound, error %d.", err);
+        return err;
     }
     // if max_block_len < size_out, we may compress to more than one block
     // of size <= max_block_len for data protection
@@ -248,7 +258,7 @@ int ZEXPORT zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
     int num_extra_blocks = (*size_out / max_block_len) + 1;
     // four extra bytes are stored per block
     *size_out += num_extra_blocks * 4;
-    return ret;
+    return err;
 }
 
 int ZEXPORT zsc_compress_get_max_output_size2(source_len, max_block_len,

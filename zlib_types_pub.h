@@ -152,26 +152,26 @@ typedef enum {
 struct internal_state;
 
 typedef struct z_stream_s {
-    const Byte *next_in;     /* next input byte */
-    uInt     avail_in;  /* number of bytes available at next_in */
-    uLong    total_in;  /* total number of input bytes read so far */
+    const U8 *next_in;     /* next input byte */
+    U32     avail_in;  /* number of bytes available at next_in */
+    U32    total_in;  /* total number of input bytes read so far */
 
-    Byte    *next_out; /* next output byte will go here */
-    uInt     avail_out; /* remaining free space at next_out */
-    uLong    total_out; /* total number of bytes output so far */
+    U8    *next_out; /* next output byte will go here */
+    U32     avail_out; /* remaining free space at next_out */
+    U32    total_out; /* total number of bytes output so far */
 
     // Abcouwer ZSC - removed allocation functions in favor of work buffer
     // must be initialized before call to Init()
-    Byte   *next_work; /* next free space in the work buffer */
-    uInt   avail_work; /* number of bytes available at next_work */
+    U8   *next_work; /* next free space in the work buffer */
+    U32   avail_work; /* number of bytes available at next_work */
 
     const char *msg;  /* last error message, NULL if no error */
     struct internal_state *state; /* not visible by applications */
 
-    int     data_type;  /* best guess about the data type: binary or text
+    ZlibDataType     data_type;  /* best guess about the data type: binary or text
                            for deflate, or the decoding state for inflate */
-    uLong   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
-    uLong   reserved;   /* reserved for future use */
+    U32   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
+    U32   reserved;   /* reserved for future use */
 } z_stream;
 
 /*

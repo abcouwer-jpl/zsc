@@ -199,9 +199,9 @@ const z_crc_t FAR * ZEXPORT get_crc_table()
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
 /* ========================================================================= */
-unsigned long ZEXPORT crc32_z(crc, buf, len)
-    unsigned long crc;
-    const unsigned char FAR *buf;
+uLong ZEXPORT crc32_z(crc, buf, len)
+    uLong crc;
+    const Byte *buf;
     z_size_t len;
 {
     if (buf == Z_NULL) return 0UL;
@@ -235,9 +235,9 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 }
 
 /* ========================================================================= */
-unsigned long ZEXPORT crc32(crc, buf, len)
-    unsigned long crc;
-    const unsigned char FAR *buf;
+uLong ZEXPORT crc32(crc, buf, len)
+    uLong crc;
+    const Byte *buf;
     uInt len;
 {
     return crc32_z(crc, buf, len);
