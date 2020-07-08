@@ -229,7 +229,8 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
     }
     if (len) do {
         DO1;
-    } while (--len);
+        --len;
+    } while (len);
     return crc ^ 0xffffffffUL;
 }
 
@@ -291,7 +292,8 @@ local unsigned long crc32_little(crc, buf, len)
 
     if (len) do {
         c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
-    } while (--len);
+        --len;
+    } while (len);
     c = ~c;
     return (unsigned long)c;
 }
@@ -331,7 +333,8 @@ local unsigned long crc32_big(crc, buf, len)
 
     if (len) do {
         c = crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8);
-    } while (--len);
+        --len;
+    } while (len);
     c = ~c;
     return (unsigned long)(ZSWAP32(c));
 }
@@ -364,8 +367,9 @@ local void gf2_matrix_square(square, mat)
 {
     int n;
 
-    for (n = 0; n < GF2_DIM; n++)
+    for (n = 0; n < GF2_DIM; n++) {
         square[n] = gf2_matrix_times(mat, mat[n]);
+    }
 }
 
 /* ========================================================================= */

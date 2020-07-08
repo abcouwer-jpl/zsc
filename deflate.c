@@ -210,7 +210,8 @@ local void slide_hash(s)
     do {
         m = *--p;
         *p = (Pos)(m >= wsize ? m - wsize : NIL);
-    } while (--n);
+        --n;
+    } while (n);
     n = wsize;
 #ifndef FASTEST
     p = &s->prev[n];
@@ -220,11 +221,12 @@ local void slide_hash(s)
         /* If n is not on any hash chain, prev[n] is garbage but
          * its value will never be used.
          */
-    } while (--n);
+        --n;
+    } while (n);
 #endif
 }
 
-local voidpf deflate_alloc(strm, items, size)
+local voidpf deflate_get_work_mem(strm, items, size)
     z_stream * strm;
     uInt items;
     uInt size;
@@ -312,13 +314,17 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         windowBits -= 16;
     }
 #endif
+    else {
+        // windowbits already proper, wrap remains 1
+    }
+
     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED ||
         windowBits < 8 || windowBits > 15 || level < 0 || level > 9 ||
         strategy < 0 || strategy > Z_FIXED || (windowBits == 8 && wrap != 1)) {
         return Z_STREAM_ERROR;
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
-    s = (deflate_state *) deflate_alloc(strm, 1, sizeof(deflate_state));
+    s = (deflate_state *) deflate_get_work_mem(strm, 1, sizeof(deflate_state));
     if (s == Z_NULL) {
         return Z_MEM_ERROR;
     }
@@ -337,15 +343,15 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
 
-    s->window = (Bytef *) deflate_alloc(strm, s->w_size, 2*sizeof(Byte));
-    s->prev   = (Posf *)  deflate_alloc(strm, s->w_size, sizeof(Pos));
-    s->head   = (Posf *)  deflate_alloc(strm, s->hash_size, sizeof(Pos));
+    s->window = (Bytef *) deflate_get_work_mem(strm, s->w_size, 2*sizeof(Byte));
+    s->prev   = (Posf *)  deflate_get_work_mem(strm, s->w_size, sizeof(Pos));
+    s->head   = (Posf *)  deflate_get_work_mem(strm, s->hash_size, sizeof(Pos));
 
     s->high_water = 0;      /* nothing written to s->window yet */
 
     s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
 
-    overlay = (ushf *) deflate_alloc(strm, s->lit_bufsize, sizeof(ush)+2);
+    overlay = (ushf *) deflate_get_work_mem(strm, s->lit_bufsize, sizeof(ush)+2);
     s->pending_buf = (uchf *) overlay;
     s->pending_buf_size = (ulg)s->lit_bufsize * (sizeof(ush)+2L);
 
@@ -445,7 +451,8 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
 #endif
             s->head[s->ins_h] = (Pos)str;
             str++;
-        } while (--n);
+            --n;
+        } while (n);
         s->strstart = str;
         s->lookahead = MIN_MATCH-1;
         fill_window(s);
@@ -700,20 +707,24 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
         wraplen = 18;
         if (s->gzhead != Z_NULL) {          /* user-supplied gzip header */
             Bytef *str;
-            if (s->gzhead->extra != Z_NULL)
+            if (s->gzhead->extra != Z_NULL) {
                 wraplen += 2 + s->gzhead->extra_len;
+            }
             str = s->gzhead->name;
-            if (str != Z_NULL)
+            if (str != Z_NULL) {
                 do {
                     wraplen++;
                 } while (*str++);
+            }
             str = s->gzhead->comment;
-            if (str != Z_NULL)
+            if (str != Z_NULL) {
                 do {
                     wraplen++;
                 } while (*str++);
-            if (s->gzhead->hcrc)
+            }
+            if (s->gzhead->hcrc) {
                 wraplen += 2;
+            }
         }
         break;
 #endif
@@ -760,6 +771,9 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
         windowBits -= 16;
     }
 #endif
+    else {
+        // windowbits already proper, wrap remains 1
+    }
     // check params
     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL ||
         windowBits < 8 || windowBits > 15 ||
@@ -774,7 +788,7 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
         wraplen = 0;
         break;
     case 1:                                 /* zlib wrapper */
-        wraplen = 6 + 4; // FIXME (s->strstart ? 4 : 0);
+        wraplen = 6 + 4;
         break;
 #ifdef GZIP
     case 2:                                 /* gzip wrapper */
@@ -784,17 +798,19 @@ int ZEXPORT deflateBoundNoStream(sourceLen,
             if (gz_head->extra != Z_NULL)
                 wraplen += 2 + gz_head->extra_len;
             str = gz_head->name;
-            if (str != Z_NULL)
+            if (str != Z_NULL) {
                 do {
                     wraplen++;
                 } while (*str++);
+            }
             str = gz_head->comment;
             if (str != Z_NULL)
                 do {
                     wraplen++;
                 } while (*str++);
-            if (gz_head->hcrc)
+            if (gz_head->hcrc) {
                 wraplen += 2;
+            }
         }
         break;
 #endif
@@ -841,6 +857,9 @@ int deflateWorkSize2(window_bits, mem_level, size_out)
         window_bits -= 16;
     }
 #endif
+    else {
+        // already proper, no change
+    }
 
     if (window_bits == 8) {
         window_bits = 9; /* until 256-byte window bug fixed */
@@ -971,6 +990,8 @@ int ZEXPORT deflate (strm, flush)
     } else if (strm->avail_in == 0 && RANK(flush) <= RANK(old_flush) &&
                flush != Z_FINISH) {
         ERR_RETURN(strm, Z_BUF_ERROR);
+    } else {
+        // no issue so far
     }
 
     /* User must not provide more input after the first FINISH: */
@@ -1202,6 +1223,8 @@ int ZEXPORT deflate (strm, flush)
                         s->insert = 0;
                     }
                 }
+            } else { // flush == Z_BLOCK
+                // do not align to byte boundary
             }
             flush_pending(strm);
             if (strm->avail_out == 0) {
@@ -1352,6 +1375,9 @@ local unsigned read_buf(strm, buf, size)
         strm->adler = crc32(strm->adler, buf, len);
     }
 #endif
+    else {
+        // no check to maintain
+    }
     strm->next_in  += len;
     strm->total_in += len;
 
@@ -1665,12 +1691,13 @@ local void fill_window(s)
         if (sizeof(int) <= 2) {
             if (more == 0 && s->strstart == 0 && s->lookahead == 0) {
                 more = wsize;
-
             } else if (more == (unsigned)(-1)) {
                 /* Very unlikely, but possible on 16 bit machine if
                  * strstart == 0 && lookahead == 1 (input done a byte at time)
                  */
                 more--;
+            } else {
+                // do nothing
             }
         }
 
@@ -1750,8 +1777,7 @@ local void fill_window(s)
                 init = WIN_INIT;
             zmemzero(s->window + curr, (unsigned)init);
             s->high_water = curr + init;
-        }
-        else if (s->high_water < (ulg)curr + WIN_INIT) {
+        } else if (s->high_water < (ulg)curr + WIN_INIT) {
             /* High water mark at or above current data, but below current data
              * plus WIN_INIT -- zero out to current data plus WIN_INIT, or up
              * to end of window, whichever is less.
@@ -1761,6 +1787,8 @@ local void fill_window(s)
                 init = s->window_size - s->high_water;
             zmemzero(s->window + s->high_water, (unsigned)init);
             s->high_water += init;
+        } else {
+            // high water is above, no action required
         }
     }
 
@@ -1918,8 +1946,11 @@ local block_state deflate_stored(s, flush)
                 /* Slide the window down. */
                 s->strstart -= s->w_size;
                 zmemcpy(s->window, s->window + s->w_size, s->strstart);
-                if (s->matches < 2)
+                if (s->matches < 2) {
                     s->matches++;   /* add a pending slide_hash() */
+                }
+            } else {
+                // no sliding needed
             }
             zmemcpy(s->window + s->strstart, s->strm->next_in - used, used);
             s->strstart += used;

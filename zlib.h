@@ -926,11 +926,6 @@ ZEXTERN int ZEXPORT inflateReset2 OF((z_stream * strm,
    the windowBits parameter is invalid.
 */
 
-//ZEXTERN int ZEXPORT inflateGetMinWorkBufSize OF((uLongf *size_out));
-//
-//ZEXTERN int ZEXPORT inflateGetMinWorkBufSize2 OF((int windowBits,
-//                                                   uLongf *size_out));
-//// FIXME number of bytes allocated by inflating
 
 ZEXTERN int ZEXPORT inflatePrime OF((z_stream * strm,
                                      int bits,

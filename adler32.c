@@ -75,26 +75,31 @@ uLong ZEXPORT adler32_z(adler, buf, len)
     /* in case user likes doing a byte at a time, keep it fast */
     if (len == 1) {
         adler += buf[0];
-        if (adler >= BASE)
+        if (adler >= BASE) {
             adler -= BASE;
+        }
         sum2 += adler;
-        if (sum2 >= BASE)
+        if (sum2 >= BASE) {
             sum2 -= BASE;
+        }
         return adler | (sum2 << 16);
     }
 
     /* initial Adler-32 value (deferred check for len == 1 speed) */
-    if (buf == Z_NULL)
+    if (buf == Z_NULL) {
         return 1L;
+    }
 
     /* in case short lengths are provided, keep it somewhat fast */
     if (len < 16) {
-        while (len--) {
+        while (len) {
+            len--;
             adler += *buf++;
             sum2 += adler;
         }
-        if (adler >= BASE)
+        if (adler >= BASE) {
             adler -= BASE;
+        }
         MOD28(sum2);            /* only added so many BASE's */
         return adler | (sum2 << 16);
     }
@@ -106,7 +111,8 @@ uLong ZEXPORT adler32_z(adler, buf, len)
         do {
             DO16(buf);          /* 16 sums unrolled */
             buf += 16;
-        } while (--n);
+            --n;
+        } while (n);
         MOD(adler);
         MOD(sum2);
     }
@@ -118,7 +124,8 @@ uLong ZEXPORT adler32_z(adler, buf, len)
             DO16(buf);
             buf += 16;
         }
-        while (len--) {
+        while (len) {
+            len--;
             adler += *buf++;
             sum2 += adler;
         }

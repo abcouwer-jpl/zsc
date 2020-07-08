@@ -111,7 +111,7 @@ z_stream * strm;
     return 0;
 }
 
-local voidpf inflate_alloc(strm, items, size)
+local voidpf inflate_get_work_mem(strm, items, size)
     z_stream * strm;
     uInt items;
     uInt size;
@@ -140,6 +140,8 @@ int ZEXPORT inflateWorkSize2(windowBits, size_out)
 #ifdef GUNZIP
         if (windowBits < 48) {
             windowBits &= 15;
+        } else {
+            // no special bits to properize
         }
 #endif
     }
@@ -209,7 +211,9 @@ int windowBits;
     struct inflate_state FAR *state;
 
     /* get the state */
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state FAR *)strm->state;
 
     /* extract wrap request from windowBits parameter */
@@ -220,21 +224,19 @@ int windowBits;
     else {
         wrap = (windowBits >> 4) + 5;
 #ifdef GUNZIP
-        if (windowBits < 48)
+        if (windowBits < 48) {
             windowBits &= 15;
+        }
 #endif
     }
 
     /* set number of window bits, free window if different */
-    if (windowBits && (windowBits < 8 || windowBits > 15))
+    if (windowBits && (windowBits < 8 || windowBits > 15)) {
         return Z_STREAM_ERROR;
+    }
     if (state->window != Z_NULL && state->wbits != (unsigned)windowBits) {
-        // modified Neil Abcouwer for zlib-safe
-        // supporting this case (which would be rare) would require
-        // a much more complicated way of handling static memory
+        // Abcouwer ZSC - this case, required dynamic memory. Removed.
         return Z_STREAM_ERROR;
-//        ZFREE(strm, state->window);
-//        state->window = Z_NULL;
     }
 
     /* update state and reset the rest of it */
@@ -270,7 +272,7 @@ int stream_size;
     // Abcouwer ZSC -  dynamic allocation disallowed, removed functions
 
     state = (struct inflate_state FAR *)
-        inflate_alloc(strm, 1, sizeof(struct inflate_state));
+        inflate_get_work_mem(strm, 1, sizeof(struct inflate_state));
     if (state == Z_NULL) {
         return Z_MEM_ERROR;
     }
@@ -367,7 +369,7 @@ unsigned copy;
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {
         state->window = (unsigned char FAR *)
-        inflate_alloc(strm, 1U << state->wbits,
+        inflate_get_work_mem(strm, 1U << state->wbits,
                                sizeof(unsigned char));
         if (state->window == Z_NULL) return 1;
     }
@@ -476,8 +478,9 @@ unsigned copy;
    not enough available input to do that, then return from inflate(). */
 #define NEEDBITS(n) \
     do { \
-        while (bits < (unsigned)(n)) \
+        while (bits < (unsigned)(n)) { \
             PULLBYTE(); \
+        } \
     } while (0)
 
 /* Return the low n bits of the bit accumulator (n < 16) */
@@ -713,9 +716,11 @@ int flush;
                 if ((state->flags & 0x0200) && (state->wrap & 4))
                     CRC2(state->check, hold);
                 INITBITS();
-            }
-            else if (state->head != Z_NULL)
+            } else if (state->head != Z_NULL) {
                 state->head->extra = Z_NULL;
+            } else {
+                // no header, do nothing
+            }
             state->mode = EXTRA;
         case EXTRA:
             if (state->flags & 0x0400) {
@@ -755,9 +760,11 @@ int flush;
                 have -= copy;
                 next += copy;
                 if (len) goto inf_leave;
-            }
-            else if (state->head != Z_NULL)
+            } else if (state->head != Z_NULL) {
                 state->head->name = Z_NULL;
+            } else {
+                // no header, do nothing
+            }
             state->length = 0;
             state->mode = COMMENT;
         case COMMENT:
@@ -776,9 +783,11 @@ int flush;
                 have -= copy;
                 next += copy;
                 if (len) goto inf_leave;
-            }
-            else if (state->head != Z_NULL)
+            } else if (state->head != Z_NULL) {
                 state->head->comment = Z_NULL;
+            } else {
+                // no header, do nothing
+            }
             state->mode = HCRC;
         case HCRC:
             if (state->flags & 0x0200) {
@@ -844,6 +853,9 @@ int flush;
                 break;
             case 3:
                 strm->msg = (char *)"invalid block type";
+                state->mode = BAD;
+            default: // Abcouwer ZSC - misra needs defalt cases
+                strm->msg = (char *)"very invalid block type";
                 state->mode = BAD;
             }
             DROPBITS(2);

@@ -410,9 +410,15 @@ local void init_block(s)
     int n; /* iterates over tree elements */
 
     /* Initialize the trees. */
-    for (n = 0; n < L_CODES;  n++) s->dyn_ltree[n].Freq = 0;
-    for (n = 0; n < D_CODES;  n++) s->dyn_dtree[n].Freq = 0;
-    for (n = 0; n < BL_CODES; n++) s->bl_tree[n].Freq = 0;
+    for (n = 0; n < L_CODES;  n++) {
+        s->dyn_ltree[n].Freq = 0;
+    }
+    for (n = 0; n < D_CODES;  n++) {
+        s->dyn_dtree[n].Freq = 0;
+    }
+    for (n = 0; n < BL_CODES; n++) {
+        s->bl_tree[n].Freq = 0;
+    }
 
     s->dyn_ltree[END_BLOCK].Freq = 1;
     s->opt_len = s->static_len = 0L;
@@ -500,7 +506,9 @@ local void gen_bitlen(s, desc)
     ush f;              /* frequency */
     int overflow = 0;   /* number of elements with bit length too large */
 
-    for (bits = 0; bits <= MAX_BITS; bits++) s->bl_count[bits] = 0;
+    for (bits = 0; bits <= MAX_BITS; bits++) {
+        s->bl_count[bits] = 0;
+    }
 
     /* In a first pass, compute the optimal bit lengths (which may
      * overflow in the case of the bit length tree).
@@ -531,7 +539,9 @@ local void gen_bitlen(s, desc)
     /* Find the first bit length which could increase: */
     do {
         bits = max_length-1;
-        while (s->bl_count[bits] == 0) bits--;
+        while (s->bl_count[bits] == 0) {
+            bits--;
+        }
         s->bl_count[bits]--;      /* move one leaf down the tree */
         s->bl_count[bits+1] += 2; /* move one overflow item as its brother */
         s->bl_count[max_length]--;
@@ -1141,17 +1151,22 @@ local int detect_data_type(s)
     int n;
 
     /* Check for non-textual ("black-listed") bytes. */
-    for (n = 0; n <= 31; n++, black_mask >>= 1)
-        if ((black_mask & 1) && (s->dyn_ltree[n].Freq != 0))
+    for (n = 0; n <= 31; n++, black_mask >>= 1) {
+        if ((black_mask & 1) && (s->dyn_ltree[n].Freq != 0)) {
             return Z_BINARY;
+        }
+    }
 
     /* Check for textual ("white-listed") bytes. */
     if (s->dyn_ltree[9].Freq != 0 || s->dyn_ltree[10].Freq != 0
-            || s->dyn_ltree[13].Freq != 0)
+            || s->dyn_ltree[13].Freq != 0) {
         return Z_TEXT;
-    for (n = 32; n < LITERALS; n++)
-        if (s->dyn_ltree[n].Freq != 0)
+    }
+    for (n = 32; n < LITERALS; n++) {
+        if (s->dyn_ltree[n].Freq != 0) {
             return Z_TEXT;
+        }
+    }
 
     /* There are no "black-listed" or "white-listed" bytes:
      * this stream either is empty or has tolerated ("gray-listed") bytes only.
@@ -1190,6 +1205,8 @@ local void bi_flush(s)
         put_byte(s, (Byte)s->bi_buf);
         s->bi_buf >>= 8;
         s->bi_valid -= 8;
+    } else {
+        // keep remaining bits, do nothing
     }
 }
 
@@ -1203,6 +1220,8 @@ local void bi_windup(s)
         put_short(s, s->bi_buf);
     } else if (s->bi_valid > 0) {
         put_byte(s, (Byte)s->bi_buf);
+    } else {
+        // no bytes to put, do nothing
     }
     s->bi_buf = 0;
     s->bi_valid = 0;

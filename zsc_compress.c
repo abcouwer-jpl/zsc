@@ -105,28 +105,24 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
         return err;
     }
     int dest_small = (*dest_len < bound1) || (*dest_len < bound2);
-    (void)dest_small; // FIXME make compiler happy until used
+    (void)dest_small; // FIXME make compiler happy until used for warning
 
     stream.next_out = dest;
     stream.avail_out = 0;
     stream.next_in = (const Bytef *)source;
-    stream.avail_in = 0; //source_len;
+    stream.avail_in = 0;
 
     uLong bytes_left_dest = *dest_len;
 
     int cycles = 0;
-    int output_blocks = 0;
     do {
-        if (stream.avail_out == 0) {
-            // provide more output
+        if (stream.avail_out == 0) { // provide more output
             stream.avail_out =
                     bytes_left_dest < (uLong) max_block_len ?
                             (uInt) bytes_left_dest : max_block_len;
             bytes_left_dest -= stream.avail_out;
-            output_blocks++;
         }
-        if (stream.avail_in == 0) {
-            // provide more input
+        if (stream.avail_in == 0) { // provide more input
             stream.avail_in =
                     source_len < (uLong) max_block_len ?
                             (uInt) source_len : max_block_len;
@@ -144,8 +140,8 @@ int ZEXPORT zsc_compress_gzip2(dest, dest_len, source, source_len, max_block_len
         cycles++;
     } while (err == Z_OK);
     *dest_len = stream.total_out;
-    printf("Compressed to %lu bytes, %d cycles, %d blocks.\n",
-            stream.total_out, cycles, output_blocks);
+    printf("Compressed to %lu bytes, %d cycles.\n",
+            stream.total_out, cycles);
 
     if(err != Z_STREAM_END) {
         // FIXME warn

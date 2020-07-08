@@ -1393,6 +1393,33 @@ TEST_F(ZlibTest, GZipInflateWindowBits0) {
     zlib_test_alice(WRAP_GZIP_BASIC, SCENARIO_INFLATE_BITS0);
 }
 
+TEST_F(ZlibTest, Bounds) {
+
+    printf("Test how string sizes add to output size\n");
+    gz_header head1;
+    memset(&head1, 0, sizeof(head1));
+    head1.extra = Z_NULL;
+    head1.name = Z_NULL;
+    head1.comment = Z_NULL;
+
+    uLong source_len = 1000;
+    uLong max_block_len = 10000;
+    int level = Z_DEFAULT_COMPRESSION;
+    uLong size_out1 = -1;
+    zsc_compress_get_max_output_size_gzip(
+            source_len, max_block_len, level, &head1, &size_out1);
+
+    head1.name = (Byte *) malloc(50);
+    sprintf((char*)head1.name,"Hello");
+    uLong size_out2 = -1;
+    zsc_compress_get_max_output_size_gzip(
+            source_len, max_block_len, level, &head1, &size_out2);
+
+    EXPECT_EQ(size_out1 + 6, size_out2);
+
+    free(head1.name);
+
+}
 
 TEST_F(ZlibTest, CompressSafeErrors) {
     printf("test errors in compress_safe\n");
