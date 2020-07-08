@@ -36,9 +36,9 @@
 #endif
 #ifdef BYFOUR
    local unsigned long crc32_little OF((unsigned long,
-                        const unsigned char FAR *, z_size_t));
+                        const U8 FAR *, z_size_t));
    local unsigned long crc32_big OF((unsigned long,
-                        const unsigned char FAR *, z_size_t));
+                        const U8 FAR *, z_size_t));
 #  define TBLS 8
 #else
 #  define TBLS 1
@@ -216,7 +216,7 @@ uLong ZEXPORT crc32_z(crc, buf, len)
         z_crc_t endian;
 
         endian = 1;
-        if (*((unsigned char *)(&endian)))
+        if (*((U8 *)(&endian)))
             return crc32_little(crc, buf, len);
         else
             return crc32_big(crc, buf, len);
@@ -266,7 +266,7 @@ uLong ZEXPORT crc32(crc, buf, len)
 /* ========================================================================= */
 local unsigned long crc32_little(crc, buf, len)
     unsigned long crc;
-    const unsigned char FAR *buf;
+    const U8 FAR *buf;
     z_size_t len;
 {
     register z_crc_t c;
@@ -288,7 +288,7 @@ local unsigned long crc32_little(crc, buf, len)
         DOLIT4;
         len -= 4;
     }
-    buf = (const unsigned char FAR *)buf4;
+    buf = (const U8 FAR *)buf4;
 
     if (len) do {
         c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
@@ -307,7 +307,7 @@ local unsigned long crc32_little(crc, buf, len)
 /* ========================================================================= */
 local unsigned long crc32_big(crc, buf, len)
     unsigned long crc;
-    const unsigned char FAR *buf;
+    const U8 FAR *buf;
     z_size_t len;
 {
     register z_crc_t c;
@@ -329,7 +329,7 @@ local unsigned long crc32_big(crc, buf, len)
         DOBIG4;
         len -= 4;
     }
-    buf = (const unsigned char FAR *)buf4;
+    buf = (const U8 FAR *)buf4;
 
     if (len) do {
         c = crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8);

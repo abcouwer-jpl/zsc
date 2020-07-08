@@ -92,9 +92,9 @@
 /* function prototypes */
 local int inflateStateCheck OF((z_stream * strm));
 local void fixedtables OF((struct inflate_state FAR *state));
-local int updatewindow OF((z_stream * strm, const unsigned char FAR *end,
+local int updatewindow OF((z_stream * strm, const U8 FAR *end,
                            unsigned copy));
-local unsigned syncsearch OF((unsigned FAR *have, const unsigned char FAR *buf,
+local unsigned syncsearch OF((unsigned FAR *have, const U8 FAR *buf,
                               unsigned len));
 
 local int inflateStateCheck(strm)
@@ -153,7 +153,7 @@ int ZEXPORT inflateWorkSize2(windowBits, size_out)
 
     uLong size = 0;
     size += sizeof(struct inflate_state);
-    size += (1U << windowBits) * sizeof(unsigned char);
+    size += (1U << windowBits) * sizeof(U8);
     *size_out = size;
 
     return Z_OK;
@@ -248,7 +248,7 @@ int windowBits;
 int ZEXPORT inflateInit2_(strm, windowBits, version, stream_size)
 z_stream * strm;
 int windowBits;
-const char *version;
+const U8 *version;
 int stream_size;
 {
     int ret;
@@ -290,7 +290,7 @@ int stream_size;
 
 int ZEXPORT inflateInit_(strm, version, stream_size)
 z_stream * strm;
-const char *version;
+const U8 *version;
 int stream_size;
 {
     return inflateInit2_(strm, DEF_WBITS, version, stream_size);
@@ -368,9 +368,9 @@ unsigned copy;
 
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {
-        state->window = (unsigned char FAR *)
+        state->window = (U8 FAR *)
         inflate_get_work_mem(strm, 1U << state->wbits,
-                               sizeof(unsigned char));
+                               sizeof(U8));
         if (state->window == Z_NULL) return 1;
     }
 
@@ -420,17 +420,17 @@ unsigned copy;
 #ifdef GUNZIP
 #  define CRC2(check, word) \
     do { \
-        hbuf[0] = (unsigned char)(word); \
-        hbuf[1] = (unsigned char)((word) >> 8); \
+        hbuf[0] = (U8)(word); \
+        hbuf[1] = (U8)((word) >> 8); \
         check = crc32(check, hbuf, 2); \
     } while (0)
 
 #  define CRC4(check, word) \
     do { \
-        hbuf[0] = (unsigned char)(word); \
-        hbuf[1] = (unsigned char)((word) >> 8); \
-        hbuf[2] = (unsigned char)((word) >> 16); \
-        hbuf[3] = (unsigned char)((word) >> 24); \
+        hbuf[0] = (U8)(word); \
+        hbuf[1] = (U8)((word) >> 8); \
+        hbuf[2] = (U8)((word) >> 16); \
+        hbuf[3] = (U8)((word) >> 24); \
         check = crc32(check, hbuf, 4); \
     } while (0)
 #endif
@@ -588,20 +588,20 @@ z_stream * strm;
 int flush;
 {
     struct inflate_state FAR *state;
-    z_const unsigned char FAR *next;    /* next input */
-    unsigned char FAR *put;     /* next output */
+    z_const U8 FAR *next;    /* next input */
+    U8 FAR *put;     /* next output */
     unsigned have, left;        /* available input and output */
     unsigned long hold;         /* bit buffer */
     unsigned bits;              /* bits in bit buffer */
     unsigned in, out;           /* save starting available input and output */
     unsigned copy;              /* number of stored or match bytes to copy */
-    unsigned char FAR *from;    /* where to copy match bytes from */
+    U8 FAR *from;    /* where to copy match bytes from */
     code here;                  /* current decoding table entry */
     code last;                  /* parent table entry */
     unsigned len;               /* length to copy for repeats, bits to drop */
     int ret;                    /* return code */
 #ifdef GUNZIP
-    unsigned char hbuf[4];      /* buffer for gzip header crc calculation */
+    U8 hbuf[4];      /* buffer for gzip header crc calculation */
 #endif
     static const unsigned short order[19] = /* permutation of code lengths */
         {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
@@ -644,12 +644,12 @@ int flush;
             if (
 #endif
                 ((BITS(8) << 8) + (hold >> 8)) % 31) {
-                strm->msg = (char *)"incorrect header check";
+                strm->msg = (U8*)"incorrect header check";
                 state->mode = BAD;
                 break;
             }
             if (BITS(4) != Z_DEFLATED) {
-                strm->msg = (char *)"unknown compression method";
+                strm->msg = (U8*)"unknown compression method";
                 state->mode = BAD;
                 break;
             }
@@ -659,7 +659,7 @@ int flush;
                 state->wbits = len;
             }
             if (len > 15 || len > state->wbits) {
-                strm->msg = (char *)"invalid window size";
+                strm->msg = (U8*)"invalid window size";
                 state->mode = BAD;
                 break;
             }
@@ -674,12 +674,12 @@ int flush;
             NEEDBITS(16);
             state->flags = (int)(hold);
             if ((state->flags & 0xff) != Z_DEFLATED) {
-                strm->msg = (char *)"unknown compression method";
+                strm->msg = (U8*)"unknown compression method";
                 state->mode = BAD;
                 break;
             }
             if (state->flags & 0xe000) {
-                strm->msg = (char *)"unknown header flags set";
+                strm->msg = (U8*)"unknown header flags set";
                 state->mode = BAD;
                 break;
             }
@@ -793,7 +793,7 @@ int flush;
             if (state->flags & 0x0200) {
                 NEEDBITS(16);
                 if ((state->wrap & 4) && hold != (state->check & 0xffff)) {
-                    strm->msg = (char *)"header crc mismatch";
+                    strm->msg = (U8*)"header crc mismatch";
                     state->mode = BAD;
                     break;
                 }
@@ -852,10 +852,10 @@ int flush;
                 state->mode = TABLE;
                 break;
             case 3:
-                strm->msg = (char *)"invalid block type";
+                strm->msg = (U8*)"invalid block type";
                 state->mode = BAD;
             default: // Abcouwer ZSC - misra needs defalt cases
-                strm->msg = (char *)"very invalid block type";
+                strm->msg = (U8*)"very invalid block type";
                 state->mode = BAD;
             }
             DROPBITS(2);
@@ -864,7 +864,7 @@ int flush;
             BYTEBITS();                         /* go to byte boundary */
             NEEDBITS(32);
             if ((hold & 0xffff) != ((hold >> 16) ^ 0xffff)) {
-                strm->msg = (char *)"invalid stored block lengths";
+                strm->msg = (U8*)"invalid stored block lengths";
                 state->mode = BAD;
                 break;
             }
@@ -905,7 +905,7 @@ int flush;
             DROPBITS(4);
 #ifndef PKZIP_BUG_WORKAROUND
             if (state->nlen > 286 || state->ndist > 30) {
-                strm->msg = (char *)"too many length or distance symbols";
+                strm->msg = (U8*)"too many length or distance symbols";
                 state->mode = BAD;
                 break;
             }
@@ -927,7 +927,7 @@ int flush;
             ret = inflate_table(CODES, state->lens, 19, &(state->next),
                                 &(state->lenbits), state->work);
             if (ret) {
-                strm->msg = (char *)"invalid code lengths set";
+                strm->msg = (U8*)"invalid code lengths set";
                 state->mode = BAD;
                 break;
             }
@@ -950,7 +950,7 @@ int flush;
                         NEEDBITS(here.bits + 2);
                         DROPBITS(here.bits);
                         if (state->have == 0) {
-                            strm->msg = (char *)"invalid bit length repeat";
+                            strm->msg = (U8*)"invalid bit length repeat";
                             state->mode = BAD;
                             break;
                         }
@@ -973,7 +973,7 @@ int flush;
                         DROPBITS(7);
                     }
                     if (state->have + copy > state->nlen + state->ndist) {
-                        strm->msg = (char *)"invalid bit length repeat";
+                        strm->msg = (U8*)"invalid bit length repeat";
                         state->mode = BAD;
                         break;
                     }
@@ -987,7 +987,7 @@ int flush;
 
             /* check for end-of-block code (better have one) */
             if (state->lens[256] == 0) {
-                strm->msg = (char *)"invalid code -- missing end-of-block";
+                strm->msg = (U8*)"invalid code -- missing end-of-block";
                 state->mode = BAD;
                 break;
             }
@@ -1001,7 +1001,7 @@ int flush;
             ret = inflate_table(LENS, state->lens, state->nlen, &(state->next),
                                 &(state->lenbits), state->work);
             if (ret) {
-                strm->msg = (char *)"invalid literal/lengths set";
+                strm->msg = (U8*)"invalid literal/lengths set";
                 state->mode = BAD;
                 break;
             }
@@ -1010,7 +1010,7 @@ int flush;
             ret = inflate_table(DISTS, state->lens + state->nlen, state->ndist,
                             &(state->next), &(state->distbits), state->work);
             if (ret) {
-                strm->msg = (char *)"invalid distances set";
+                strm->msg = (U8*)"invalid distances set";
                 state->mode = BAD;
                 break;
             }
@@ -1062,7 +1062,7 @@ int flush;
                 break;
             }
             if (here.op & 64) {
-                strm->msg = (char *)"invalid literal/length code";
+                strm->msg = (U8*)"invalid literal/length code";
                 state->mode = BAD;
                 break;
             }
@@ -1098,7 +1098,7 @@ int flush;
             DROPBITS(here.bits);
             state->back += here.bits;
             if (here.op & 64) {
-                strm->msg = (char *)"invalid distance code";
+                strm->msg = (U8*)"invalid distance code";
                 state->mode = BAD;
                 break;
             }
@@ -1114,7 +1114,7 @@ int flush;
             }
 #ifdef INFLATE_STRICT
             if (state->offset > state->dmax) {
-                strm->msg = (char *)"invalid distance too far back";
+                strm->msg = (U8*)"invalid distance too far back";
                 state->mode = BAD;
                 break;
             }
@@ -1128,7 +1128,7 @@ int flush;
                 copy = state->offset - copy;
                 if (copy > state->whave) {
                     if (state->sane) {
-                        strm->msg = (char *)"invalid distance too far back";
+                        strm->msg = (U8*)"invalid distance too far back";
                         state->mode = BAD;
                         break;
                     }
@@ -1168,7 +1168,7 @@ int flush;
             break;
         case LIT:
             if (left == 0) goto inf_leave;
-            *put++ = (unsigned char)(state->length);
+            *put++ = (U8)(state->length);
             left--;
             state->mode = LEN;
             break;
@@ -1187,7 +1187,7 @@ int flush;
                      state->flags ? hold :
 #endif
                      ZSWAP32(hold)) != state->check) {
-                    strm->msg = (char *)"incorrect data check";
+                    strm->msg = (U8*)"incorrect data check";
                     state->mode = BAD;
                     break;
                 }
@@ -1200,7 +1200,7 @@ int flush;
             if (state->wrap && state->flags) {
                 NEEDBITS(32);
                 if (hold != (state->total & 0xffffffffUL)) {
-                    strm->msg = (char *)"incorrect length check";
+                    strm->msg = (U8*)"incorrect length check";
                     state->mode = BAD;
                     break;
                 }
@@ -1378,7 +1378,7 @@ gz_header * head;
  */
 local unsigned syncsearch(have, buf, len)
 unsigned FAR *have;
-const unsigned char FAR *buf;
+const U8 FAR *buf;
 unsigned len;
 {
     unsigned got;
@@ -1405,7 +1405,7 @@ z_stream * strm;
 {
     unsigned len;               /* number of bytes to look at or looked at */
     unsigned long in, out;      /* temporary to save total_in and total_out */
-    unsigned char buf[4];       /* to restore bit buffer to byte string */
+    U8 buf[4];       /* to restore bit buffer to byte string */
     struct inflate_state FAR *state;
 
     /* check parameters */
@@ -1424,7 +1424,7 @@ z_stream * strm;
         state->bits -= state->bits & 7;
         len = 0;
         while (state->bits >= 8) {
-            buf[len++] = (unsigned char)(state->hold);
+            buf[len++] = (U8)(state->hold);
             state->hold >>= 8;
             state->bits -= 8;
         }
@@ -1482,7 +1482,7 @@ z_stream * source;
 {
     struct inflate_state FAR *state;
     struct inflate_state FAR *copy;
-    unsigned char FAR *window;
+    U8 FAR *window;
     unsigned wsize;
 
     /* check input */
@@ -1496,8 +1496,8 @@ z_stream * source;
     if (copy == Z_NULL) return Z_MEM_ERROR;
     window = Z_NULL;
     if (state->window != Z_NULL) {
-        window = (unsigned char FAR *)
-                 ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
+        window = (U8 FAR *)
+                 ZALLOC(source, 1U << state->wbits, sizeof(U8));
         if (window == Z_NULL) {
             ZFREE(source, copy);
             return Z_MEM_ERROR;

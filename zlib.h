@@ -99,7 +99,7 @@ extern "C" {
 
                         /* basic functions */
 
-ZEXTERN const char * ZEXPORT zlibVersion OF((void));
+ZEXTERN const U8 * ZEXPORT zlibVersion OF((void));
 /* The application can compare zlibVersion and ZLIB_VERSION for consistency.
    If the first character differs, the library code actually used is not
    compatible with the zlib.h header file used by the application.  This check
@@ -1018,7 +1018,7 @@ ZEXTERN int ZEXPORT inflateGetHeader OF((z_stream * strm,
 
 /*
 ZEXTERN int ZEXPORT inflateBackInit OF((z_stream * strm, int windowBits,
-                                        unsigned char FAR *window));
+                                        unsigned U8 FAR *window));
 
      Initialize the internal stream state for decompression using inflateBack()
    calls.  The fields zalloc, zfree and opaque in strm must be initialized
@@ -1039,8 +1039,8 @@ ZEXTERN int ZEXPORT inflateBackInit OF((z_stream * strm, int windowBits,
 */
 
 typedef unsigned (*in_func) OF((void FAR *,
-                                z_const unsigned char FAR * FAR *));
-typedef int (*out_func) OF((void FAR *, unsigned char FAR *, unsigned));
+                                z_const U8 FAR * FAR *));
+typedef int (*out_func) OF((void FAR *, U8 FAR *, unsigned));
 
 ZEXTERN int ZEXPORT inflateBack OF((z_stream * strm,
                                     in_func in, void FAR *in_desc,
@@ -1250,18 +1250,18 @@ ZEXTERN uLong ZEXPORT crc32_combine OF((uLong crc1, uLong crc2, z_off_t len2));
  * and the compiler's view of z_stream:
  */
 ZEXTERN int ZEXPORT deflateInit_ OF((z_stream * strm, int level,
-                                     const char *version, int stream_size));
+                                     const U8 *version, int stream_size));
 ZEXTERN int ZEXPORT inflateInit_ OF((z_stream * strm,
-                                     const char *version, int stream_size));
+                                     const U8 *version, int stream_size));
 ZEXTERN int ZEXPORT deflateInit2_ OF((z_stream * strm, int  level, int  method,
                                       int windowBits, int memLevel,
-                                      int strategy, const char *version,
+                                      int strategy, const U8 *version,
                                       int stream_size));
 ZEXTERN int ZEXPORT inflateInit2_ OF((z_stream * strm, int  windowBits,
-                                      const char *version, int stream_size));
+                                      const U8 *version, int stream_size));
 ZEXTERN int ZEXPORT inflateBackInit_ OF((z_stream * strm, int windowBits,
-                                         unsigned char FAR *window,
-                                         const char *version,
+                                         U8 FAR *window,
+                                         const U8 *version,
                                          int stream_size));
 #ifdef Z_PREFIX_SET
 #  define z_deflateInit(strm, level) \
@@ -1279,18 +1279,18 @@ ZEXTERN int ZEXPORT inflateBackInit_ OF((z_stream * strm, int windowBits,
                            ZLIB_VERSION, (int)sizeof(z_stream))
 #else
 #  define deflateInit(strm, level) \
-          deflateInit_((strm), (level), ZLIB_VERSION, (int)sizeof(z_stream))
+          deflateInit_((strm), (level), (U8*)ZLIB_VERSION, (int)sizeof(z_stream))
 #  define inflateInit(strm) \
-          inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
+          inflateInit_((strm), (U8*)ZLIB_VERSION, (int)sizeof(z_stream))
 #  define deflateInit2(strm, level, method, windowBits, memLevel, strategy) \
           deflateInit2_((strm),(level),(method),(windowBits),(memLevel),\
-                        (strategy), ZLIB_VERSION, (int)sizeof(z_stream))
+                        (strategy), (U8*)ZLIB_VERSION, (int)sizeof(z_stream))
 #  define inflateInit2(strm, windowBits) \
-          inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
+          inflateInit2_((strm), (windowBits), (U8*)ZLIB_VERSION, \
                         (int)sizeof(z_stream))
 #  define inflateBackInit(strm, windowBits, window) \
           inflateBackInit_((strm), (windowBits), (window), \
-                           ZLIB_VERSION, (int)sizeof(z_stream))
+                  (U8*)ZLIB_VERSION, (int)sizeof(z_stream))
 #endif
 
 // Abcouwer ZSC - Remove gz functions
@@ -1301,7 +1301,7 @@ ZEXTERN uLong ZEXPORT crc32_combine OF((uLong, uLong, z_off_t));
 
 
 /* undocumented functions */
-ZEXTERN const char   * ZEXPORT zError           OF((int));
+ZEXTERN const U8     * ZEXPORT zError           OF((int));
 ZEXTERN int            ZEXPORT inflateSyncPoint OF((z_stream *));
 ZEXTERN const z_crc_t FAR * ZEXPORT get_crc_table    OF((void));
 ZEXTERN int            ZEXPORT inflateUndermine OF((z_stream *, int));

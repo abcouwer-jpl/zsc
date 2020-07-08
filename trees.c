@@ -874,7 +874,7 @@ local void send_all_trees(s, lcodes, dcodes, blcodes)
  */
 void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
     deflate_state *s;
-    char *buf;       /* input block */
+    U8 *buf;       /* input block */
     ulg stored_len;   /* length of input block */
     int last;         /* one if this is the last block for a file */
 {
@@ -922,7 +922,7 @@ void ZLIB_INTERNAL _tr_align(s)
  */
 void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     deflate_state *s;
-    char *buf;       /* input block, or NULL if too old */
+    U8 *buf;       /* input block, or NULL if too old */
     ulg stored_len;   /* length of input block */
     int last;         /* one if this is the last block for a file */
 {
@@ -964,14 +964,14 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
         if (static_lenb <= opt_lenb) opt_lenb = static_lenb;
 
     } else {
-        Assert(buf != (char*)0, "lost buf");
+        Assert(buf != (U8*)0, "lost buf");
         opt_lenb = static_lenb = stored_len + 5; /* force a stored block */
     }
 
 #ifdef FORCE_STORED
-    if (buf != (char*)0) { /* force stored block */
+    if (buf != (U8*)0) { /* force stored block */
 #else
-    if (stored_len+4 <= opt_lenb && buf != (char*)0) {
+    if (stored_len+4 <= opt_lenb && buf != (U8*)0) {
                        /* 4: two words for the lengths */
 #endif
         /* The test buf != NULL is only necessary if LIT_BUFSIZE > WSIZE.

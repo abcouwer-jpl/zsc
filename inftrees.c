@@ -122,8 +122,8 @@ unsigned short FAR *work;
         root = max;
     }
     if (max == 0) {                     /* no symbols to code at all */
-        here.op = (unsigned char)64;    /* invalid code marker */
-        here.bits = (unsigned char)1;
+        here.op = (U8)64;    /* invalid code marker */
+        here.bits = (U8)1;
         here.val = (unsigned short)0;
         *(*table)++ = here;             /* make a table to force an error */
         *(*table)++ = here;
@@ -227,17 +227,17 @@ unsigned short FAR *work;
     /* process all codes and make table entries */
     for (;;) {
         /* create table entry */
-        here.bits = (unsigned char)(len - drop);
+        here.bits = (U8)(len - drop);
         if (work[sym] + 1U < match) {
-            here.op = (unsigned char)0;
+            here.op = (U8)0;
             here.val = work[sym];
         }
         else if (work[sym] >= match) {
-            here.op = (unsigned char)(extra[work[sym] - match]);
+            here.op = (U8)(extra[work[sym] - match]);
             here.val = base[work[sym] - match];
         }
         else {
-            here.op = (unsigned char)(32 + 64);         /* end of block */
+            here.op = (U8)(32 + 64);         /* end of block */
             here.val = 0;
         }
 
@@ -303,8 +303,8 @@ unsigned short FAR *work;
 
             /* point entry in root table to sub-table */
             low = huff & mask;
-            (*table)[low].op = (unsigned char)curr;
-            (*table)[low].bits = (unsigned char)root;
+            (*table)[low].op = (U8)curr;
+            (*table)[low].bits = (U8)root;
             (*table)[low].val = (unsigned short)(next - *table);
         }
     }
@@ -313,8 +313,8 @@ unsigned short FAR *work;
        at most one remaining entry, since if the code is incomplete, the
        maximum code length that was allowed to get this far is one bit) */
     if (huff != 0) {
-        here.op = (unsigned char)64;            /* invalid code marker */
-        here.bits = (unsigned char)(len - drop);
+        here.op = (U8)64;            /* invalid code marker */
+        here.bits = (U8)(len - drop);
         here.val = (unsigned short)0;
         next[huff] = here;
     }

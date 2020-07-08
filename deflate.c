@@ -54,7 +54,7 @@
 
 #include <stdio.h> // FIXME delete
 
-const char deflate_copyright[] =
+const U8 deflate_copyright[] =
    " deflate 1.2.11.f Copyright 1995-2017 Jean-loup Gailly and Mark Adler, Modifications Neil Abcouwer ";
 /*
   If you use the zlib library in a product, an acknowledgment is welcome
@@ -253,7 +253,7 @@ local void * deflate_get_work_mem(strm, items, size)
 int ZEXPORT deflateInit_(strm, level, version, stream_size)
     z_stream * strm;
     int level;
-    const char *version;
+    const U8 *version;
     int stream_size;
 {
     return deflateInit2_(strm, level, Z_DEFLATED, MAX_WBITS, DEF_MEM_LEVEL,
@@ -270,12 +270,12 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     int  windowBits;
     int  memLevel;
     int  strategy;
-    const char *version;
+    const U8 *version;
     int stream_size;
 {
     deflate_state *s;
     int wrap = 1;
-    static const char my_version[] = ZLIB_VERSION;
+    static const U8 my_version[] = ZLIB_VERSION;
 
     ushf *overlay;
     /* We overlay pending_buf and d_buf+l_buf. This works since the average
@@ -419,7 +419,7 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
     uInt str, n;
     int wrap;
     unsigned avail;
-    z_const unsigned char *next;
+    z_const U8 *next;
 
     if (deflateStateCheck(strm) || dictionary == Z_NULL)
         return Z_STREAM_ERROR;
@@ -1223,7 +1223,7 @@ int ZEXPORT deflate (strm, flush)
             if (flush == Z_PARTIAL_FLUSH) {
                 _tr_align(s);
             } else if (flush != Z_BLOCK) { /* FULL_FLUSH or SYNC_FLUSH */
-                _tr_stored_block(s, (char*)0, 0L, 0);
+                _tr_stored_block(s, (U8*)0, 0L, 0);
                 /* For a full flush, this empty block will be recognized
                  * as a special marker by inflate_sync().
                  */
@@ -1814,8 +1814,8 @@ local void fill_window(s)
  */
 #define FLUSH_BLOCK_ONLY(s, last) { \
    _tr_flush_block(s, (s->block_start >= 0L ? \
-                   (char *)&s->window[(unsigned)s->block_start] : \
-                   (char *)Z_NULL), \
+                   (U8*)&s->window[(unsigned)s->block_start] : \
+                   (U8*)Z_NULL), \
                 (ulg)((long)s->strstart - s->block_start), \
                 (last)); \
    s->block_start = s->strstart; \
@@ -1897,7 +1897,7 @@ local block_state deflate_stored(s, flush)
          * including any pending bits. This also updates the debugging counts.
          */
         last = flush == Z_FINISH && len == left + s->strm->avail_in ? 1 : 0;
-        _tr_stored_block(s, (char *)0, 0L, last);
+        _tr_stored_block(s, (U8*)0, 0L, last);
 
         /* Replace the lengths in the dummy stored block with len. */
         s->pending_buf[s->pending - 4] = len;
@@ -2018,7 +2018,7 @@ local block_state deflate_stored(s, flush)
         len = MIN(left, have);
         last = flush == Z_FINISH && s->strm->avail_in == 0 &&
                len == left ? 1 : 0;
-        _tr_stored_block(s, (char *)s->window + s->block_start, len, last);
+        _tr_stored_block(s, (U8*)s->window + s->block_start, len, last);
         s->block_start += len;
         flush_pending(s->strm);
     }

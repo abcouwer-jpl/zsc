@@ -9,23 +9,23 @@
 // Abcouwer ZSC - no gz files
 
 
-const char * const z_errmsg[10] = {
-    (const char *)"need dictionary",     /* Z_NEED_DICT       2  */
-    (const char *)"stream end",          /* Z_STREAM_END      1  */
-    (const char *)"",                    /* Z_OK              0  */
-    (const char *)"file error",          /* Z_ERRNO         (-1) */
-    (const char *)"stream error",        /* Z_STREAM_ERROR  (-2) */
-    (const char *)"data error",          /* Z_DATA_ERROR    (-3) */
-    (const char *)"insufficient memory", /* Z_MEM_ERROR     (-4) */
-    (const char *)"buffer error",        /* Z_BUF_ERROR     (-5) */
-    (const char *)"incompatible version",/* Z_VERSION_ERROR (-6) */
-    (const char *)""
+const U8 * const z_errmsg[10] = {
+    (const U8 *)"need dictionary",     /* Z_NEED_DICT       2  */
+    (const U8 *)"stream end",          /* Z_STREAM_END      1  */
+    (const U8 *)"",                    /* Z_OK              0  */
+    (const U8 *)"file error",          /* Z_ERRNO         (-1) */
+    (const U8 *)"stream error",        /* Z_STREAM_ERROR  (-2) */
+    (const U8 *)"data error",          /* Z_DATA_ERROR    (-3) */
+    (const U8 *)"insufficient memory", /* Z_MEM_ERROR     (-4) */
+    (const U8 *)"buffer error",        /* Z_BUF_ERROR     (-5) */
+    (const U8 *)"incompatible version",/* Z_VERSION_ERROR (-6) */
+    (const U8 *)""
 };
 
 
-const char * ZEXPORT zlibVersion()
+const U8 * ZEXPORT zlibVersion()
 {
-    return ZLIB_VERSION;
+    return (U8*)ZLIB_VERSION;
 }
 
 uLong ZEXPORT zlibCompileFlags()
@@ -119,7 +119,7 @@ uLong ZEXPORT zlibCompileFlags()
 int ZLIB_INTERNAL z_verbose = verbose;
 
 void ZLIB_INTERNAL z_error (m)
-    char *m;
+    U8 *m;
 {
     fprintf(stderr, "%s\n", m);
     exit(1);
@@ -129,7 +129,7 @@ void ZLIB_INTERNAL z_error (m)
 /* exported to allow conversion of error code to string for compress() and
  * uncompress()
  */
-const char * ZEXPORT zError(err)
+const U8 * ZEXPORT zError(err)
     int err;
 {
     return ERR_MSG(err);

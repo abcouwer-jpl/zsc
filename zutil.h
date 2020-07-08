@@ -40,13 +40,14 @@
    define "local" for the non-static meaning of "static", for readability
    (compile with -Dlocal if your debugger can't find static symbols) */
 
-typedef unsigned char  uch;
+   // FIXME remove
+typedef U8  uch;
 typedef uch FAR uchf;
-typedef unsigned short ush;
+typedef U32 ush;
 typedef ush FAR ushf;
-typedef unsigned long  ulg;
+typedef U32  ulg;
 
-extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
+extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* (size given to avoid silly warnings with Visual C++) */
 
 #define ERR_MSG(err) z_errmsg[Z_NEED_DICT-(err)]

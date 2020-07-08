@@ -165,7 +165,7 @@ typedef struct z_stream_s {
     U8   *next_work; /* next free space in the work buffer */
     U32   avail_work; /* number of bytes available at next_work */
 
-    const char *msg;  /* last error message, NULL if no error */
+    const U8 *msg;  /* last error message, NULL if no error */
     struct internal_state *state; /* not visible by applications */
 
     ZlibDataType     data_type;  /* best guess about the data type: binary or text

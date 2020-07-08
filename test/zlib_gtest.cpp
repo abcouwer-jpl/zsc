@@ -351,7 +351,7 @@ void zlib_test(
     EXPECT_EQ(err, Z_OK);
 
 
-    printf("max_output calculated at %lu.\n", predicted_max_output_size);
+    printf("max_output calculated at %u.\n", predicted_max_output_size);
     compressed_buf_len = predicted_max_output_size;
 
     compressed_buf = (Byte *) malloc(compressed_buf_len);
@@ -371,7 +371,7 @@ void zlib_test(
     // fill work buffer with garbage
     memset((void*)work_buf, 0xa5,work_buf_len);
 
-    printf("Compressed buf size: %lu. Work buf size: %lu.\n",
+    printf("Compressed buf size: %u. Work buf size: %u.\n",
             compressed_buf_len, work_buf_len);
 
     if(scenarios == SCENARIO_BASIC
@@ -632,7 +632,7 @@ void zlib_test(
 
     free(work_buf);
 
-    printf("Compressed to size: %lu.\n",
+    printf("Compressed to size: %u.\n",
             compressed_buf_len_out);
 
     // sync search
@@ -727,7 +727,7 @@ void zlib_test(
     // fill work buffer with garbage
     memset((void*)work_buf, 0x5a,work_buf_len);
 
-    printf("Uncompress. Work buf size: %lu.\n",
+    printf("Uncompress. Work buf size: %u.\n",
             work_buf_len);
 
     uLong uncompressed_buf_len_out = uncompressed_buf_len;
@@ -777,7 +777,7 @@ void zlib_test(
             EXPECT_EQ(err, Z_OK);
         }
 
-        printf("uncompressed len: %lu\n", uncompressed_buf_len_out);
+        printf("uncompressed len: %u\n", uncompressed_buf_len_out);
 
     } else {
 
@@ -1068,12 +1068,12 @@ TEST_F(ZlibTest, Version) {
         fprintf(stderr, "incompatible zlib version\n");
         exit(1);
 
-    } else if (strcmp(zlibVersion(), ZLIB_VERSION) != 0) {
+    } else if (strcmp((char*)zlibVersion(), ZLIB_VERSION) != 0) {
         fprintf(stderr, "warning: different zlib version\n");
     }
 
     uLong compile_flags = zlibCompileFlags();
-    printf("zlib version %s = 0x%04x, compile flags = 0x%lx\n",
+    printf("zlib version %s = 0x%04x, compile flags = 0x%x\n",
             ZLIB_VERSION, ZLIB_VERNUM, zlibCompileFlags());
 
     // Neil's unit testing was conducted on machine where
@@ -1599,19 +1599,19 @@ TEST_F(ZlibTest, DeflateErrors) {
     printf("null version gives error\n");
     err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
             DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-            Z_NULL, sizeof(z_stream));
+            (U8*)Z_NULL, sizeof(z_stream));
     EXPECT_EQ(err, Z_VERSION_ERROR);
 
     printf("bad version gives error\n");
     err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
             DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-            "2.0.0.0", sizeof(z_stream));
+            (U8*)"2.0.0.0", sizeof(z_stream));
     EXPECT_EQ(err, Z_VERSION_ERROR);
 
     printf("bad stream size gives error\n");
     err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
             DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-            ZLIB_VERSION, sizeof(z_stream)+1);
+            (U8*)ZLIB_VERSION, sizeof(z_stream)+1);
     EXPECT_EQ(err, Z_VERSION_ERROR);
 
     printf("null stream gives error\n");
@@ -1740,17 +1740,17 @@ TEST_F(ZlibTest, InflateErrors) {
 
     printf("null version gives error\n");
     err = inflateInit2_(Z_NULL, DEF_WBITS,
-            Z_NULL, sizeof(z_stream));
+            (U8*)Z_NULL, sizeof(z_stream));
     EXPECT_EQ(err, Z_VERSION_ERROR);
 
     printf("bad version gives error\n");
     err = inflateInit2_(Z_NULL, DEF_WBITS,
-            "2.0.0.0", sizeof(z_stream));
+            (U8*)"2.0.0.0", sizeof(z_stream));
     EXPECT_EQ(err, Z_VERSION_ERROR);
 
     printf("bad stream size gives error\n");
     err = inflateInit2_(Z_NULL, DEF_WBITS,
-            ZLIB_VERSION, sizeof(z_stream)+1);
+            (U8*)ZLIB_VERSION, sizeof(z_stream)+1);
     EXPECT_EQ(err, Z_VERSION_ERROR);
 
     printf("null stream gives error\n");
