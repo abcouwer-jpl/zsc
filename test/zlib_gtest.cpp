@@ -205,7 +205,7 @@ void zlib_test(
         int level = Z_DEFAULT_COMPRESSION,
         int windowBits = DEF_WBITS,
         int memLevel = DEF_MEM_LEVEL,
-        int strategy = Z_DEFAULT_STRATEGY,
+        ZlibStrategy strategy = Z_DEFAULT_STRATEGY,
         int max_block_size = 100000)
 {
 
@@ -1026,7 +1026,7 @@ void zlib_test_file(
         int level = Z_DEFAULT_COMPRESSION,
         int windowBits = DEF_WBITS,
         int memLevel = DEF_MEM_LEVEL,
-        int strategy = Z_DEFAULT_STRATEGY)
+        ZlibStrategy strategy = Z_DEFAULT_STRATEGY)
 {
     printf("Compress file %s.\n", filename);
     FILE * file = fopen(filename, "r");
@@ -1053,7 +1053,7 @@ void zlib_test_alice(
         int level = Z_DEFAULT_COMPRESSION,
         int windowBits = DEF_WBITS,
         int memLevel = DEF_MEM_LEVEL,
-        int strategy = Z_DEFAULT_STRATEGY)
+        ZlibStrategy strategy = Z_DEFAULT_STRATEGY)
 {
     zlib_test_file("corpus/cantrbry/alice29.txt",
             wrapper, scenarios, level, windowBits, memLevel, strategy);
@@ -1469,7 +1469,8 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     printf("bad strategy\n");
     err = zsc_compress2(compressed_buf, &compressed_buf_len_out,
             source_buf, source_buf_len, max_block_size,
-            work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, DEF_WBITS, DEF_MEM_LEVEL, 42);
+            work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, DEF_WBITS,
+            DEF_MEM_LEVEL, (ZlibStrategy)42);
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
 

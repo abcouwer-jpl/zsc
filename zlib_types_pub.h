@@ -35,8 +35,14 @@
 #define ZLIB_TYPES_PUB_H
 
 #include "zsc_conf_global_types.h"
-//#include "zconf.h"
 
+// check that conf_global_types defined signed sied types correctly
+
+ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
+ZSC_COMPILE_ASSERT(sizeof(I64) == 8, I64BadSize);
+ZSC_COMPILE_ASSERT(sizeof(U8)  == 1,  U8BadSize);
+ZSC_COMPILE_ASSERT(sizeof(U16) == 2, U16BadSize);
+ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
 
 
                         /* constants */
@@ -152,20 +158,20 @@ typedef enum {
 struct internal_state;
 
 typedef struct z_stream_s {
-    const U8 *next_in;     /* next input byte */
+    const U8* next_in;     /* next input byte */
     U32     avail_in;  /* number of bytes available at next_in */
     U32    total_in;  /* total number of input bytes read so far */
 
-    U8    *next_out; /* next output byte will go here */
+    U8*    next_out; /* next output byte will go here */
     U32     avail_out; /* remaining free space at next_out */
     U32    total_out; /* total number of bytes output so far */
 
     // Abcouwer ZSC - removed allocation functions in favor of work buffer
     // must be initialized before call to Init()
-    U8   *next_work; /* next free space in the work buffer */
+    U8*   next_work; /* next free space in the work buffer */
     U32   avail_work; /* number of bytes available at next_work */
 
-    const U8 *msg;  /* last error message, NULL if no error */
+    const U8* msg;  /* last error message, NULL if no error */
     struct internal_state *state; /* not visible by applications */
 
     ZlibDataType     data_type;  /* best guess about the data type: binary or text
@@ -179,19 +185,19 @@ typedef struct z_stream_s {
   for more details on the meanings of these fields.
 */
 typedef struct gz_header_s {
-    I16     text;       /* true if compressed data believed to be text */
-    U32   time;       /* modification time */
-    I16     xflags;     /* extra flags (not used when writing a gzip file) */
-    I16     os;         /* operating system */
-    U8   *extra;     /* pointer to extra field or Z_NULL if none */
-    U16    extra_len;  /* extra field length (valid if extra != Z_NULL) */
-    U16    extra_max;  /* space at extra (only when reading header) */
-    U8   *name;      /* pointer to zero-terminated file name or Z_NULL */
-    U16    name_max;   /* space at name (only when reading header) */
-    U8   *comment;   /* pointer to zero-terminated comment or Z_NULL */
-    U16    comm_max;   /* space at comment (only when reading header) */
-    I16     hcrc;       /* true if there was or will be a header crc */
-    I16     done;       /* true when done reading gzip header (not used
+    I32 text;       /* true if compressed data believed to be text */
+    U32 time;       /* modification time */
+    I32 xflags;     /* extra flags (not used when writing a gzip file) */
+    I32 os;         /* operating system */
+    U8* extra;      /* pointer to extra field or Z_NULL if none */
+    U32 extra_len;  /* extra field length (valid if extra != Z_NULL) */
+    U32 extra_max;  /* space at extra (only when reading header) */
+    U8* name;       /* pointer to zero-terminated file name or Z_NULL */
+    U32 name_max;   /* space at name (only when reading header) */
+    U8* comment;    /* pointer to zero-terminated comment or Z_NULL */
+    U32 comm_max;   /* space at comment (only when reading header) */
+    I32 hcrc;       /* true if there was or will be a header crc */
+    I32 done;       /* true when done reading gzip header (not used
                            when writing a gzip file) */
 } gz_header;
 

@@ -80,19 +80,14 @@
 #endif
 
 
-typedef int16_t I8;
-typedef int16_t I16;
 typedef int32_t I32;
 typedef int64_t I64;
 typedef uint8_t U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
 
-ZSC_COMPILE_ASSERT(sizeof(I16) == 2, I16BadSize);
-ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
-ZSC_COMPILE_ASSERT(sizeof(U8)  == 1,  U8BadSize);
-ZSC_COMPILE_ASSERT(sizeof(U16) == 2, U16BadSize);
-ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
+#define U32_MAX (U32)0xFFFFFFFF
+
 
 // FIXME delete
 

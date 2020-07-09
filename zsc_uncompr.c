@@ -26,39 +26,31 @@
 
 #define GZIP_CODE (16)
 
-int ZEXPORT zsc_uncompress_get_min_work_buf_size2(windowBits, size_out)
-    int windowBits;
-    uLong *size_out;
+ZlibReturn ZEXPORT zsc_uncompress_get_min_work_buf_size2(
+        I32 window_bits, U32 *size_out)
 {
-    return inflateWorkSize2(windowBits, size_out);
+    return inflateWorkSize2(window_bits, size_out);
 }
 
 // get the bounded size of the work buffer
-int ZEXPORT zsc_uncompress_get_min_work_buf_size(size_out)
-    uLong *size_out;
+ZlibReturn ZEXPORT zsc_uncompress_get_min_work_buf_size(U32 *size_out)
 {
     return inflateWorkSize(size_out);
 }
 
-int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, workLen,
-        windowBits, gz_head)
-    Byte *dest;
-    uLong *destLen;
-    const Byte *source;
-    uLong *sourceLen;
-    Byte *work; // work buffer
-    uLong workLen;
-    int windowBits;
-    gz_header * gz_head;
+ZlibReturn ZEXPORT zsc_uncompress_safe_gzip2(
+        U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
+        U8 *work, U32 work_len, I32 window_bits, gz_header * gz_head)
 {
     // check if workbuffer is large enough
-    uLong min_work_buf_size = (uLong)(-1);
+    U32 min_work_buf_size = U32_MAX;
 
-    int err = zsc_uncompress_get_min_work_buf_size2(windowBits, &min_work_buf_size);
+    ZlibReturn err =
+            zsc_uncompress_get_min_work_buf_size2(window_bits, &min_work_buf_size);
     if (err != Z_OK) {
         return err;
     }
-    if (workLen < min_work_buf_size) {
+    if (work_len < min_work_buf_size) {
         // work buffer is smaller than bound
         // FIXME warn
         printf("work buffer is smaller than bound.\n");
@@ -69,9 +61,9 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
     z_stream stream;
     zmemzero((Byte*)&stream, sizeof(stream));
     stream.next_work = work;
-    stream.avail_work = workLen;
+    stream.avail_work = work_len;
 
-    err = inflateInit2(&stream, windowBits);
+    err = inflateInit2(&stream, window_bits);
     if (err != Z_OK) {
         // might be unreachable, as windowbits is checked above
         return err;
@@ -86,12 +78,13 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
     }
 
     stream.next_in = (const Byte *)source;
-    stream.avail_in = *sourceLen;
+    stream.avail_in = *source_len;
     stream.next_out = dest;
-    stream.avail_out = *destLen;
+    stream.avail_out = *dest_len;
 
-    int got_data_err = 0;
-    int cycles = 0;
+    I32 got_data_err = 0;
+    I32 cycles = 0;
+    // FIXME loop limit
     do {
         printf("inflate cycle %d. before: avail_in=%u, out=%u\n",
                 cycles, stream.avail_in, stream.avail_out);
@@ -122,8 +115,8 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         cycles++;
     } while (err == Z_OK);
 
-    *destLen = stream.total_out;
-    *sourceLen = stream.total_in;
+    *dest_len = stream.total_out;
+    *source_len = stream.total_in;
 
     if(err != Z_STREAM_END) {
         printf("inflate failed\n");
@@ -132,7 +125,7 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
         // Z_STREAM_END is expected, not Z_OK
         // Z_OK may indicate there wasn't enough output space
         (void)inflateEnd(&stream); // clean up
-        return (err == Z_OK) ? Z_MEM_ERROR : err;
+        return (err == Z_OK) ? Z_STREAM_ERROR : err; // FIXME stream error?
     }
 
     err = inflateEnd(&stream);
@@ -145,44 +138,28 @@ int ZEXPORT zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, wo
     return err;
 }
 
-int ZEXPORT zsc_uncompress_safe2(dest, destLen, source, sourceLen, work, workLen,
-        windowBits)
-    Byte *dest;
-    uLong *destLen;
-    const Byte *source;
-    uLong *sourceLen;
-    Byte *work; // work buffer
-    uLong workLen;
-    int windowBits;
+ZlibReturn ZEXPORT zsc_uncompress_safe2(
+        U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
+        U8 *work, U32 work_len, I32 window_bits)
 {
-    return zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, workLen,
-            windowBits, Z_NULL);
+    return zsc_uncompress_safe_gzip2(dest, dest_len, source, source_len,
+            work, work_len, window_bits, Z_NULL);
 }
 
-int ZEXPORT zsc_uncompress (dest, destLen, source, sourceLen, work, workLen)
-    Byte *dest;
-    uLong *destLen;
-    const Byte *source;
-    uLong *sourceLen;
-    Byte *work; // work buffer
-    uLong workLen;
+ZlibReturn ZEXPORT zsc_uncompress(
+        U8 *dest, U32 *dest_len, const U8 *source,
+        U32 *source_len, U8 *work, U32 work_len)
 {
-    return zsc_uncompress_safe2(dest, destLen, source, sourceLen, work, workLen,
-            DEF_WBITS);
+    return zsc_uncompress_safe2(dest, dest_len, source, source_len,
+            work, work_len, DEF_WBITS);
 }
 
-int ZEXPORT zsc_uncompress_safe_gzip(dest, destLen, source, sourceLen, work, workLen,
-        gz_head)
-    Byte *dest;
-    uLong *destLen;
-    const Byte *source;
-    uLong *sourceLen;
-    Byte *work; // work buffer
-    uLong workLen;
-    gz_header * gz_head;
+ZlibReturn ZEXPORT zsc_uncompress_safe_gzip(
+        U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
+        U8 *work, U32 work_len, gz_header * gz_head)
 {
-    return zsc_uncompress_safe_gzip2(dest, destLen, source, sourceLen, work, workLen,
-            DEF_WBITS + GZIP_CODE, gz_head);
+    return zsc_uncompress_safe_gzip2(dest, dest_len, source, source_len,
+            work, work_len, DEF_WBITS + GZIP_CODE, gz_head);
 }
 
 
