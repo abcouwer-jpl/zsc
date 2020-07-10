@@ -215,7 +215,7 @@ void zlib_test(
             source_buf_len, wrapper, scenarios,
             level, windowBits, memLevel, strategy, max_block_size);
 
-    int err;
+    ZlibReturn err;
 
     if (scenarios & SCENARIO_BIG_DICTIONARY) {
         scenarios |= SCENARIO_DICTIONARY;
@@ -842,7 +842,7 @@ void zlib_test(
                 }
             }
 
-            int flush = Z_NO_FLUSH;
+            ZlibFlush flush = Z_NO_FLUSH;
             if (scenarios & SCENARIO_INFLATE_BLOCK) {
                 flush = Z_BLOCK;
                 printf("flush = BLOCK. inflate stops on block boundaries\n");
@@ -1459,7 +1459,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     ASSERT_TRUE(nread <= source_buf_len);
     source_buf_len = nread;
 
-    int err;
+    ZlibReturn err;
     int level = Z_DEFAULT_COMPRESSION;
 
     uLong compressed_buf_len;
@@ -1533,7 +1533,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     ASSERT_TRUE(nread <= source_buf_len);
     source_buf_len = nread;
 
-    int err;
+    ZlibReturn err;
 
     uLong compressed_buf_len;
     Byte * compressed_buf;
@@ -1617,7 +1617,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
 TEST_F(ZlibTest, DeflateErrors) {
     printf("test errors in deflate.c\n");
 
-    int err;
+    ZlibReturn err;
 
     printf("null version gives error\n");
     err = deflateInit2_(Z_NULL, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
@@ -1759,7 +1759,7 @@ TEST_F(ZlibTest, DeflateErrors) {
 TEST_F(ZlibTest, InflateErrors) {
     printf("test errors in inflate.c\n");
 
-    int err;
+    ZlibReturn err;
 
     printf("null version gives error\n");
     err = inflateInit2_(Z_NULL, DEF_WBITS,
@@ -2038,7 +2038,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
 TEST_F(ZlibTest, DeflatePrime) {
 
-    int err;
+    ZlibReturn err;
 
     err = deflatePrime(Z_NULL, 5, 31);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -2093,7 +2093,7 @@ TEST_F(ZlibTest, DeflatePrime) {
 
 TEST_F(ZlibTest, InflatePrime) {
 
-    int err;
+    ZlibReturn err;
 
     err = inflatePrime(Z_NULL, 5, 31);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -2154,7 +2154,7 @@ TEST_F(ZlibTest, InflatePrime) {
 TEST_F(ZlibTest, InflateUndocumented) {
     printf("cover undocumented inflate functions\n");
 
-    int err;
+    ZlibReturn err;
 
     err = inflateUndermine(Z_NULL, 42);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -2166,11 +2166,14 @@ TEST_F(ZlibTest, InflateUndocumented) {
 
     mark = inflateMark(Z_NULL);
     EXPECT_EQ(mark, -(1L << 16));
+    EXPECT_EQ(mark, -65536);
+
+
 
     unsigned long codes_used;
 
     codes_used = inflateCodesUsed(Z_NULL);
-    EXPECT_EQ(codes_used, (unsigned long)-1);
+    EXPECT_EQ(codes_used, (U32)-1);
 
 
 }

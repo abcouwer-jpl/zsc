@@ -876,7 +876,7 @@ void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
     deflate_state *s;
     U8 *buf;       /* input block */
     ulg stored_len;   /* length of input block */
-    int last;         /* one if this is the last block for a file */
+    I32 last;         /* one if this is the last block for a file */
 {
     send_bits(s, (STORED_BLOCK<<1)+last, 3);    /* send block type */
     bi_windup(s);        /* align on byte boundary */
@@ -924,7 +924,7 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     deflate_state *s;
     U8 *buf;       /* input block, or NULL if too old */
     ulg stored_len;   /* length of input block */
-    int last;         /* one if this is the last block for a file */
+    I32 last;         /* one if this is the last block for a file */
 {
     ulg opt_lenb, static_lenb; /* opt_len and static_len in bytes */
     int max_blindex = 0;  /* index of last bit length code of non zero freq */
@@ -1020,7 +1020,7 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
 }
 
 /*modified Neil Abcouwer for zlib-safe
- _tr_tally is done inline when DEGUG is not defined
+ _tr_tally is done inline when DEBUG is not defined
  and this code is unused
  see deflate.h */
 #ifdef ZLIB_DEBUG
@@ -1029,10 +1029,10 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
  * Save the match info and tally the frequency counts. Return true if
  * the current block must be flushed.
  */
-int ZLIB_INTERNAL _tr_tally (s, dist, lc)
+I32 ZLIB_INTERNAL _tr_tally (s, dist, lc)
     deflate_state *s;
-    unsigned dist;  /* distance of matched string */
-    unsigned lc;    /* match length-MIN_MATCH or unmatched char (if dist==0) */
+    U32 dist;  /* distance of matched string */
+    U32 lc;    /* match length-MIN_MATCH or unmatched char (if dist==0) */
 {
     s->d_buf[s->last_lit] = (ush)dist;
     s->l_buf[s->last_lit++] = (uch)lc;

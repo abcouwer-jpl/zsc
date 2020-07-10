@@ -128,7 +128,7 @@ void ZLIB_INTERNAL z_error (m)
  * uncompress()
  */
 const U8 * ZEXPORT zError(err)
-    int err;
+    ZlibReturn err;
 {
     return ERR_MSG(err);
 }

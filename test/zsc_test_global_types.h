@@ -62,7 +62,7 @@
 #define ZEXTERN extern
 #define ZEXPORTVA
 #define FAR
-#define Z_U4 unsigned
+#define Z_U4 U32
 #define z_const const
 
 #define z_off_t long

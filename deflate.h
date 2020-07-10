@@ -85,7 +85,7 @@ typedef struct static_tree_desc_s  static_tree_desc;
 
 typedef struct tree_desc_s {
     ct_data *dyn_tree;           /* the dynamic tree */
-    int     max_code;            /* largest code with non zero frequency */
+    I32     max_code;            /* largest code with non zero frequency */
     const static_tree_desc *stat_desc;  /* the corresponding static tree */
 } FAR tree_desc;
 
@@ -302,13 +302,13 @@ ZSC_COMPILE_ASSERT(Z_DEFLATE_STATE_SIZE >= sizeof(deflate_state),
 
         /* in trees.c */
 void ZLIB_INTERNAL _tr_init OF((deflate_state *s));
-int ZLIB_INTERNAL _tr_tally OF((deflate_state *s, unsigned dist, unsigned lc));
+I32 ZLIB_INTERNAL _tr_tally OF((deflate_state *s, U32 dist, U32 lc));
 void ZLIB_INTERNAL _tr_flush_block OF((deflate_state *s, U8 *buf,
-                        ulg stored_len, int last));
+                        ulg stored_len, I32 last));
 void ZLIB_INTERNAL _tr_flush_bits OF((deflate_state *s));
 void ZLIB_INTERNAL _tr_align OF((deflate_state *s));
 void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, U8 *buf,
-                        ulg stored_len, int last));
+                        ulg stored_len, I32 last));
 
 #define d_code(dist) \
    ((dist) < 256 ? _dist_code[dist] : _dist_code[256+((dist)>>7)])
