@@ -1258,7 +1258,6 @@ ZlibFlush flush;
 ZlibReturn ZEXPORT inflateEnd(strm)
 z_stream * strm;
 {
-//    struct inflate_state FAR *state;
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
