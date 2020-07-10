@@ -8,9 +8,7 @@
 #include "inflate.h"
 #include "inffast.h"
 
-#ifdef ASMINF
-#  pragma message("Assembler code may have bugs -- use at your own risk")
-#else
+// Abcouwer ZSC - no assembly included, warnings removed
 
 /*
    Decode literal, length, and distance codes and write out the resulting
@@ -320,4 +318,3 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
    - Moving len -= 3 statement into middle of loop
  */
 
-#endif /* !ASMINF */

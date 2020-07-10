@@ -86,11 +86,7 @@ ZlibReturn ZEXPORT zsc_uncompress_safe_gzip2(
     I32 cycles = 0;
     // FIXME loop limit
     do {
-        printf("inflate cycle %d. before: avail_in=%u, out=%u\n",
-                cycles, stream.avail_in, stream.avail_out);
         err = inflate(&stream, Z_FINISH);
-        printf(" after: avail_in=%u, out=%u, err = %d\n",
-                stream.avail_in, stream.avail_out, err);
         if (err == Z_DATA_ERROR) {
             // there was probably some corruption in the buffer
             got_data_err = 1;

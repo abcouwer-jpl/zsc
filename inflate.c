@@ -1229,12 +1229,7 @@ int flush;
        Note: a memory error from inflate() is non-recoverable.
      */
   inf_leave:
-    printf("inf_leave - ret = %d, mode = %d\n",
-            ret, state->mode);
     RESTORE();
-    printf("inf_leave1 - strm->avail_in = %d, strm->avail_out = %d "
-            "in = %d out = %d\n",
-            strm->avail_in, strm->avail_out, in, out);
     if (state->wsize || (out != strm->avail_out && state->mode < BAD &&
             (state->mode < CHECK || flush != Z_FINISH))) {
         if (updatewindow(strm, strm->next_out, out - strm->avail_out)) {
@@ -1242,24 +1237,15 @@ int flush;
             return Z_MEM_ERROR;
         }
     }
-    printf("inf_leave2 - strm->avail_in = %d, strm->avail_out = %d "
-            "in = %d out = %d\n",
-            strm->avail_in, strm->avail_out, in, out);
     in -= strm->avail_in;
     out -= strm->avail_out;
     strm->total_in += in;
     strm->total_out += out;
     state->total += out;
-    printf("inf_leave3 - strm->avail_in = %d, strm->avail_out = %d "
-            "in = %d out = %d\n",
-            strm->avail_in, strm->avail_out, in, out);
     if ((state->wrap & 4) && out) {
         strm->adler = state->check =
             UPDATE(state->check, strm->next_out - out, out);
     }
-    printf("inf_leave4 - strm->avail_in = %d, strm->avail_out = %d "
-            "in = %d out = %d\n",
-            strm->avail_in, strm->avail_out, in, out);
     strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
                       (state->mode == TYPE ? 128 : 0) +
                       (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);

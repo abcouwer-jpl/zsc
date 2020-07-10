@@ -42,9 +42,7 @@
 
    // FIXME remove
 typedef U8  uch;
-typedef uch FAR uchf;
 typedef U32 ush;
-typedef ush FAR ushf;
 typedef U32  ulg;
 
 extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */

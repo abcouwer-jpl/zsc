@@ -129,7 +129,7 @@ ZEXTERN int ZEXPORT deflateInit OF((z_stream * strm, int level));
 */
 
 
-ZEXTERN int ZEXPORT deflate OF((z_stream * strm, int flush));
+ZEXTERN ZlibReturn ZEXPORT deflate OF((z_stream * strm, ZlibFlush flush));
 /*
     deflate compresses as much data as possible, and stops when the input
   buffer becomes empty or the output buffer becomes full.  It may introduce
@@ -242,7 +242,7 @@ ZEXTERN int ZEXPORT deflate OF((z_stream * strm, int flush));
 */
 
 
-ZEXTERN int ZEXPORT deflateEnd OF((z_stream * strm));
+ZEXTERN ZlibReturn ZEXPORT deflateEnd OF((z_stream * strm));
 /*
      All dynamically allocated data structures for this stream are freed.
    This function discards any unprocessed input and does not flush any pending
@@ -493,7 +493,7 @@ ZEXTERN int ZEXPORT deflateInit2 OF((z_stream * strm,
    compression: this will be done by deflate().
 */
 
-ZEXTERN int ZEXPORT deflateSetDictionary OF((z_stream * strm,
+ZEXTERN ZlibReturn ZEXPORT deflateSetDictionary OF((z_stream * strm,
                                              const Byte *dictionary,
                                              uInt  dictLength));
 /*
@@ -537,7 +537,7 @@ ZEXTERN int ZEXPORT deflateSetDictionary OF((z_stream * strm,
    not perform any compression: this will be done by deflate().
 */
 
-ZEXTERN int ZEXPORT deflateGetDictionary OF((z_stream * strm,
+ZEXTERN ZlibReturn ZEXPORT deflateGetDictionary OF((z_stream * strm,
                                              Byte *dictionary,
                                              uInt  *dictLength));
 /*
@@ -582,7 +582,7 @@ ZEXTERN int ZEXPORT deflateCopy OF((z_stream * dest,
 */
 #endif
 
-ZEXTERN int ZEXPORT deflateReset OF((z_stream * strm));
+ZEXTERN ZlibReturn ZEXPORT deflateReset OF((z_stream * strm));
 /*
      This function is equivalent to deflateEnd followed by deflateInit, but
    does not free and reallocate the internal compression state.  The stream
@@ -593,9 +593,9 @@ ZEXTERN int ZEXPORT deflateReset OF((z_stream * strm));
    stream state was inconsistent (such as zalloc or state being Z_NULL).
 */
 
-ZEXTERN int ZEXPORT deflateParams OF((z_stream * strm,
-                                      int level,
-                                      int strategy));
+ZEXTERN ZlibReturn ZEXPORT deflateParams OF((z_stream * strm,
+                                      I32 level,
+                                      ZlibStrategy strategy));
 /*
      Dynamically update the compression level and compression strategy.  The
    interpretation of level and strategy is as in deflateInit2().  This can be
@@ -630,11 +630,11 @@ ZEXTERN int ZEXPORT deflateParams OF((z_stream * strm,
    retried with more output space.
 */
 
-ZEXTERN int ZEXPORT deflateTune OF((z_stream * strm,
-                                    int good_length,
-                                    int max_lazy,
-                                    int nice_length,
-                                    int max_chain));
+ZEXTERN ZlibReturn ZEXPORT deflateTune OF((z_stream * strm,
+                                    I32 good_length,
+                                    I32 max_lazy,
+                                    I32 nice_length,
+                                    I32 max_chain));
 /*
      Fine tune deflate's internal compression parameters.  This should only be
    used by someone who understands the algorithm used by zlib's deflate for
@@ -662,13 +662,22 @@ ZEXTERN uLong ZEXPORT deflateBound OF((z_stream * strm,
    than Z_FINISH or Z_NO_FLUSH are used.
 */
 
-ZEXTERN int ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
-                                                   int level,
-                                                   int windowBits,
-                                                   int memLevel,
+ZEXTERN ZlibReturn ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
+                                                   I32 level,
+                                                   I32 windowBits,
+                                                   I32 memLevel,
                                                    gz_header * gz_head,
                                                    uLong *size_out));
 
+//ZEXTERN int ZEXPORT deflateBoundNoStreamComplen OF((uLong sourceLen,
+//                                                   int level,
+//                                                   int windowBits,
+//                                                   int memLevel,
+//                                                   uLong *size_out));
+//
+//ZEXTERN int ZEXPORT deflateBoundNoStreamWraplen OF((int windowBits,
+//                                                   gz_header * gz_head,
+//                                                   uLong *size_out));
 
 /**
  * @brief Get minimum size of a work buffer, default compression settings
@@ -678,7 +687,7 @@ ZEXTERN int ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
  * @param size_out  Minimum size required for working memory
  * @return Z_OK if there was no error
  */
-int deflateWorkSize(uLong *size_out);
+ZlibReturn deflateWorkSize(uLong *size_out);
 
 /**
  * @brief Get minimum size of a work buffer, custom compression settings
@@ -692,18 +701,16 @@ int deflateWorkSize(uLong *size_out);
  * @param size_out      Minimum size required for working memory
  * @return Z_STREAM_ERROR if parameters are improper, Z_OK otherwise
  */
-int deflateWorkSize2(int window_bits,
-        int mem_level,
-        uLong *size_out);
+ZlibReturn deflateWorkSize2(I32 window_bits, I32 mem_level, uLong *size_out);
 
 
 
 
 
 
-ZEXTERN int ZEXPORT deflatePending OF((z_stream * strm,
-                                       unsigned *pending,
-                                       int *bits));
+ZEXTERN ZlibReturn ZEXPORT deflatePending OF((z_stream * strm,
+                                       U32 *pending,
+                                       I32 *bits));
 /*
      deflatePending() returns the number of bytes and bits of output that have
    been generated, but not yet provided in the available output.  The bytes not
@@ -716,9 +723,9 @@ ZEXTERN int ZEXPORT deflatePending OF((z_stream * strm,
    stream state was inconsistent.
  */
 
-ZEXTERN int ZEXPORT deflatePrime OF((z_stream * strm,
-                                     int bits,
-                                     int value));
+ZEXTERN ZlibReturn ZEXPORT deflatePrime OF((z_stream * strm,
+                                     I32 bits,
+                                     I32 value));
 /*
      deflatePrime() inserts bits in the deflate output stream.  The intent
    is that this function is used to start off the deflate output with the bits
@@ -733,7 +740,7 @@ ZEXTERN int ZEXPORT deflatePrime OF((z_stream * strm,
    source stream state was inconsistent.
 */
 
-ZEXTERN int ZEXPORT deflateSetHeader OF((z_stream * strm,
+ZEXTERN ZlibReturn ZEXPORT deflateSetHeader OF((z_stream * strm,
                                          gz_header * head));
 /*
      deflateSetHeader() provides gzip header information for when a gzip

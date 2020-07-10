@@ -505,7 +505,7 @@ void zlib_test(
             stream.next_in = source_buf;
             stream.avail_in = 0;
 
-            int flush_type = Z_NO_FLUSH;
+            ZlibFlush flush_type = Z_NO_FLUSH;
 
             if (scenarios & SCENARIO_NO_FLUSH) {
                 printf("doing no flush\n");
@@ -1419,6 +1419,28 @@ TEST_F(ZlibTest, Bounds) {
     EXPECT_EQ(size_out1 + 6, size_out2);
 
     free(head1.name);
+
+    U32 fcn_size;
+    U32 macro_size;
+    printf("sizeof(deflate_state)=%lu\n", sizeof(deflate_state));
+    for(int window_bits = 9; window_bits <=15; window_bits++ ) {
+        for(int mem_level = 1; mem_level <= 9; mem_level++ ) {
+            ZlibReturn ret = zsc_compress_get_min_work_buf_size2(
+                    window_bits, mem_level, &fcn_size);
+            ASSERT_EQ(ret, Z_OK);
+            macro_size = Z_COMPRESS_WORK_SIZE2(window_bits, mem_level);
+            EXPECT_LE(fcn_size, macro_size);
+        }
+    }
+
+    printf("sizeof(inflate_state)=%lu\n", sizeof(inflate_state));
+    for(int window_bits = 9; window_bits <=15; window_bits++ ) {
+        ZlibReturn ret = zsc_uncompress_get_min_work_buf_size2(
+                window_bits, &fcn_size);
+        ASSERT_EQ(ret, Z_OK);
+        macro_size = Z_UNCOMPRESS_WORK_SIZE2(window_bits);
+        EXPECT_LE(fcn_size, macro_size);
+    }
 
 }
 

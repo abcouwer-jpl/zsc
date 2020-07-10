@@ -128,15 +128,8 @@ ZlibReturn ZEXPORT zsc_compress_gzip2(
                             (uInt) source_len : max_block_len;
             source_len -= stream.avail_in;
         }
-        int flush = (source_len > 0) ? Z_FULL_FLUSH : Z_FINISH;
-        printf("deflate cycle %d. before: bytes_left_dest = %u source_len = %u, "
-                "avail_in=%u, out=%u, flush = %d, ",
-                cycles, bytes_left_dest, source_len,
-                stream.avail_in, stream.avail_out, flush);
+        ZlibFlush flush = (source_len > 0) ? Z_FULL_FLUSH : Z_FINISH;
         err = deflate(&stream, flush);
-
-        printf(" after: avail_in=%u, out=%u, err = %d\n",
-                stream.avail_in, stream.avail_out, err);
         cycles++;
     } while (err == Z_OK);
     *dest_len = stream.total_out;
@@ -205,19 +198,28 @@ ZlibReturn ZEXPORT zsc_compress_get_max_output_size_gzip2(
         U32 source_len, U32 max_block_len, I32 level, I32 window_bits,
         I32 mem_level, gz_header * gz_header, U32 *size_out)
 {
+    // determine output bound for the give source_len
+    U32 intermediate_size = U32_MAX;
     ZlibReturn err = deflateBoundNoStream(source_len,
-            level, window_bits, mem_level, gz_header, size_out);
+            level, window_bits, mem_level, gz_header, &intermediate_size);
     if (err != Z_OK) {
         ZSC_WARN1("Could not get deflate output bound, error %d.", err);
         return err;
     }
-    // if max_block_len < size_out, we may compress to more than one block
-    // of size <= max_block_len for data protection
-    // add addition bound for the each restart
+
+    // but we'll be splitting that output into independent blocks
     // FIXME assert not 0
-    I32 num_extra_blocks = (*size_out / max_block_len) + 1;
+    I32 num_blocks = (intermediate_size / max_block_len) + 1;
+
     // four extra bytes are stored per block
-    *size_out += num_extra_blocks * 4;
+    U32 extra_bytes = num_blocks * 4;
+
+    // recalculate output bound
+    err = deflateBoundNoStream(source_len + extra_bytes,
+            level, window_bits, mem_level, gz_header, size_out);
+    if (err != Z_OK) {
+        ZSC_WARN1("Could not get deflate output bound, error %d.", err);
+    }
     return err;
 }
 

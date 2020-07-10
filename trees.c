@@ -139,7 +139,7 @@ local void tr_static_init OF((void));
 local void init_block     OF((deflate_state *s));
 local void pqdownheap     OF((deflate_state *s, ct_data *tree, int k));
 local void gen_bitlen     OF((deflate_state *s, tree_desc *desc));
-local void gen_codes      OF((ct_data *tree, int max_code, ushf *bl_count));
+local void gen_codes      OF((ct_data *tree, int max_code, ush *bl_count));
 local void build_tree     OF((deflate_state *s, tree_desc *desc));
 local void scan_tree      OF((deflate_state *s, ct_data *tree, int max_code));
 local void send_tree      OF((deflate_state *s, ct_data *tree, int max_code));
@@ -582,7 +582,7 @@ local void gen_bitlen(s, desc)
 local void gen_codes (tree, max_code, bl_count)
     ct_data *tree;             /* the tree to decorate */
     int max_code;              /* largest code with non zero frequency */
-    ushf *bl_count;            /* number of codes at each bit length */
+    ush *bl_count;            /* number of codes at each bit length */
 {
     ush next_code[MAX_BITS+1]; /* next code value for each bit length */
     unsigned code = 0;         /* running code value */

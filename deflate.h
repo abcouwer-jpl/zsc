@@ -99,16 +99,16 @@ typedef unsigned IPos;
 
 typedef struct internal_state {
     z_stream * strm;      /* pointer back to this zlib stream */
-    int   status;        /* as the name implies */
+    I32   status;        /* as the name implies */
     Byte *pending_buf;  /* output still pending */
     ulg   pending_buf_size; /* size of pending_buf */
     Byte *pending_out;  /* next pending byte to output to the stream */
     ulg   pending;       /* nb of bytes in the pending buffer */
-    int   wrap;          /* bit 0 true for zlib, bit 1 true for gzip */
+    I32   wrap;          /* bit 0 true for zlib, bit 1 true for gzip */
     gz_header *  gzhead;  /* gzip header information to write */
     ulg   gzindex;       /* where in extra, name, or comment */
-    Byte  method;        /* can only be DEFLATED */
-    int   last_flush;    /* value of flush param for previous deflate call */
+    ZlibMethod  method;        /* can only be DEFLATED */
+    ZlibFlush   last_flush;    /* value of flush param for previous deflate call */
 
                 /* used by deflate.c: */
 
@@ -151,14 +151,14 @@ typedef struct internal_state {
      *   hash_shift * MIN_MATCH >= hash_bits
      */
 
-    long block_start;
+    I32 block_start;
     /* Window position at the beginning of the current output block. Gets
      * negative when the window is moved backwards.
      */
 
     uInt match_length;           /* length of best match */
     IPos prev_match;             /* previous match */
-    int match_available;         /* set if previous match exists */
+    I32 match_available;         /* set if previous match exists */
     uInt strstart;               /* start of string to insert */
     uInt match_start;            /* start of matching string */
     uInt lookahead;              /* number of valid bytes ahead in window */
@@ -185,13 +185,13 @@ typedef struct internal_state {
      * max_insert_length is used only for compression levels <= 3.
      */
 
-    int level;    /* compression level (1..9) */
-    int strategy; /* favor or force Huffman coding*/
+    I32 level;    /* compression level (1..9) */
+    ZlibStrategy strategy; /* favor or force Huffman coding*/
 
     uInt good_match;
     /* Use a faster search when the previous match is longer than this */
 
-    int nice_match; /* Stop searching when current match exceeds this */
+    I32 nice_match; /* Stop searching when current match exceeds this */
 
                 /* used by trees.c: */
     /* Didn't use ct_data typedef below to suppress compiler warning */
@@ -206,9 +206,9 @@ typedef struct internal_state {
     ush bl_count[MAX_BITS+1];
     /* number of codes at each bit length for an optimal tree */
 
-    int heap[2*L_CODES+1];      /* heap used to build the Huffman trees */
-    int heap_len;               /* number of elements in the heap */
-    int heap_max;               /* element of largest frequency */
+    I32 heap[2*L_CODES+1];      /* heap used to build the Huffman trees */
+    I32 heap_len;               /* number of elements in the heap */
+    I32 heap_max;               /* element of largest frequency */
     /* The sons of heap[n] are heap[2*n] and heap[2*n+1]. heap[0] is not used.
      * The same heap array is used to build all trees.
      */
@@ -217,7 +217,7 @@ typedef struct internal_state {
     /* Depth of each subtree used as tie breaker for trees of equal frequency
      */
 
-    uchf *l_buf;          /* buffer for literals or lengths */
+    uch *l_buf;          /* buffer for literals or lengths */
 
     uInt  lit_bufsize;
     /* Size of match buffer for literals/lengths.  There are 4 reasons for
@@ -241,7 +241,7 @@ typedef struct internal_state {
 
     uInt last_lit;      /* running index in l_buf */
 
-    ushf *d_buf;
+    ush *d_buf;
     /* Buffer for distances. To simplify the code, d_buf and l_buf have
      * the same number of elements. To use different lengths, an extra flag
      * array would be necessary.
@@ -261,7 +261,7 @@ typedef struct internal_state {
     /* Output buffer. bits are inserted starting at the bottom (least
      * significant bits).
      */
-    int bi_valid;
+    I32 bi_valid;
     /* Number of valid bits in bi_buf.  All bits above the last valid bit
      * are always zero.
      */
@@ -274,6 +274,11 @@ typedef struct internal_state {
      */
 
 } FAR deflate_state;
+
+// check that our macro for size of the private deflate state is correct
+ZSC_COMPILE_ASSERT(Z_DEFLATE_STATE_SIZE >= sizeof(deflate_state),
+        bad_deflate_state_size);
+
 
 /* Output a byte on the stream.
  * IN assertion: there is enough room in pending_buf.

@@ -60,9 +60,7 @@ uLong ZEXPORT zlibCompileFlags()
 #ifdef ZLIB_DEBUG
     flags += 1 << 8;
 #endif
-#if defined(ASMV) || defined(ASMINF)
-    flags += 1 << 9;
-#endif
+// Abcouwer ZSC - remove assembly functions - defining ASMV/ASMINF won't change
 #ifdef ZLIB_WINAPI
     flags += 1 << 10;
 #endif

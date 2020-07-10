@@ -126,3 +126,7 @@ struct inflate_state {
     int back;                   /* bits back of last unprocessed length/lit */
     unsigned was;               /* initial length of match */
 };
+
+// check that our macro for size of the private deflate state is correct
+ZSC_COMPILE_ASSERT(Z_INFLATE_STATE_SIZE == sizeof(struct inflate_state),
+        bad_inflate_state_size);

@@ -36,7 +36,7 @@
 
 #include "zsc_conf_global_types.h"
 
-// check that conf_global_types defined signed sied types correctly
+// check that conf_global_types defined signed sized types correctly
 
 ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 ZSC_COMPILE_ASSERT(sizeof(I64) == 8, I64BadSize);
@@ -45,9 +45,51 @@ ZSC_COMPILE_ASSERT(sizeof(U16) == 2, U16BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
 
 
-                        /* constants */
-
 #define Z_NULL  0  /// for initializing zalloc, zfree, opaque
+
+// macros for users to define sizes of buffers at compile time
+
+// conservative bound on the largest size of a "compressed" output, given an input
+// assumes the largest wrapper, gzip, will be used, but without filling the
+// name, comment, or extra fields. If those will be filled, the user should add more
+// margin
+#define Z_DEFLATE_OUTPUT_BOUND(source_len) \
+    ((source_len) + \
+           (((source_len)+7) >> 3) + (((source_len)+63) >> 6) + 5 + \
+           18 + 2)
+
+// conservative bound on the largest size of a "compressed" output, given an input
+// and the minimum value max_block_len could take. With a smaller the block size,
+// there will be more overhead
+// assumes the largest wrapper, gzip, will be used, but without filling the
+// name, comment, or extra fields. If those will be filled, the user should add more
+// margin
+#define Z_DEFLATE_OUTPUT_BOUND_BLOCKS(source_len, min_max_block_len) \
+    (Z_DEFLATE_OUTPUT_BOUND((source_len)) + \
+     (Z_DEFLATE_OUTPUT_BOUND((source_len)) / (min_max_block_len) + 1) * 4)
+
+
+// size of the private deflate state
+#define Z_DEFLATE_STATE_SIZE 8656
+// size of work buffer needed for compression
+#define Z_COMPRESS_WORK_SIZE2(window_bits, mem_level) \
+    (Z_DEFLATE_STATE_SIZE + \
+            (1 << (window_bits)) * 2 * sizeof(Byte) + \
+            (1 << (window_bits)) * 2 * sizeof(Pos) + \
+            (1 << ((mem_level)+7)) * sizeof(Pos) + \
+            (1 << ((mem_level)+6)) * (sizeof(ush) +2) )
+
+// size of the private inflate state
+#define Z_INFLATE_STATE_SIZE 7160
+// size of work buffer needed for decompression
+#define Z_UNCOMPRESS_WORK_SIZE2(window_bits) \
+    (Z_INFLATE_STATE_SIZE + (1 << (window_bits)) * sizeof(U8))
+
+
+
+
+/* constants */
+
 
 /* The memory requirements for deflate are (in bytes):
             (1 << (windowBits+2)) +  (1 << (memLevel+9))
@@ -63,13 +105,13 @@ ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
 */
 enum {
     MAX_MEM_LEVEL = 9, ///Maximum value for memLevel in deflateInit2
-    DEF_MEM_LEVEL = 8,
+    DEF_MEM_LEVEL = 8,    //!< DEF_MEM_LEVEL
     /* Maximum value for windowBits in deflateInit2 and inflateInit2.
      * WARNING: reducing MAX_WBITS makes minigzip unable to extract .gz files
      * created by gzip. (Files created by minigzip can still be extracted by
      * gzip.) */
     MAX_WBITS = 15, /// 32K LZ77 window
-    DEF_WBITS = MAX_WBITS,
+    DEF_WBITS = MAX_WBITS,//!< DEF_WBITS
 };
 
 ZSC_COMPILE_ASSERT(DEF_MEM_LEVEL <= MAX_MEM_LEVEL, bad_def_mem_level);
@@ -137,6 +179,10 @@ typedef enum {
 // FIXME Doxygen all types
 
 
+
+
+
+
 /*
 
      ZSC - The application must pass a buffer to next_work (and its size to
@@ -147,7 +193,7 @@ typedef enum {
    to zero.
 
      ZSC - The z_stream originally had function pointers for allocation
-   functions. These have bee replaced with pointer to and size of a work buffer.
+   functions. These have been replaced with pointer to and size of a work buffer.
 
      The fields total_in and total_out can be used for statistics or progress
    reports.  After compression, total_in holds the total size of the
