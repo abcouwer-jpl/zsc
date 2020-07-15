@@ -104,10 +104,10 @@ uch _dist_code[DIST_CODE_LEN];
 uch _length_code[MAX_MATCH-MIN_MATCH+1];
 /* length code for each normalized match length (0 == MIN_MATCH) */
 
-local int base_length[LENGTH_CODES];
+local I32 base_length[LENGTH_CODES];
 /* First normalized length for each code (0 = MIN_MATCH) */
 
-local int base_dist[D_CODES];
+local I32 base_dist[D_CODES];
 /* First normalized distance for each code (0 = distance of 1) */
 
 #else
@@ -181,12 +181,12 @@ local void gen_trees_header OF((void));
  * IN assertion: length <= 16 and value fits in length bits.
  */
 #ifdef ZLIB_DEBUG
-local void send_bits      OF((deflate_state *s, int value, int length));
+local void send_bits      OF((deflate_state *s, I32 value, I32 length));
 
 local void send_bits(s, value, length)
     deflate_state *s;
-    int value;  /* value to send */
-    int length; /* number of bits */
+    I32 value;  /* value to send */
+    I32 length; /* number of bits */
 {
     Tracevv((stderr," l %2d v %4x ", length, value));
     Assert(length > 0 && length <= 15, "invalid length");
@@ -196,7 +196,7 @@ local void send_bits(s, value, length)
      * (16 - bi_valid) bits from value, leaving (width - (16-bi_valid))
      * unused bits in value.
      */
-    if (s->bi_valid > (int)Buf_size - length) {
+    if (s->bi_valid > (I32)Buf_size - length) {
         s->bi_buf |= (ush)value << s->bi_valid;
         put_short(s, s->bi_buf);
         s->bi_buf = (ush)value >> (Buf_size - s->bi_valid);
@@ -209,9 +209,9 @@ local void send_bits(s, value, length)
 #else /* !ZLIB_DEBUG */
 
 #define send_bits(s, value, length) \
-{ int len = length;\
-  if (s->bi_valid > (int)Buf_size - len) {\
-    int val = (int)value;\
+{ I32 len = length;\
+  if (s->bi_valid > (I32)Buf_size - len) {\
+    I32 val = (I32)value;\
     s->bi_buf |= (ush)val << s->bi_valid;\
     put_short(s, s->bi_buf);\
     s->bi_buf = (ush)val >> (Buf_size - s->bi_valid);\
@@ -232,12 +232,12 @@ local void send_bits(s, value, length)
 local void tr_static_init()
 {
 #if defined(GEN_TREES_H) || !defined(STDC)
-    static int static_init_done = 0;
-    int n;        /* iterates over tree elements */
-    int bits;     /* bit counter */
-    int length;   /* length value */
-    int code;     /* code value */
-    int dist;     /* distance index */
+    static I32 static_init_done = 0;
+    I32 n;        /* iterates over tree elements */
+    I32 bits;     /* bit counter */
+    I32 length;   /* length value */
+    I32 code;     /* code value */
+    I32 dist;     /* distance index */
     ush bl_count[MAX_BITS+1];
     /* number of codes at each bit length for an optimal tree */
 
@@ -326,7 +326,7 @@ local void tr_static_init()
 void gen_trees_header()
 {
     FILE *header = fopen("trees.h", "w");
-    int i;
+    I32 i;
 
     Assert (header != NULL, "Can't open trees.h");
     fprintf(header,
@@ -407,7 +407,7 @@ void ZLIB_INTERNAL _tr_init(s)
 local void init_block(s)
     deflate_state *s;
 {
-    int n; /* iterates over tree elements */
+    I32 n; /* iterates over tree elements */
 
     /* Initialize the trees. */
     for (n = 0; n < L_CODES;  n++) {
@@ -459,8 +459,8 @@ local void pqdownheap(s, tree, k)
     ct_data *tree;  /* the tree to restore */
     I32 k;               /* node to move down */
 {
-    int v = s->heap[k];
-    int j = k << 1;  /* left son of k */
+    I32 v = s->heap[k];
+    I32 j = k << 1;  /* left son of k */
     while (j <= s->heap_len) {
         /* Set j to the smallest of the two sons: */
         if (j < s->heap_len &&
@@ -494,17 +494,17 @@ local void gen_bitlen(s, desc)
     tree_desc *desc;    /* the tree descriptor */
 {
     ct_data *tree        = desc->dyn_tree;
-    int max_code         = desc->max_code;
+    I32 max_code         = desc->max_code;
     const ct_data *stree = desc->stat_desc->static_tree;
-    const int *extra    = desc->stat_desc->extra_bits;
-    int base             = desc->stat_desc->extra_base;
-    int max_length       = desc->stat_desc->max_length;
-    int h;              /* heap index */
-    int n, m;           /* iterate over the tree elements */
-    int bits;           /* bit length */
-    int xbits;          /* extra bits */
+    const I32 *extra    = desc->stat_desc->extra_bits;
+    I32 base             = desc->stat_desc->extra_base;
+    I32 max_length       = desc->stat_desc->max_length;
+    I32 h;              /* heap index */
+    I32 n, m;           /* iterate over the tree elements */
+    I32 bits;           /* bit length */
+    I32 xbits;          /* extra bits */
     ush f;              /* frequency */
-    int overflow = 0;   /* number of elements with bit length too large */
+    I32 overflow = 0;   /* number of elements with bit length too large */
 
     for (bits = 0; bits <= MAX_BITS; bits++) {
         s->bl_count[bits] = 0;
@@ -586,8 +586,8 @@ local void gen_codes (tree, max_code, bl_count)
 {
     ush next_code[MAX_BITS+1]; /* next code value for each bit length */
     unsigned code = 0;         /* running code value */
-    int bits;                  /* bit index */
-    int n;                     /* code index */
+    I32 bits;                  /* bit index */
+    I32 n;                     /* code index */
 
     /* The distribution counts are first used to generate the code values
      * without bit reversal.
@@ -604,7 +604,7 @@ local void gen_codes (tree, max_code, bl_count)
     Tracev((stderr,"\ngen_codes: max_code %d ", max_code));
 
     for (n = 0;  n <= max_code; n++) {
-        int len = tree[n].Len;
+        I32 len = tree[n].Len;
         if (len == 0) continue;
         /* Now reverse the bits */
         tree[n].Code = (ush)bi_reverse(next_code[len]++, len);
@@ -628,10 +628,10 @@ local void build_tree(s, desc)
 {
     ct_data *tree         = desc->dyn_tree;
     const ct_data *stree  = desc->stat_desc->static_tree;
-    int elems             = desc->stat_desc->elems;
-    int n, m;          /* iterate over heap elements */
-    int max_code = -1; /* largest code with non zero frequency */
-    int node;          /* new node being created */
+    I32 elems             = desc->stat_desc->elems;
+    I32 n, m;          /* iterate over heap elements */
+    I32 max_code = -1; /* largest code with non zero frequency */
+    I32 node;          /* new node being created */
 
     /* Construct the initial heap, with least frequent element in
      * heap[SMALLEST]. The sons of heap[n] are heap[2*n] and heap[2*n+1].
@@ -717,13 +717,13 @@ local void scan_tree (s, tree, max_code)
     ct_data *tree;   /* the tree to be scanned */
     I32 max_code;    /* and its largest code of non zero frequency */
 {
-    int n;                     /* iterates over all tree elements */
-    int prevlen = -1;          /* last emitted length */
-    int curlen;                /* length of current code */
-    int nextlen = tree[0].Len; /* length of next code */
-    int count = 0;             /* repeat count of the current code */
-    int max_count = 7;         /* max repeat count */
-    int min_count = 4;         /* min repeat count */
+    I32 n;                     /* iterates over all tree elements */
+    I32 prevlen = -1;          /* last emitted length */
+    I32 curlen;                /* length of current code */
+    I32 nextlen = tree[0].Len; /* length of next code */
+    I32 count = 0;             /* repeat count of the current code */
+    I32 max_count = 7;         /* max repeat count */
+    I32 min_count = 4;         /* min repeat count */
 
     if (nextlen == 0) max_count = 138, min_count = 3;
     tree[max_code+1].Len = (ush)0xffff; /* guard */
@@ -760,15 +760,15 @@ local void scan_tree (s, tree, max_code)
 local void send_tree (s, tree, max_code)
     deflate_state *s;
     ct_data *tree; /* the tree to be scanned */
-    int max_code;       /* and its largest code of non zero frequency */
+    I32 max_code;       /* and its largest code of non zero frequency */
 {
-    int n;                     /* iterates over all tree elements */
-    int prevlen = -1;          /* last emitted length */
-    int curlen;                /* length of current code */
-    int nextlen = tree[0].Len; /* length of next code */
-    int count = 0;             /* repeat count of the current code */
-    int max_count = 7;         /* max repeat count */
-    int min_count = 4;         /* min repeat count */
+    I32 n;                     /* iterates over all tree elements */
+    I32 prevlen = -1;          /* last emitted length */
+    I32 curlen;                /* length of current code */
+    I32 nextlen = tree[0].Len; /* length of next code */
+    I32 count = 0;             /* repeat count of the current code */
+    I32 max_count = 7;         /* max repeat count */
+    I32 min_count = 4;         /* min repeat count */
 
     /* tree[max_code+1].Len = -1; */  /* guard already set */
     if (nextlen == 0) max_count = 138, min_count = 3;
@@ -811,7 +811,7 @@ local void send_tree (s, tree, max_code)
 local I32 build_bl_tree(s)
     deflate_state *s;
 {
-    int max_blindex;  /* index of last bit length code of non zero freq */
+    I32 max_blindex;  /* index of last bit length code of non zero freq */
 
     /* Determine the bit length frequencies for literal and distance trees */
     scan_tree(s, (ct_data *)s->dyn_ltree, s->l_desc.max_code);
@@ -845,9 +845,9 @@ local I32 build_bl_tree(s)
  */
 local void send_all_trees(s, lcodes, dcodes, blcodes)
     deflate_state *s;
-    int lcodes, dcodes, blcodes; /* number of codes for each tree */
+    I32 lcodes, dcodes, blcodes; /* number of codes for each tree */
 {
-    int rank;                    /* index in bl_order */
+    I32 rank;                    /* index in bl_order */
 
     Assert (lcodes >= 257 && dcodes >= 1 && blcodes >= 4, "not enough codes");
     Assert (lcodes <= L_CODES && dcodes <= D_CODES && blcodes <= BL_CODES,
@@ -927,7 +927,7 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     I32 last;         /* one if this is the last block for a file */
 {
     ulg opt_lenb, static_lenb; /* opt_len and static_len in bytes */
-    int max_blindex = 0;  /* index of last bit length code of non zero freq */
+    I32 max_blindex = 0;  /* index of last bit length code of non zero freq */
 
     /* Build the Huffman trees unless a stored block is forced */
     if (s->level > 0) {
@@ -1057,7 +1057,7 @@ I32 ZLIB_INTERNAL _tr_tally (s, dist, lc)
         /* Compute an upper bound for the compressed length */
         ulg out_length = (ulg)s->last_lit*8L;
         ulg in_length = (ulg)((long)s->strstart - s->block_start);
-        int dcode;
+        I32 dcode;
         for (dcode = 0; dcode < D_CODES; dcode++) {
             out_length += (ulg)s->dyn_dtree[dcode].Freq *
                 (5L+extra_dbits[dcode]);
@@ -1086,10 +1086,10 @@ local void compress_block(s, ltree, dtree)
     const ct_data *dtree; /* distance tree */
 {
     unsigned dist;      /* distance of matched string */
-    int lc;             /* match length or unmatched char (if dist == 0) */
+    I32 lc;             /* match length or unmatched char (if dist == 0) */
     unsigned lx = 0;    /* running index in l_buf */
     unsigned code;      /* the code to send */
-    int extra;          /* number of extra bits to send */
+    I32 extra;          /* number of extra bits to send */
 
     if (s->last_lit != 0) do {
         dist = s->d_buf[lx];
@@ -1147,8 +1147,8 @@ local I32 detect_data_type(s)
      * set bits 0..6, 14..25, and 28..31
      * 0xf3ffc07f = binary 11110011111111111100000001111111
      */
-    unsigned long black_mask = 0xf3ffc07fUL;
-    int n;
+    U32 black_mask = 0xf3ffc07f;
+    I32 n;
 
     /* Check for non-textual ("black-listed") bytes. */
     for (n = 0; n <= 31; n++, black_mask >>= 1) {
