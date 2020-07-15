@@ -85,48 +85,48 @@ typedef enum {
 struct inflate_state {
     z_stream * strm;             /* pointer back to this zlib stream */
     inflate_mode mode;          /* current inflate mode */
-    int last;                   /* true if processing last block */
-    int wrap;                   /* bit 0 true for zlib, bit 1 true for gzip,
+    I32 last;                   /* true if processing last block */
+    I32 wrap;                   /* bit 0 true for zlib, bit 1 true for gzip,
                                    bit 2 true to validate check value */
-    int havedict;               /* true if dictionary provided */
-    int flags;                  /* gzip header method and flags (0 if zlib) */
-    unsigned dmax;              /* zlib header max distance (INFLATE_STRICT) */
-    unsigned long check;        /* protected copy of check value */
-    unsigned long total;        /* protected copy of output count */
+    I32 havedict;               /* true if dictionary provided */
+    I32 flags;                  /* gzip header method and flags (0 if zlib) */
+    U32 dmax;              /* zlib header max distance (INFLATE_STRICT) */
+    U32 check;        /* protected copy of check value */
+    U32 total;        /* protected copy of output count */
     gz_header * head;            /* where to save gzip header information */
         /* sliding window */
-    unsigned wbits;             /* log base 2 of requested window size */
-    unsigned wsize;             /* window size or zero if not using window */
-    unsigned whave;             /* valid bytes in the window */
-    unsigned wnext;             /* window write index */
+    U32 wbits;             /* log base 2 of requested window size */
+    U32 wsize;             /* window size or zero if not using window */
+    U32 whave;             /* valid bytes in the window */
+    U32 wnext;             /* window write index */
     U8 FAR *window;  /* allocated sliding window, if needed */
         /* bit accumulator */
-    unsigned long hold;         /* input bit accumulator */
-    unsigned bits;              /* number of bits in "in" */
+    U32 hold;         /* input bit accumulator */
+    U32 bits;              /* number of bits in "in" */
         /* for string and stored block copying */
-    unsigned length;            /* literal or length of data to copy */
-    unsigned offset;            /* distance back to copy string from */
+    U32 length;            /* literal or length of data to copy */
+    U32 offset;            /* distance back to copy string from */
         /* for table and code decoding */
-    unsigned extra;             /* extra bits needed */
+    U32 extra;             /* extra bits needed */
         /* fixed and dynamic code tables */
     code const FAR *lencode;    /* starting table for length/literal codes */
     code const FAR *distcode;   /* starting table for distance codes */
-    unsigned lenbits;           /* index bits for lencode */
-    unsigned distbits;          /* index bits for distcode */
+    U32 lenbits;           /* index bits for lencode */
+    U32 distbits;          /* index bits for distcode */
         /* dynamic table building */
-    unsigned ncode;             /* number of code length code lengths */
-    unsigned nlen;              /* number of length code lengths */
-    unsigned ndist;             /* number of distance code lengths */
-    unsigned have;              /* number of code lengths in lens[] */
+    U32 ncode;             /* number of code length code lengths */
+    U32 nlen;              /* number of length code lengths */
+    U32 ndist;             /* number of distance code lengths */
+    U32 have;              /* number of code lengths in lens[] */
     code FAR *next;             /* next available space in codes[] */
-    unsigned short lens[320];   /* temporary storage for code lengths */
-    unsigned short work[288];   /* work area for code table building */
+    U16 lens[320];   /* temporary storage for code lengths */
+    U16 work[288];   /* work area for code table building */
     code codes[ENOUGH];         /* space for code tables */
-    int sane;                   /* if false, allow invalid distance too far */
-    int back;                   /* bits back of last unprocessed length/lit */
-    unsigned was;               /* initial length of match */
+    I32 sane;                   /* if false, allow invalid distance too far */
+    I32 back;                   /* bits back of last unprocessed length/lit */
+    U32 was;               /* initial length of match */
 };
 
 // check that our macro for size of the private deflate state is correct
-ZSC_COMPILE_ASSERT(Z_INFLATE_STATE_SIZE == sizeof(struct inflate_state),
+ZSC_COMPILE_ASSERT(Z_INFLATE_STATE_SIZE >= sizeof(struct inflate_state),
         bad_inflate_state_size);

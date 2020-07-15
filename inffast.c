@@ -47,7 +47,7 @@
  */
 void ZLIB_INTERNAL inflate_fast(strm, start)
 z_stream * strm;
-unsigned start;         /* inflate()'s starting value for strm->avail_out */
+U32 start;         /* inflate()'s starting value for strm->avail_out */
 {
     struct inflate_state FAR *state;
     z_const U8 FAR *in;      /* local strm->next_in */
@@ -56,23 +56,23 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
     U8 FAR *beg;     /* inflate()'s initial strm->next_out */
     U8 FAR *end;     /* while out < end, enough space available */
 #ifdef INFLATE_STRICT
-    unsigned dmax;              /* maximum distance from zlib header */
+    U32 dmax;              /* maximum distance from zlib header */
 #endif
-    unsigned wsize;             /* window size or zero if not using window */
-    unsigned whave;             /* valid bytes in the window */
-    unsigned wnext;             /* window write index */
+    U32 wsize;             /* window size or zero if not using window */
+    U32 whave;             /* valid bytes in the window */
+    U32 wnext;             /* window write index */
     U8 FAR *window;  /* allocated sliding window, if wsize != 0 */
-    unsigned long hold;         /* local strm->hold */
-    unsigned bits;              /* local strm->bits */
+    U32 hold;         /* local strm->hold */
+    U32 bits;              /* local strm->bits */
     code const FAR *lcode;      /* local strm->lencode */
     code const FAR *dcode;      /* local strm->distcode */
-    unsigned lmask;             /* mask for first level of length codes */
-    unsigned dmask;             /* mask for first level of distance codes */
+    U32 lmask;             /* mask for first level of length codes */
+    U32 dmask;             /* mask for first level of distance codes */
     code here;                  /* retrieved table entry */
-    unsigned op;                /* code bits, operation, extra bits, or */
+    U32 op;                /* code bits, operation, extra bits, or */
                                 /*  window position, window bytes to copy */
-    unsigned len;               /* match length, unused bytes */
-    unsigned dist;              /* match distance */
+    U32 len;               /* match length, unused bytes */
+    U32 dist;              /* match distance */
     U8 FAR *from;    /* where to copy match from */
 
     /* copy state to local variables */
@@ -100,17 +100,17 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
        input data or output space */
     do {
         if (bits < 15) {
-            hold += (unsigned long)(*in++) << bits;
+            hold += (U32)(*in++) << bits;
             bits += 8;
-            hold += (unsigned long)(*in++) << bits;
+            hold += (U32)(*in++) << bits;
             bits += 8;
         }
         here = lcode[hold & lmask];
       dolen:
-        op = (unsigned)(here.bits);
+        op = (U32)(here.bits);
         hold >>= op;
         bits -= op;
-        op = (unsigned)(here.op);
+        op = (U32)(here.op);
         if (op == 0) {                          /* literal */
             Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
                     "inflate:         literal '%c'\n" :
@@ -118,42 +118,42 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
             *out++ = (U8)(here.val);
         }
         else if (op & 16) {                     /* length base */
-            len = (unsigned)(here.val);
+            len = (U32)(here.val);
             op &= 15;                           /* number of extra bits */
             if (op) {
                 if (bits < op) {
-                    hold += (unsigned long)(*in++) << bits;
+                    hold += (U32)(*in++) << bits;
                     bits += 8;
                 }
-                len += (unsigned)hold & ((1U << op) - 1);
+                len += (U32)hold & ((1U << op) - 1);
                 hold >>= op;
                 bits -= op;
             }
             Tracevv((stderr, "inflate:         length %u\n", len));
             if (bits < 15) {
-                hold += (unsigned long)(*in++) << bits;
+                hold += (U32)(*in++) << bits;
                 bits += 8;
-                hold += (unsigned long)(*in++) << bits;
+                hold += (U32)(*in++) << bits;
                 bits += 8;
             }
             here = dcode[hold & dmask];
           dodist:
-            op = (unsigned)(here.bits);
+            op = (U32)(here.bits);
             hold >>= op;
             bits -= op;
-            op = (unsigned)(here.op);
+            op = (U32)(here.op);
             if (op & 16) {                      /* distance base */
-                dist = (unsigned)(here.val);
+                dist = (U32)(here.val);
                 op &= 15;                       /* number of extra bits */
                 if (bits < op) {
-                    hold += (unsigned long)(*in++) << bits;
+                    hold += (U32)(*in++) << bits;
                     bits += 8;
                     if (bits < op) {
-                        hold += (unsigned long)(*in++) << bits;
+                        hold += (U32)(*in++) << bits;
                         bits += 8;
                     }
                 }
-                dist += (unsigned)hold & ((1U << op) - 1);
+                dist += (U32)hold & ((1U << op) - 1);
 #ifdef INFLATE_STRICT
                 if (dist > dmax) {
                     strm->msg = (U8*)"invalid distance too far back";
@@ -164,7 +164,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                 hold >>= op;
                 bits -= op;
                 Tracevv((stderr, "inflate:         distance %u\n", dist));
-                op = (unsigned)(out - beg);     /* max distance in output */
+                op = (U32)(out - beg);     /* max distance in output */
                 if (dist > op) {                /* see if copy from window */
                     op = dist - op;             /* distance back in window */
                     if (op > whave) {
@@ -296,8 +296,8 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
     /* update state and return */
     strm->next_in = in;
     strm->next_out = out;
-    strm->avail_in = (unsigned)(in < last ? 5 + (last - in) : 5 - (in - last));
-    strm->avail_out = (unsigned)(out < end ?
+    strm->avail_in = (U32)(in < last ? 5 + (last - in) : 5 - (in - last));
+    strm->avail_out = (U32)(out < end ?
                                  257 + (end - out) : 257 - (out - end));
     state->hold = hold;
     state->bits = bits;

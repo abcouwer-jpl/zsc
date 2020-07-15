@@ -90,14 +90,14 @@
 #include <stdio.h>
 
 /* function prototypes */
-local int inflateStateCheck OF((z_stream * strm));
+local I32 inflateStateCheck OF((z_stream * strm));
 local void fixedtables OF((struct inflate_state FAR *state));
-local int updatewindow OF((z_stream * strm, const U8 FAR *end,
-                           unsigned copy));
-local unsigned syncsearch OF((unsigned FAR *have, const U8 FAR *buf,
-                              unsigned len));
+local I32 updatewindow OF((z_stream * strm, const U8 FAR *end,
+                           U32 copy));
+local U32 syncsearch OF((U32 FAR *have, const U8 FAR *buf,
+                              U32 len));
 
-local int inflateStateCheck(strm)
+local I32 inflateStateCheck(strm)
 z_stream * strm;
 {
     struct inflate_state FAR *state;
@@ -207,7 +207,7 @@ ZlibReturn ZEXPORT inflateReset2(strm, windowBits)
 z_stream * strm;
 I32 windowBits;
 {
-    int wrap;
+    I32 wrap;
     struct inflate_state FAR *state;
 
     /* get the state */
@@ -234,28 +234,28 @@ I32 windowBits;
     if (windowBits && (windowBits < 8 || windowBits > 15)) {
         return Z_STREAM_ERROR;
     }
-    if (state->window != Z_NULL && state->wbits != (unsigned)windowBits) {
+    if (state->window != Z_NULL && state->wbits != (U32)windowBits) {
         // Abcouwer ZSC - this case, required dynamic memory. Removed.
         return Z_STREAM_ERROR;
     }
 
     /* update state and reset the rest of it */
     state->wrap = wrap;
-    state->wbits = (unsigned)windowBits;
+    state->wbits = (U32)windowBits;
     return inflateReset(strm);
 }
 
-int ZEXPORT inflateInit2_(strm, windowBits, version, stream_size)
+I32 ZEXPORT inflateInit2_(strm, windowBits, version, stream_size)
 z_stream * strm;
-int windowBits;
+I32 windowBits;
 const U8 *version;
-int stream_size;
+I32 stream_size;
 {
-    int ret;
+    I32 ret;
     struct inflate_state FAR *state;
 
     if (version == Z_NULL || version[0] != ZLIB_VERSION[0] ||
-        stream_size != (int)(sizeof(z_stream))){
+        stream_size != (I32)(sizeof(z_stream))){
         return Z_VERSION_ERROR;
     }
     if (strm == Z_NULL) {
@@ -291,7 +291,7 @@ int stream_size;
 ZlibReturn ZEXPORT inflateInit_(strm, version, stream_size)
 z_stream * strm;
 const U8 *version;
-int stream_size;
+I32 stream_size;
 {
     return inflateInit2_(strm, DEF_WBITS, version, stream_size);
 }
@@ -316,7 +316,7 @@ I32 value;
         return Z_STREAM_ERROR;
     }
     value &= (1L << bits) - 1;
-    state->hold += (unsigned)value << state->bits;
+    state->hold += (U32)value << state->bits;
     state->bits += (uInt)bits;
     return Z_OK;
 }
@@ -356,13 +356,13 @@ struct inflate_state FAR *state;
    output will fall in the output data, making match copies simpler and faster.
    The advantage may be dependent on the size of the processor's data caches.
  */
-local int updatewindow(strm, end, copy)
+local I32 updatewindow(strm, end, copy)
 z_stream * strm;
 const Byte *end;
-unsigned copy;
+U32 copy;
 {
     struct inflate_state FAR *state;
-    unsigned dist;
+    U32 dist;
 
     state = (struct inflate_state FAR *)strm->state;
 
@@ -470,7 +470,7 @@ unsigned copy;
     do { \
         if (have == 0) goto inf_leave; \
         have--; \
-        hold += (unsigned long)(*next++) << bits; \
+        hold += (U32)(*next++) << bits; \
         bits += 8; \
     } while (0)
 
@@ -478,20 +478,20 @@ unsigned copy;
    not enough available input to do that, then return from inflate(). */
 #define NEEDBITS(n) \
     do { \
-        while (bits < (unsigned)(n)) { \
+        while (bits < (U32)(n)) { \
             PULLBYTE(); \
         } \
     } while (0)
 
 /* Return the low n bits of the bit accumulator (n < 16) */
 #define BITS(n) \
-    ((unsigned)hold & ((1U << (n)) - 1))
+    ((U32)hold & ((1U << (n)) - 1))
 
 /* Remove n bits from the bit accumulator */
 #define DROPBITS(n) \
     do { \
         hold >>= (n); \
-        bits -= (unsigned)(n); \
+        bits -= (U32)(n); \
     } while (0)
 
 /* Remove zero to seven bits as needed to go to a byte boundary */
@@ -590,20 +590,20 @@ ZlibFlush flush;
     struct inflate_state FAR *state;
     z_const U8 FAR *next;    /* next input */
     U8 FAR *put;     /* next output */
-    unsigned have, left;        /* available input and output */
-    unsigned long hold;         /* bit buffer */
-    unsigned bits;              /* bits in bit buffer */
-    unsigned in, out;           /* save starting available input and output */
-    unsigned copy;              /* number of stored or match bytes to copy */
+    U32 have, left;        /* available input and output */
+    U32 hold;         /* bit buffer */
+    U32 bits;              /* bits in bit buffer */
+    U32 in, out;           /* save starting available input and output */
+    U32 copy;              /* number of stored or match bytes to copy */
     U8 FAR *from;    /* where to copy match bytes from */
     code here;                  /* current decoding table entry */
     code last;                  /* parent table entry */
-    unsigned len;               /* length to copy for repeats, bits to drop */
-    int ret;                    /* return code */
+    U32 len;               /* length to copy for repeats, bits to drop */
+    I32 ret;                    /* return code */
 #ifdef GUNZIP
     U8 hbuf[4];      /* buffer for gzip header crc calculation */
 #endif
-    static const unsigned short order[19] = /* permutation of code lengths */
+    static const U16 order[19] = /* permutation of code lengths */
         {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
     if (inflateStateCheck(strm) || strm->next_out == Z_NULL ||
@@ -672,7 +672,7 @@ ZlibFlush flush;
 #ifdef GUNZIP
         case FLAGS:
             NEEDBITS(16);
-            state->flags = (int)(hold);
+            state->flags = (I32)(hold);
             if ((state->flags & 0xff) != Z_DEFLATED) {
                 strm->msg = (U8*)"unknown compression method";
                 state->mode = BAD;
@@ -684,7 +684,7 @@ ZlibFlush flush;
                 break;
             }
             if (state->head != Z_NULL)
-                state->head->text = (int)((hold >> 8) & 1);
+                state->head->text = (I32)((hold >> 8) & 1);
             if ((state->flags & 0x0200) && (state->wrap & 4))
                 CRC2(state->check, hold);
             INITBITS();
@@ -700,8 +700,8 @@ ZlibFlush flush;
         case OS:
             NEEDBITS(16);
             if (state->head != Z_NULL) {
-                state->head->xflags = (int)(hold & 0xff);
-                state->head->os = (int)(hold >> 8);
+                state->head->xflags = (I32)(hold & 0xff);
+                state->head->os = (I32)(hold >> 8);
             }
             if ((state->flags & 0x0200) && (state->wrap & 4))
                 CRC2(state->check, hold);
@@ -710,9 +710,9 @@ ZlibFlush flush;
         case EXLEN:
             if (state->flags & 0x0400) {
                 NEEDBITS(16);
-                state->length = (unsigned)(hold);
+                state->length = (U32)(hold);
                 if (state->head != Z_NULL)
-                    state->head->extra_len = (unsigned)hold;
+                    state->head->extra_len = (U32)hold;
                 if ((state->flags & 0x0200) && (state->wrap & 4))
                     CRC2(state->check, hold);
                 INITBITS();
@@ -749,7 +749,7 @@ ZlibFlush flush;
                 if (have == 0) goto inf_leave;
                 copy = 0;
                 do {
-                    len = (unsigned)(next[copy++]);
+                    len = (U32)(next[copy++]);
                     if (state->head != Z_NULL &&
                             state->head->name != Z_NULL &&
                             state->length < state->head->name_max)
@@ -772,7 +772,7 @@ ZlibFlush flush;
                 if (have == 0) goto inf_leave;
                 copy = 0;
                 do {
-                    len = (unsigned)(next[copy++]);
+                    len = (U32)(next[copy++]);
                     if (state->head != Z_NULL &&
                             state->head->comment != Z_NULL &&
                             state->length < state->head->comm_max)
@@ -800,7 +800,7 @@ ZlibFlush flush;
                 INITBITS();
             }
             if (state->head != Z_NULL) {
-                state->head->hcrc = (int)((state->flags >> 9) & 1);
+                state->head->hcrc = (I32)((state->flags >> 9) & 1);
                 state->head->done = 1;
             }
             strm->adler = state->check = crc32(0L, Z_NULL, 0);
@@ -868,7 +868,7 @@ ZlibFlush flush;
                 state->mode = BAD;
                 break;
             }
-            state->length = (unsigned)hold & 0xffff;
+            state->length = (U32)hold & 0xffff;
             Tracev((stderr, "inflate:       stored length %u\n",
                     state->length));
             INITBITS();
@@ -916,7 +916,7 @@ ZlibFlush flush;
         case LENLENS:
             while (state->have < state->ncode) {
                 NEEDBITS(3);
-                state->lens[order[state->have++]] = (unsigned short)BITS(3);
+                state->lens[order[state->have++]] = (U16)BITS(3);
                 DROPBITS(3);
             }
             while (state->have < 19)
@@ -938,7 +938,7 @@ ZlibFlush flush;
             while (state->have < state->nlen + state->ndist) {
                 for (;;) {
                     here = state->lencode[BITS(state->lenbits)];
-                    if ((unsigned)(here.bits) <= bits) break;
+                    if ((U32)(here.bits) <= bits) break;
                     PULLBYTE();
                 }
                 if (here.val < 16) {
@@ -978,7 +978,7 @@ ZlibFlush flush;
                         break;
                     }
                     while (copy--)
-                        state->lens[state->have++] = (unsigned short)len;
+                        state->lens[state->have++] = (U16)len;
                 }
             }
 
@@ -1031,7 +1031,7 @@ ZlibFlush flush;
             state->back = 0;
             for (;;) {
                 here = state->lencode[BITS(state->lenbits)];
-                if ((unsigned)(here.bits) <= bits) break;
+                if ((U32)(here.bits) <= bits) break;
                 PULLBYTE();
             }
             if (here.op && (here.op & 0xf0) == 0) {
@@ -1039,7 +1039,7 @@ ZlibFlush flush;
                 for (;;) {
                     here = state->lencode[last.val +
                             (BITS(last.bits + last.op) >> last.bits)];
-                    if ((unsigned)(last.bits + here.bits) <= bits) break;
+                    if ((U32)(last.bits + here.bits) <= bits) break;
                     PULLBYTE();
                 }
                 DROPBITS(last.bits);
@@ -1047,8 +1047,8 @@ ZlibFlush flush;
             }
             DROPBITS(here.bits);
             state->back += here.bits;
-            state->length = (unsigned)here.val;
-            if ((int)(here.op) == 0) {
+            state->length = (U32)here.val;
+            if ((I32)(here.op) == 0) {
                 Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
                         "inflate:         literal '%c'\n" :
                         "inflate:         literal 0x%02x\n", here.val));
@@ -1066,7 +1066,7 @@ ZlibFlush flush;
                 state->mode = BAD;
                 break;
             }
-            state->extra = (unsigned)(here.op) & 15;
+            state->extra = (U32)(here.op) & 15;
             state->mode = LENEXT;
         case LENEXT:
             if (state->extra) {
@@ -1081,7 +1081,7 @@ ZlibFlush flush;
         case DIST:
             for (;;) {
                 here = state->distcode[BITS(state->distbits)];
-                if ((unsigned)(here.bits) <= bits) break;
+                if ((U32)(here.bits) <= bits) break;
                 PULLBYTE();
             }
             if ((here.op & 0xf0) == 0) {
@@ -1089,7 +1089,7 @@ ZlibFlush flush;
                 for (;;) {
                     here = state->distcode[last.val +
                             (BITS(last.bits + last.op) >> last.bits)];
-                    if ((unsigned)(last.bits + here.bits) <= bits) break;
+                    if ((U32)(last.bits + here.bits) <= bits) break;
                     PULLBYTE();
                 }
                 DROPBITS(last.bits);
@@ -1102,8 +1102,8 @@ ZlibFlush flush;
                 state->mode = BAD;
                 break;
             }
-            state->offset = (unsigned)here.val;
-            state->extra = (unsigned)(here.op) & 15;
+            state->offset = (U32)here.val;
+            state->extra = (U32)(here.op) & 15;
             state->mode = DISTEXT;
         case DISTEXT:
             if (state->extra) {
@@ -1246,7 +1246,7 @@ ZlibFlush flush;
         strm->adler = state->check =
             UPDATE(state->check, strm->next_out - out, out);
     }
-    strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
+    strm->data_type = (I32)state->bits + (state->last ? 64 : 0) +
                       (state->mode == TYPE ? 128 : 0) +
                       (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK) {
@@ -1298,8 +1298,8 @@ const Byte *dictionary;
 uInt dictLength;
 {
     struct inflate_state FAR *state;
-    unsigned long dictid;
-    int ret;
+    U32 dictid;
+    I32 ret;
 
     /* check state */
     if (inflateStateCheck(strm)) {
@@ -1361,18 +1361,18 @@ gz_header * head;
    called again with more data and the *have state.  *have is initialized to
    zero for the first call.
  */
-local unsigned syncsearch(have, buf, len)
-unsigned FAR *have;
+local U32 syncsearch(have, buf, len)
+U32 FAR *have;
 const U8 FAR *buf;
-unsigned len;
+U32 len;
 {
-    unsigned got;
-    unsigned next;
+    U32 got;
+    U32 next;
 
     got = *have;
     next = 0;
     while (next < len && got < 4) {
-        if ((int)(buf[next]) == (got < 2 ? 0 : 0xff)) {
+        if ((I32)(buf[next]) == (got < 2 ? 0 : 0xff)) {
             got++;
         } else if (buf[next]) {
             got = 0;
@@ -1388,8 +1388,8 @@ unsigned len;
 ZlibReturn ZEXPORT inflateSync(strm)
 z_stream * strm;
 {
-    unsigned len;               /* number of bytes to look at or looked at */
-    unsigned long in, out;      /* temporary to save total_in and total_out */
+    U32 len;               /* number of bytes to look at or looked at */
+    U32 in, out;      /* temporary to save total_in and total_out */
     U8 buf[4];       /* to restore bit buffer to byte string */
     struct inflate_state FAR *state;
 
@@ -1428,7 +1428,7 @@ z_stream * strm;
         return Z_DATA_ERROR;
     }
     in = strm->total_in;  out = strm->total_out;
-    int ir_ret = inflateReset(strm);
+    I32 ir_ret = inflateReset(strm);
     if (ir_ret != Z_OK) {
         return ir_ret;
     }
@@ -1461,14 +1461,14 @@ z_stream * strm;
 // copying then doing allocs will spool more memory from the work buffer
 // maybe revisit
 #if 0
-int ZEXPORT inflateCopy(dest, source)
+I32 ZEXPORT inflateCopy(dest, source)
 z_stream * dest;
 z_stream * source;
 {
     struct inflate_state FAR *state;
     struct inflate_state FAR *copy;
     U8 FAR *window;
-    unsigned wsize;
+    U32 wsize;
 
     /* check input */
     if (inflateStateCheck(source) || dest == Z_NULL)
@@ -1557,7 +1557,7 @@ z_stream * strm;
         return -(1L << 16);
     }
     state = (struct inflate_state FAR *)strm->state;
-    return (long)(((unsigned long)((long)state->back)) << 16) +
+    return (I32)(((U32)((I32)state->back)) << 16) +
         (state->mode == COPY ? state->length :
             (state->mode == MATCH ? state->was - state->length : 0));
 }
