@@ -669,16 +669,6 @@ ZEXTERN ZlibReturn ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
                                                    gz_header * gz_head,
                                                    uLong *size_out));
 
-//ZEXTERN int ZEXPORT deflateBoundNoStreamComplen OF((uLong sourceLen,
-//                                                   int level,
-//                                                   int windowBits,
-//                                                   int memLevel,
-//                                                   uLong *size_out));
-//
-//ZEXTERN int ZEXPORT deflateBoundNoStreamWraplen OF((int windowBits,
-//                                                   gz_header * gz_head,
-//                                                   uLong *size_out));
-
 /**
  * @brief Get minimum size of a work buffer, default compression settings
  * Returns the size of working memory that must be provided to a compression function

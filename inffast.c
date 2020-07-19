@@ -201,7 +201,8 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                             len -= op;
                             do {
                                 *out++ = *from++;
-                            } while (--op);
+                                op--;
+                            } while (op);
                             from = out - dist;  /* rest from output */
                         }
                     }
@@ -212,14 +213,16 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                             len -= op;
                             do {
                                 *out++ = *from++;
-                            } while (--op);
+                                op--;
+                            } while (op);
                             from = window;
                             if (wnext < len) {  /* some from start of window */
                                 op = wnext;
                                 len -= op;
                                 do {
                                     *out++ = *from++;
-                                } while (--op);
+                                    op--;
+                                } while (op);
                                 from = out - dist;      /* rest from output */
                             }
                         }
@@ -230,7 +233,8 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                             len -= op;
                             do {
                                 *out++ = *from++;
-                            } while (--op);
+                                op--;
+                            } while (op);
                             from = out - dist;  /* rest from output */
                         }
                     }

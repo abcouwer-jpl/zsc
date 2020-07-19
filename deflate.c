@@ -516,7 +516,7 @@ ZlibReturn ZEXPORT deflateResetKeep (strm)
     s->pending_out = s->pending_buf;
 
     if (s->wrap < 0) {
-        s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH); */
+        s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH) */
     }
     s->status =
 #ifdef GZIP
@@ -718,15 +718,21 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
             }
             str = s->gzhead->name;
             if (str != Z_NULL) {
-                do {
+                // Abcouwer ZSC - modified to not use result of assignment
+                wraplen++;
+                while(*str) {
+                    str++;
                     wraplen++;
-                } while (*str++);
+                }
             }
             str = s->gzhead->comment;
             if (str != Z_NULL) {
-                do {
+                // Abcouwer ZSC - modified to not use result of assignment
+                wraplen++;
+                while(*str) {
+                    str++;
                     wraplen++;
-                } while (*str++);
+                }
             }
             if (s->gzhead->hcrc) {
                 wraplen += 2;
@@ -805,15 +811,22 @@ ZlibReturn ZEXPORT deflateBoundNoStream(sourceLen,
                 wraplen += 2 + gz_head->extra_len;
             str = gz_head->name;
             if (str != Z_NULL) {
-                do {
+                // Abcouwer ZSC - modified to not use result of assignment
+                wraplen++;
+                while(*str) {
+                    str++;
                     wraplen++;
-                } while (*str++);
+                }
             }
             str = gz_head->comment;
-            if (str != Z_NULL)
-                do {
+            if (str != Z_NULL) {
+                // Abcouwer ZSC - modified to not use result of assignment
+                wraplen++;
+                while(*str) {
+                    str++;
                     wraplen++;
-                } while (*str++);
+                }
+            }
             if (gz_head->hcrc) {
                 wraplen += 2;
             }
@@ -1525,10 +1538,13 @@ local U32 longest_match(s, cur_match)
 
 #else /* UNALIGNED_OK */
 
+        // Abcouwer ZSC - modified to comply with MISRA C 13.5
+        // match no longer modified as side effect in right hand operand of ||
+
         if (match[best_len]   != scan_end  ||
             match[best_len-1] != scan_end1 ||
             *match            != *scan     ||
-            *++match          != scan[1])      continue;
+            match[1]          != scan[1])      continue;
 
         /* The check at best_len-1 can be removed because it will be made
          * again later. (This heuristic is not always a win.)
@@ -1536,18 +1552,22 @@ local U32 longest_match(s, cur_match)
          * are always equal when the other bytes match, given that
          * the hash keys are equal and that HASH_BITS >= 8.
          */
-        scan += 2, match++;
+        scan += 2; match += 2;
         Assert(*scan == *match, "match[2]?");
 
         /* We check for insufficient lookahead only every 8th comparison;
-         * the 256th check will be made at strstart+258.
-         */
+         * the 256th check will be made at strstart+258. */
+        // Abcouwer ZSC - Modified to scan by to follow MISRA 13.5
         do {
-        } while (*++scan == *++match && *++scan == *++match &&
-                 *++scan == *++match && *++scan == *++match &&
-                 *++scan == *++match && *++scan == *++match &&
-                 *++scan == *++match && *++scan == *++match &&
-                 scan < strend);
+            scan++;
+            match++;
+        } while (*scan == *match && scan < strend);
+//        do {
+//        } while (*++scan == *++match && *++scan == *++match &&
+//                 *++scan == *++match && *++scan == *++match &&
+//                 *++scan == *++match && *++scan == *++match &&
+//                 *++scan == *++match && *++scan == *++match &&
+//                 scan < strend);
 
         Assert(scan <= s->window+(U32)(s->window_size-1), "wild scan");
 
@@ -1567,10 +1587,15 @@ local U32 longest_match(s, cur_match)
             scan_end   = scan[best_len];
 #endif
         }
+        // assert no underflow
+        ZSC_ASSERT(chain_length>0);
+        --chain_length;
     } while ((cur_match = prev[cur_match & wmask]) > limit
-             && --chain_length != 0);
+             && chain_length != 0);
 
-    if ((uInt)best_len <= s->lookahead) return (uInt)best_len;
+    if ((uInt)best_len <= s->lookahead) {
+        return (uInt)best_len;
+    }
     return s->lookahead;
 }
 
@@ -2076,16 +2101,16 @@ local block_state deflate_fast(s, flush)
              * is not too large. This saves time but degrades compression.
              */
 #ifndef FASTEST
-            if (s->match_length <= s->max_insert_length &&
-                s->lookahead >= MIN_MATCH) {
+            if (s->match_length <= s->max_insert_length
+                    && s->lookahead >= MIN_MATCH) {
                 s->match_length--; /* string at strstart already in table */
                 do {
                     s->strstart++;
                     INSERT_STRING(s, s->strstart, hash_head);
                     /* strstart never exceeds WSIZE-MAX_MATCH, so there are
-                     * always MIN_MATCH bytes ahead.
-                     */
-                } while (--s->match_length != 0);
+                     * always MIN_MATCH bytes ahead. */
+                    s->match_length--;
+                } while (s->match_length != 0);
                 s->strstart++;
             } else
 #endif
@@ -2203,10 +2228,12 @@ local block_state deflate_slow(s, flush)
             s->lookahead -= s->prev_length-1;
             s->prev_length -= 2;
             do {
-                if (++s->strstart <= max_insert) {
+                s->strstart++;
+                if (s->strstart <= max_insert) {
                     INSERT_STRING(s, s->strstart, hash_head);
                 }
-            } while (--s->prev_length != 0);
+                s->prev_length--;
+            } while (s->prev_length != 0);
             s->match_available = 0;
             s->match_length = MIN_MATCH-1;
             s->strstart++;
@@ -2284,14 +2311,13 @@ local block_state deflate_rle(s, flush)
         if (s->lookahead >= MIN_MATCH && s->strstart > 0) {
             scan = s->window + s->strstart - 1;
             prev = *scan;
-            if (prev == *++scan && prev == *++scan && prev == *++scan) {
+            if (prev == scan[1] && prev == scan[2] && prev == scan[3]) {
+                scan+=3;
                 strend = s->window + s->strstart + MAX_MATCH;
+                // Abcouwer ZSC - Modified scan to follow MISRA 13.5
                 do {
-                } while (prev == *++scan && prev == *++scan &&
-                         prev == *++scan && prev == *++scan &&
-                         prev == *++scan && prev == *++scan &&
-                         prev == *++scan && prev == *++scan &&
-                         scan < strend);
+                    scan++;
+                } while (prev == *scan && scan < strend);
                 s->match_length = MAX_MATCH - (uInt)(strend - scan);
                 if (s->match_length > s->lookahead)
                     s->match_length = s->lookahead;

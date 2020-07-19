@@ -689,6 +689,7 @@ ZlibFlush flush;
                 CRC2(state->check, hold);
             INITBITS();
             state->mode = TIME;
+            break;
         case TIME:
             NEEDBITS(32);
             if (state->head != Z_NULL)
@@ -697,6 +698,7 @@ ZlibFlush flush;
                 CRC4(state->check, hold);
             INITBITS();
             state->mode = OS;
+            break;
         case OS:
             NEEDBITS(16);
             if (state->head != Z_NULL) {
@@ -707,6 +709,7 @@ ZlibFlush flush;
                 CRC2(state->check, hold);
             INITBITS();
             state->mode = EXLEN;
+            break;
         case EXLEN:
             if (state->flags & 0x0400) {
                 NEEDBITS(16);
@@ -722,6 +725,7 @@ ZlibFlush flush;
                 // no header, do nothing
             }
             state->mode = EXTRA;
+            break;
         case EXTRA:
             if (state->flags & 0x0400) {
                 copy = state->length;
@@ -744,6 +748,7 @@ ZlibFlush flush;
             }
             state->length = 0;
             state->mode = NAME;
+            break;
         case NAME:
             if (state->flags & 0x0800) {
                 if (have == 0) goto inf_leave;
@@ -767,6 +772,7 @@ ZlibFlush flush;
             }
             state->length = 0;
             state->mode = COMMENT;
+            break;
         case COMMENT:
             if (state->flags & 0x1000) {
                 if (have == 0) goto inf_leave;
@@ -789,6 +795,7 @@ ZlibFlush flush;
                 // no header, do nothing
             }
             state->mode = HCRC;
+            break;
         case HCRC:
             if (state->flags & 0x0200) {
                 NEEDBITS(16);
@@ -812,6 +819,7 @@ ZlibFlush flush;
             strm->adler = state->check = ZSWAP32(hold);
             INITBITS();
             state->mode = DICT;
+            break;
         case DICT:
             if (state->havedict == 0) {
                 RESTORE();
@@ -819,8 +827,11 @@ ZlibFlush flush;
             }
             strm->adler = state->check = adler32(0L, Z_NULL, 0);
             state->mode = TYPE;
+            break;
         case TYPE:
             if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
+            state->mode = TYPEDO;
+            break;
         case TYPEDO:
             if (state->last) {
                 BYTEBITS();
@@ -854,9 +865,11 @@ ZlibFlush flush;
             case 3:
                 strm->msg = (U8*)"invalid block type";
                 state->mode = BAD;
+                break;
             default: // Abcouwer ZSC - misra needs defalt cases
                 strm->msg = (U8*)"very invalid block type";
                 state->mode = BAD;
+                break;
             }
             DROPBITS(2);
             break;
@@ -876,8 +889,10 @@ ZlibFlush flush;
             if (flush == Z_TREES) {
                 goto inf_leave;
             }
+            break;
         case COPY_:
             state->mode = COPY;
+            break;
         case COPY:
             copy = state->length;
             if (copy) {
@@ -913,6 +928,7 @@ ZlibFlush flush;
             Tracev((stderr, "inflate:       table sizes ok\n"));
             state->have = 0;
             state->mode = LENLENS;
+            break;
         case LENLENS:
             while (state->have < state->ncode) {
                 NEEDBITS(3);
@@ -934,6 +950,7 @@ ZlibFlush flush;
             Tracev((stderr, "inflate:       code lengths ok\n"));
             state->have = 0;
             state->mode = CODELENS;
+            break;
         case CODELENS:
             while (state->have < state->nlen + state->ndist) {
                 for (;;) {
@@ -977,8 +994,10 @@ ZlibFlush flush;
                         state->mode = BAD;
                         break;
                     }
-                    while (copy--)
+                    while (copy) {
+                        copy--;
                         state->lens[state->have++] = (U16)len;
+                    }
                 }
             }
 
@@ -1017,8 +1036,10 @@ ZlibFlush flush;
             Tracev((stderr, "inflate:       codes ok\n"));
             state->mode = LEN_;
             if (flush == Z_TREES) goto inf_leave;
+            break;
         case LEN_:
             state->mode = LEN;
+            break;
         case LEN:
             if (have >= 6 && left >= 258) {
                 RESTORE();
@@ -1068,6 +1089,7 @@ ZlibFlush flush;
             }
             state->extra = (U32)(here.op) & 15;
             state->mode = LENEXT;
+            break;
         case LENEXT:
             if (state->extra) {
                 NEEDBITS(state->extra);
@@ -1078,6 +1100,7 @@ ZlibFlush flush;
             Tracevv((stderr, "inflate:         length %u\n", state->length));
             state->was = state->length;
             state->mode = DIST;
+            break;
         case DIST:
             for (;;) {
                 here = state->distcode[BITS(state->distbits)];
@@ -1105,6 +1128,7 @@ ZlibFlush flush;
             state->offset = (U32)here.val;
             state->extra = (U32)(here.op) & 15;
             state->mode = DISTEXT;
+            break;
         case DISTEXT:
             if (state->extra) {
                 NEEDBITS(state->extra);
@@ -1121,6 +1145,7 @@ ZlibFlush flush;
 #endif
             Tracevv((stderr, "inflate:         distance %u\n", state->offset));
             state->mode = MATCH;
+            break;
         case MATCH:
             if (left == 0) goto inf_leave;
             copy = out - left;
@@ -1163,7 +1188,8 @@ ZlibFlush flush;
             state->length -= copy;
             do {
                 *put++ = *from++;
-            } while (--copy);
+                copy--;
+            } while (copy);
             if (state->length == 0) state->mode = LEN;
             break;
         case LIT:
@@ -1196,6 +1222,7 @@ ZlibFlush flush;
             }
 #ifdef GUNZIP
             state->mode = LENGTH;
+            break;
         case LENGTH:
             if (state->wrap && state->flags) {
                 NEEDBITS(32);
@@ -1209,17 +1236,22 @@ ZlibFlush flush;
             }
 #endif
             state->mode = DONE;
+            break;
         case DONE:
             ret = Z_STREAM_END;
             goto inf_leave;
+            break;
         case BAD:
             ret = Z_DATA_ERROR;
             goto inf_leave;
+            break;
         case MEM:
             return Z_MEM_ERROR;
+            break;
         case SYNC:
         default:
             return Z_STREAM_ERROR;
+            break;
         }
     }
     /*

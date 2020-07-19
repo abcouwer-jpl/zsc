@@ -730,7 +730,8 @@ local void scan_tree (s, tree, max_code)
 
     for (n = 0; n <= max_code; n++) {
         curlen = nextlen; nextlen = tree[n+1].Len;
-        if (++count < max_count && curlen == nextlen) {
+        count++;
+        if (count < max_count && curlen == nextlen) {
             continue;
         } else if (count < min_count) {
             s->bl_tree[curlen].Freq += count;
@@ -770,15 +771,21 @@ local void send_tree (s, tree, max_code)
     I32 max_count = 7;         /* max repeat count */
     I32 min_count = 4;         /* min repeat count */
 
-    /* tree[max_code+1].Len = -1; */  /* guard already set */
-    if (nextlen == 0) max_count = 138, min_count = 3;
+    if (nextlen == 0) {
+        max_count = 138;
+        min_count = 3;
+    }
 
     for (n = 0; n <= max_code; n++) {
         curlen = nextlen; nextlen = tree[n+1].Len;
-        if (++count < max_count && curlen == nextlen) {
+        count++;
+        if (count < max_count && curlen == nextlen) {
             continue;
         } else if (count < min_count) {
-            do { send_code(s, curlen, s->bl_tree); } while (--count != 0);
+            do {
+                send_code(s, curlen, s->bl_tree);
+                count--;
+            } while (count != 0);
 
         } else if (curlen != 0) {
             if (curlen != prevlen) {
@@ -1186,8 +1193,10 @@ local U32 bi_reverse(code, len)
     register unsigned res = 0;
     do {
         res |= code & 1;
-        code >>= 1, res <<= 1;
-    } while (--len > 0);
+        code >>= 1;
+        res <<= 1;
+        len--;
+    } while (len > 0);
     return res >> 1;
 }
 

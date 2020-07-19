@@ -120,7 +120,7 @@ ZSC_COMPILE_ASSERT(DEF_WBITS <= DEF_WBITS, bad_def_wbits);
 
 
 
-/** Allowed flush values; see deflate() and inflate() below for details */
+/** Allowed flush values - see deflate() and inflate() below for details */
 typedef enum {
     Z_NO_FLUSH = 0,
     Z_PARTIAL_FLUSH = 1,

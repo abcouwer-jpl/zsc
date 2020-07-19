@@ -265,7 +265,8 @@ U16 FAR *work;
 
         /* go to next symbol, update count, len */
         sym++;
-        if (--(count[len]) == 0) {
+        (count[len])--;
+        if (count[len] == 0) {
             if (len == max) {
                 break;
             }

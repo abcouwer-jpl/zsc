@@ -151,7 +151,8 @@ void ZLIB_INTERNAL zmemcpy(dest, source, len)
     if (len == 0) return;
     do {
         *dest++ = *source++; /* ??? to be unrolled */
-    } while (--len != 0);
+        len--;
+    } while (len != 0);
 }
 
 int ZLIB_INTERNAL zmemcmp(s1, s2, len)
@@ -174,7 +175,8 @@ void ZLIB_INTERNAL zmemzero(dest, len)
     if (len == 0) return;
     do {
         *dest++ = 0;  /* ??? to be unrolled */
-    } while (--len != 0);
+        len--;
+    } while (len != 0);
 }
 #endif
 

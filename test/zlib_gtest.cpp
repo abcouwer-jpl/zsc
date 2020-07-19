@@ -714,7 +714,7 @@ void zlib_test(
 
     if(scenarios & SCENARIO_CORRUPT) {
         printf("Corrupting compressed buffer\n");
-        compressed_buf[first_sync_loc > 0 ? first_sync_loc / 2 : 42]++;
+        compressed_buf[first_sync_loc > 0 ? first_sync_loc / 3 : 42]++;
     }
 
     uLong uncompressed_buf_len = source_buf_len;
