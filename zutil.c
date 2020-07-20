@@ -28,6 +28,18 @@ const U8 * ZEXPORT zlibVersion()
     return (U8*)ZLIB_VERSION;
 }
 
+/*
+Abcouwer ZSC - As it is impossible to test the 2^N variations of zlib that
+could exist with conditional compilation, most of these variations have been removed.
+Unless noted elsewhere, the code has been changed to match the compilation
+in the case where these flags are not defined.
+
+If your favorite option has been removed, but the option is compatible with
+the goals of ZSC, consider a pull request! But implement that option is such a way
+that the source code compiles the same, the option is a run-time option.
+That allows unit testing of all the options.
+
+*/
 U32 ZEXPORT zlibCompileFlags()
 {
     U32 flags;
@@ -60,28 +72,12 @@ U32 ZEXPORT zlibCompileFlags()
 #ifdef ZLIB_DEBUG
     flags += 1 << 8;
 #endif
-// Abcouwer ZSC - remove assembly functions - defining ASMV/ASMINF won't change
-#ifdef ZLIB_WINAPI
-    flags += 1 << 10;
-#endif
-#ifdef BUILDFIXED
-    flags += 1 << 12;
-#endif
-#ifdef DYNAMIC_CRC_TABLE
-    flags += 1 << 13;
-#endif
-#ifdef NO_GZCOMPRESS
-    flags += 1L << 16;
-#endif
-#ifdef NO_GZIP
-    flags += 1L << 17;
-#endif
-#ifdef PKZIP_BUG_WORKAROUND
-    flags += 1L << 20;
-#endif
-#ifdef FASTEST
-    flags += 1L << 21;
-#endif
+    /* Abcouwer ZSC - removed conditional compilation flags:
+     * ASMV/ASMINF, ZLIB_WINAPI, BUILDFIXED, DYNAMIC_CRC_TABLE, NO_GZCOMPRESS,
+     * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST
+     *
+     */
+
 #if defined(STDC) || defined(Z_HAVE_STDARG_H)
 #  ifdef NO_vsnprintf
     flags += 1L << 25;
@@ -133,13 +129,6 @@ const U8 * ZEXPORT zError(err)
     return ERR_MSG(err);
 }
 
-#if defined(_WIN32_WCE)
-    /* The Microsoft C Run-Time Library for Windows CE doesn't have
-     * errno.  We define it as a global variable to simplify porting.
-     * Its value is always 0 and should not be used.
-     */
-    int errno = 0;
-#endif
 
 #ifndef HAVE_MEMCPY
 

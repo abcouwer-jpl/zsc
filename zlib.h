@@ -559,28 +559,8 @@ ZEXTERN ZlibReturn ZEXPORT deflateGetDictionary OF((z_stream * strm,
    stream state is inconsistent.
 */
 
-// removed Neil Abcouwer for zlib-safe
-// copying then doing allocs will spool more memory from the work buffer
-// maybe revisit
-#if 0
-ZEXTERN int ZEXPORT deflateCopy OF((z_stream * dest,
-                                    z_stream * source));
-/*
-     Sets the destination stream as a complete copy of the source stream.
-
-     This function can be useful when several compression strategies will be
-   tried, for example when there are several ways of pre-processing the input
-   data with a filter.  The streams that will be discarded should then be freed
-   by calling deflateEnd.  Note that deflateCopy duplicates the internal
-   compression state which can be quite large, so this strategy is slow and can
-   consume lots of memory.
-
-     deflateCopy returns Z_OK if success, Z_MEM_ERROR if there was not
-   enough memory, Z_STREAM_ERROR if the source stream state was inconsistent
-   (such as zalloc being Z_NULL).  msg is left unchanged in both source and
-   destination.
-*/
-#endif
+// Abcouwer ZSC - removed deflateCopy
+// copying then doing allocs will spool more memory from the work buffer.
 
 ZEXTERN ZlibReturn ZEXPORT deflateReset OF((z_stream * strm));
 /*
@@ -878,26 +858,8 @@ ZEXTERN ZlibReturn ZEXPORT inflateSync OF((z_stream * strm));
    input each time, until success or end of the input data.
 */
 
-// removed Neil Abcouwer for zlib-safe
-// copying then doing allocs will spool more memory from the work buffer
-// maybe revisit
-#if 0
-ZEXTERN int ZEXPORT inflateCopy OF((z_stream * dest,
-                                    z_stream * source));
-/*
-     Sets the destination stream as a complete copy of the source stream.
-
-     This function can be useful when randomly accessing a large stream.  The
-   first pass through the stream can periodically record the inflate state,
-   allowing restarting inflate at those points when randomly accessing the
-   stream.
-
-     inflateCopy returns Z_OK if success, Z_MEM_ERROR if there was not
-   enough memory, Z_STREAM_ERROR if the source stream state was inconsistent
-   (such as zalloc being Z_NULL).  msg is left unchanged in both source and
-   destination.
-*/
-#endif
+// Abcouwer ZSC - removed inflateCopy
+// copying then doing allocs will spool more memory from the work buffer.
 
 ZEXTERN ZlibReturn ZEXPORT inflateReset OF((z_stream * strm));
 /*
@@ -1120,6 +1082,10 @@ ZEXTERN ZlibReturn ZEXPORT inflateBackEnd OF((z_stream * strm));
 ZEXTERN U32 ZEXPORT zlibCompileFlags OF((void));
 /* Return flags indicating compile-time options.
 
+    Abcouwer ZSC - As it is impossible to test the 2^N variations of zlib that
+    could exist with conditional compilation, most of these variations have been,
+    or are in the process of being, removed.
+
     Type sizes, two bits each, 00 = 16 bits, 01 = 32, 10 = 64, 11 = other:
      1.0: size of uInt
      3.2: size of U32
@@ -1147,6 +1113,7 @@ ZEXTERN U32 ZEXPORT zlibCompileFlags OF((void));
     Operation variations (changes in library functionality):
      20: PKZIP_BUG_WORKAROUND -- slightly more permissive inflate
      21: FASTEST -- deflate algorithm with only one, lowest compression level
+         AbcouwerZSC - removed
      22,23: 0 (reserved)
 
     The sprintf variant used by gzprintf (zero is best):
@@ -1260,21 +1227,7 @@ ZEXTERN ZlibReturn ZEXPORT inflateBackInit_ OF((z_stream * strm, I32 windowBits,
                                          U8 FAR *window,
                                          const U8 *version,
                                          I32 stream_size));
-#ifdef Z_PREFIX_SET
-#  define z_deflateInit(strm, level) \
-          deflateInit_((strm), (level), ZLIB_VERSION, (I32)sizeof(z_stream))
-#  define z_inflateInit(strm) \
-          inflateInit_((strm), ZLIB_VERSION, (I32)sizeof(z_stream))
-#  define z_deflateInit2(strm, level, method, windowBits, memLevel, strategy) \
-          deflateInit2_((strm),(level),(method),(windowBits),(memLevel),\
-                        (strategy), ZLIB_VERSION, (I32)sizeof(z_stream))
-#  define z_inflateInit2(strm, windowBits) \
-          inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
-                        (I32)sizeof(z_stream))
-#  define z_inflateBackInit(strm, windowBits, window) \
-          inflateBackInit_((strm), (windowBits), (window), \
-                           ZLIB_VERSION, (I32)sizeof(z_stream))
-#else
+
 #  define deflateInit(strm, level) \
           deflateInit_((strm), (level), (U8*)ZLIB_VERSION, (I32)sizeof(z_stream))
 #  define inflateInit(strm) \
@@ -1288,7 +1241,6 @@ ZEXTERN ZlibReturn ZEXPORT inflateBackInit_ OF((z_stream * strm, I32 windowBits,
 #  define inflateBackInit(strm, windowBits, window) \
           inflateBackInit_((strm), (windowBits), (window), \
                   (U8*)ZLIB_VERSION, (I32)sizeof(z_stream))
-#endif
 
 // Abcouwer ZSC - Remove gz functions
 

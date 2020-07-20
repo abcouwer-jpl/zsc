@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+//#include <string.h> //memset
 
 // private functions are preceded by ZSC_PRIVATE
 // this can be defined as 0 when compiling unit tests to allow access
@@ -62,13 +63,29 @@
 
 
 
-// if your framework has messaging/logging infrasturcture, replace here
+// if your framework has messaging/logging infrastructure, replace here
 // or define as nothing to disable
 // FIXME make better
 #define ZSC_WARN(fmt) printf("WARNING "fmt"\n")
 #define ZSC_WARN1(fmt, arg1) printf("WARNING "fmt"\n", arg1)
 #define ZSC_WARN2(fmt, arg1, arg2) printf("WARNING "fmt"\n", arg1, arg2)
 #define ZSC_WARN3(fmt, arg1, arg2, arg3) printf("WARNING "fmt"\n", arg1, arg2, arg3)
+
+/*
+ define zmemcpy, zmemcmp, zmemzero appropriately
+ either define HAVE_MEMCPY and with memcopy (if allowed)
+ or with internal functions (see zutil.c)
+*/
+//#define HAVE_MEMCPY
+//#ifdef HAVE_MEMCPY
+//#    define zmemcpy memcpy
+//#    define zmemcmp memcmp
+//#    define zmemzero(dest, len) memset(dest, 0, len)
+//#else
+//   void ZLIB_INTERNAL zmemcpy OF((U8* dest, const U8* source, U32 len));
+//   I32 ZLIB_INTERNAL zmemcmp OF((const U8* s1, const U8* s2, U32 len));
+//   void ZLIB_INTERNAL zmemzero OF((U8* dest, U32 len));
+//#endif
 
 
 

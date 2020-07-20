@@ -21,13 +21,6 @@
 
 #include "zlib.h"
 
-#if defined(STDC) && !defined(Z_SOLO)
-#  if !(defined(_WIN32_WCE) && defined(_MSC_VER))
-#    include <stddef.h>
-#  endif
-#  include <string.h>
-#  include <stdlib.h>
-#endif
 
 // Abcouwer ZSC - typedef ptrdiff_t moved to zsc_conf_global_types
 
@@ -62,33 +55,16 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
 #define PRESET_DICT 0x20 /* preset dictionary flag in zlib header */
 
-        /* target dependencies */
+// define os code
 
 #if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
 #  define OS_CODE  0x00
-#  ifndef Z_SOLO
-#    if defined(__TURBOC__) || defined(__BORLANDC__)
-#      if (__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
-         /* Allow compilation with ANSI keywords only enabled */
-         void _Cdecl farfree( void *block );
-         void *_Cdecl farmalloc( unsigned long nbytes );
-#      else
-#        include <alloc.h>
-#      endif
-#    else /* MSC or DJGPP */
-#      include <malloc.h>
-#    endif
-#  endif
 #endif
-
 #ifdef AMIGA
 #  define OS_CODE  1
 #endif
-
 #if defined(VAXC) || defined(VMS)
 #  define OS_CODE  2
-#  define F_OPEN(name, mode) \
-     fopen((name), (mode), "mbc=60", "ctx=stm", "rfm=fix", "mrs=512")
 #endif
 
 #ifdef __370__
@@ -107,22 +83,10 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
 #ifdef OS2
 #  define OS_CODE  6
-#  if defined(M_I86) && !defined(Z_SOLO)
-#    include <malloc.h>
-#  endif
 #endif
 
 #if defined(MACOS) || defined(TARGET_OS_MAC)
 #  define OS_CODE  7
-#  ifndef Z_SOLO
-#    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
-#      include <unix.h> /* for fdopen */
-#    else
-#      ifndef fdopen
-#        define fdopen(fd,mode) NULL /* No fdopen() */
-#      endif
-#    endif
-#  endif
 #endif
 
 #ifdef __acorn
@@ -145,26 +109,11 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define OS_CODE 19
 #endif
 
-#if defined(_BEOS_) || defined(RISCOS)
-#  define fdopen(fd,mode) NULL /* No fdopen() */
+#ifndef OS_CODE
+#  define OS_CODE  3     /* assume Unix */
 #endif
 
-#if (defined(_MSC_VER) && (_MSC_VER > 600)) && !defined __INTERIX
-#  if defined(_WIN32_WCE)
-#    define fdopen(fd,mode) NULL /* No fdopen() */
-#    ifndef _PTRDIFF_T_DEFINED
-       typedef int ptrdiff_t;
-#      define _PTRDIFF_T_DEFINED
-#    endif
-#  else
-#    define fdopen(fd,type)  _fdopen(fd,type)
-#  endif
-#endif
-
-#if defined(__BORLANDC__) && !defined(MSDOS)
-  ZSC_COMPILE_ASSERT(0, borlandc_and_not_msdos);
-  // Abcouwer ZSC - removed warn pragmas
-#endif
+// Abcouwer ZSC - Remove target dependencies related to fdopen and dynamic memory
 
 /* provide prototypes for these when building zlib without LFS */
 #if !defined(_WIN32) && \
@@ -173,21 +122,12 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
     ZEXTERN U32 ZEXPORT crc32_combine64 OF((U32, U32, z_off_t));
 #endif
 
-        /* common defaults */
-
-#ifndef OS_CODE
-#  define OS_CODE  3     /* assume Unix */
-#endif
-
-#ifndef F_OPEN
-#  define F_OPEN(name, mode) fopen((name), (mode))
-#endif
-
          /* functions */
 
 #if defined(pyr) || defined(Z_SOLO)
 #  define NO_MEMCPY
 #endif
+
 #if defined(SMALL_MEDIUM) && !defined(_MSC_VER) && !defined(__SC__)
  /* Use our own functions for small and medium model with MSC <= 5.0.
   * You may have to use the same strategy for Borland C (untested).
@@ -195,6 +135,7 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
   */
 #  define NO_MEMCPY
 #endif
+
 #if defined(STDC) && !defined(HAVE_MEMCPY) && !defined(NO_MEMCPY)
 #  define HAVE_MEMCPY
 #endif

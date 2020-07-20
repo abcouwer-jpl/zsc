@@ -15,13 +15,8 @@
 
 #include "zutil.h"
 
-/* define NO_GZIP when compiling if you want to disable gzip header and
-   trailer creation by deflate().  NO_GZIP would be used to avoid linking in
-   the crc code when it is not needed.  For shared libraries, gzip encoding
-   should be left enabled. */
-#ifndef NO_GZIP
-#  define GZIP
-#endif
+// Abcouwer ZSC - remove compilation conditional on GZIP/NO_GZIP
+
 
 /* ===========================================================================
  * Internal compression state.
@@ -52,9 +47,7 @@
 /* size of bit buffer in bi_buf */
 
 #define INIT_STATE    42    /* zlib header -> BUSY_STATE */
-#ifdef GZIP
-#  define GZIP_STATE  57    /* gzip header -> BUSY_STATE | EXTRA_STATE */
-#endif
+#define GZIP_STATE    57    /* gzip header -> BUSY_STATE | EXTRA_STATE */
 #define EXTRA_STATE   69    /* gzip extra block -> NAME_STATE */
 #define NAME_STATE    73    /* gzip file name -> COMMENT_STATE */
 #define COMMENT_STATE 91    /* gzip comment -> HCRC_STATE */
@@ -320,13 +313,8 @@ void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, U8 *buf,
 #ifndef ZLIB_DEBUG
 /* Inline versions of _tr_tally for speed: */
 
-#if defined(GEN_TREES_H) || !defined(STDC)
-  extern U8 ZLIB_INTERNAL _length_code[];
-  extern U8 ZLIB_INTERNAL _dist_code[];
-#else
-  extern const U8 ZLIB_INTERNAL _length_code[];
-  extern const U8 ZLIB_INTERNAL _dist_code[];
-#endif
+extern const U8 ZLIB_INTERNAL _length_code[];
+extern const U8 ZLIB_INTERNAL _dist_code[];
 
 # define _tr_tally_lit(s, c, flush) \
   { U8 cc = (c); \
