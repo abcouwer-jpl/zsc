@@ -40,6 +40,7 @@
 #define ZSC_CONF_GLOBAL_TYPES_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 // FIXME delete when removed
 #define Z_SOLO
@@ -65,8 +66,7 @@
 #define Z_U4 U32
 #define z_const const
 
-#define z_off_t long
-
+#define z_off_t I64
 #define z_off64_t I64
 
 
@@ -80,25 +80,29 @@
 #endif
 
 
-typedef int32_t I32;
-typedef int64_t I64;
-typedef uint8_t U8;
+typedef  int32_t I32;
+typedef  int64_t I64;
+typedef  uint8_t  U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
+typedef uint64_t U64;
 
-#define U32_MAX (U32)0xFFFFFFFF
+#define U32_MAX ((U32)0xFFFFFFFF)
 
 
 // FIXME delete
 
-typedef U8  Byte;  /* 8 bits */
-typedef U32   uInt;  /* 16 bits or more */
-typedef U32  uLong; /* 32 bits or more */
+//typedef U8  Byte;  /* 8 bits */
+//typedef U32 uInt;  /* 16 bits or more */
+//typedef U32 uLong; /* 32 bits or more */
 
-
+// CRCs are 32 bits
 typedef U32 z_crc_t;
-typedef unsigned long z_size_t;
-typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
+// z_size_t must be unsigned, big enough to contain the size of the largest size
+// that the system can handle
+typedef size_t z_size_t;
+// ptrdiff_t must be defined,
+// can include stddef, or use signed version of z_size_ts
 
 
 

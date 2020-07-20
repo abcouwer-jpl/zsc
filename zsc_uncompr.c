@@ -59,7 +59,7 @@ ZlibReturn ZEXPORT zsc_uncompress_safe_gzip2(
     }
 
     z_stream stream;
-    zmemzero((Byte*)&stream, sizeof(stream));
+    zmemzero((U8*)&stream, sizeof(stream));
     stream.next_work = work;
     stream.avail_work = work_len;
 
@@ -77,7 +77,7 @@ ZlibReturn ZEXPORT zsc_uncompress_safe_gzip2(
         }
     }
 
-    stream.next_in = (const Byte *)source;
+    stream.next_in = (const U8 *)source;
     stream.avail_in = *source_len;
     stream.next_out = dest;
     stream.avail_out = *dest_len;

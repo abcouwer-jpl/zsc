@@ -24,6 +24,7 @@
 #define ZSC_CONF_PRIVATE_H
 
 #include <assert.h>
+#include <stdio.h>
 
 // private functions are preceded by ZSC_PRIVATE
 // this can be defined as 0 when compiling unit tests to allow access

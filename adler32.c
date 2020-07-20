@@ -7,7 +7,7 @@
 
 #include "zutil.h"
 
-local uLong adler32_combine_ OF((uLong adler1, uLong adler2, z_off64_t len2));
+local U32 adler32_combine_ OF((U32 adler1, U32 adler2, z_off64_t len2));
 
 #define BASE 65521U     /* largest prime smaller than 65536 */
 #define NMAX 5552
@@ -60,9 +60,9 @@ local uLong adler32_combine_ OF((uLong adler1, uLong adler2, z_off64_t len2));
 #endif
 
 /* ========================================================================= */
-uLong ZEXPORT adler32_z(adler, buf, len)
-    uLong adler;
-    const Byte *buf;
+U32 ZEXPORT adler32_z(adler, buf, len)
+    U32 adler;
+    const U8 *buf;
     z_size_t len;
 {
     U32 sum2;
@@ -138,18 +138,18 @@ uLong ZEXPORT adler32_z(adler, buf, len)
 }
 
 /* ========================================================================= */
-uLong ZEXPORT adler32(adler, buf, len)
-    uLong adler;
-    const Byte *buf;
-    uInt len;
+U32 ZEXPORT adler32(adler, buf, len)
+    U32 adler;
+    const U8 *buf;
+    U32 len;
 {
     return adler32_z(adler, buf, len);
 }
 
 /* ========================================================================= */
-local uLong adler32_combine_(adler1, adler2, len2)
-    uLong adler1;
-    uLong adler2;
+local U32 adler32_combine_(adler1, adler2, len2)
+    U32 adler1;
+    U32 adler2;
     z_off64_t len2;
 {
     U32 sum1;
@@ -176,17 +176,17 @@ local uLong adler32_combine_(adler1, adler2, len2)
 }
 
 /* ========================================================================= */
-uLong ZEXPORT adler32_combine(adler1, adler2, len2)
-    uLong adler1;
-    uLong adler2;
+U32 ZEXPORT adler32_combine(adler1, adler2, len2)
+    U32 adler1;
+    U32 adler2;
     z_off_t len2;
 {
     return adler32_combine_(adler1, adler2, len2);
 }
 
-uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
-    uLong adler1;
-    uLong adler2;
+U32 ZEXPORT adler32_combine64(adler1, adler2, len2)
+    U32 adler1;
+    U32 adler2;
     z_off64_t len2;
 {
     return adler32_combine_(adler1, adler2, len2);

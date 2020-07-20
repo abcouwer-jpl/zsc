@@ -43,6 +43,7 @@ ZSC_COMPILE_ASSERT(sizeof(I64) == 8, I64BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U8)  == 1,  U8BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U16) == 2, U16BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
+ZSC_COMPILE_ASSERT(sizeof(U64) == 8, U64BadSize);
 
 
 #define Z_NULL  0  /// for initializing zalloc, zfree, opaque
@@ -74,10 +75,10 @@ ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
 // size of work buffer needed for compression
 #define Z_COMPRESS_WORK_SIZE2(window_bits, mem_level) \
     (Z_DEFLATE_STATE_SIZE + \
-            (1 << (window_bits)) * 2 * sizeof(Byte) + \
+            (1 << (window_bits)) * 2 * sizeof(U8) + \
             (1 << (window_bits)) * 2 * sizeof(Pos) + \
             (1 << ((mem_level)+7)) * sizeof(Pos) + \
-            (1 << ((mem_level)+6)) * (sizeof(ush) +2) )
+            (1 << ((mem_level)+6)) * (sizeof(U16) +2) )
 
 // size of the private inflate state
 #define Z_INFLATE_STATE_SIZE 7160

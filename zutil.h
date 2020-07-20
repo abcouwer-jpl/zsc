@@ -29,9 +29,7 @@
 #  include <stdlib.h>
 #endif
 
-#ifdef Z_SOLO
-   typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
-#endif
+// Abcouwer ZSC - typedef ptrdiff_t moved to zsc_conf_global_types
 
 #ifndef local
 #  define local static
@@ -39,11 +37,6 @@
 /* since "static" is used to mean two completely different things in C, we
    define "local" for the non-static meaning of "static", for readability
    (compile with -Dlocal if your debugger can't find static symbols) */
-
-   // FIXME remove
-typedef U8  uch;
-typedef U32 ush;
-typedef U32  ulg;
 
 extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* (size given to avoid silly warnings with Visual C++) */
@@ -176,8 +169,8 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* provide prototypes for these when building zlib without LFS */
 #if !defined(_WIN32) && \
     (!defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0)
-    ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off_t));
-    ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off_t));
+    ZEXTERN U32 ZEXPORT adler32_combine64 OF((U32, U32, z_off_t));
+    ZEXTERN U32 ZEXPORT crc32_combine64 OF((U32, U32, z_off_t));
 #endif
 
         /* common defaults */
@@ -216,9 +209,9 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #    define zmemzero(dest, len) memset(dest, 0, len)
 #  endif
 #else
-   void ZLIB_INTERNAL zmemcpy OF((Byte* dest, const Byte* source, uInt len));
-   int ZLIB_INTERNAL zmemcmp OF((const Byte* s1, const Byte* s2, uInt len));
-   void ZLIB_INTERNAL zmemzero OF((Byte* dest, uInt len));
+   void ZLIB_INTERNAL zmemcpy OF((U8* dest, const U8* source, U32 len));
+   I32 ZLIB_INTERNAL zmemcmp OF((const U8* s1, const U8* s2, U32 len));
+   void ZLIB_INTERNAL zmemzero OF((U8* dest, U32 len));
 #endif
 
 

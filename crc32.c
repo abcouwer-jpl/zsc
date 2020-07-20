@@ -48,7 +48,7 @@
 local U32 gf2_matrix_times OF((U32 *mat,
                                          U32 vec));
 local void gf2_matrix_square OF((U32 *square, U32 *mat));
-local uLong crc32_combine_ OF((uLong crc1, uLong crc2, z_off64_t len2));
+local U32 crc32_combine_ OF((U32 crc1, U32 crc2, z_off64_t len2));
 
 
 #ifdef DYNAMIC_CRC_TABLE
@@ -199,9 +199,9 @@ const z_crc_t FAR * ZEXPORT get_crc_table()
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
 /* ========================================================================= */
-uLong ZEXPORT crc32_z(crc, buf, len)
-    uLong crc;
-    const Byte *buf;
+U32 ZEXPORT crc32_z(crc, buf, len)
+    U32 crc;
+    const U8 *buf;
     z_size_t len;
 {
     if (buf == Z_NULL) return 0UL;
@@ -235,10 +235,10 @@ uLong ZEXPORT crc32_z(crc, buf, len)
 }
 
 /* ========================================================================= */
-uLong ZEXPORT crc32(crc, buf, len)
-    uLong crc;
-    const Byte *buf;
-    uInt len;
+U32 ZEXPORT crc32(crc, buf, len)
+    U32 crc;
+    const U8 *buf;
+    U32 len;
 {
     return crc32_z(crc, buf, len);
 }
@@ -371,9 +371,9 @@ local void gf2_matrix_square(square, mat)
 }
 
 /* ========================================================================= */
-local uLong crc32_combine_(crc1, crc2, len2)
-    uLong crc1;
-    uLong crc2;
+local U32 crc32_combine_(crc1, crc2, len2)
+    U32 crc1;
+    U32 crc2;
     z_off64_t len2;
 {
     U32 row;
@@ -426,17 +426,17 @@ local uLong crc32_combine_(crc1, crc2, len2)
 }
 
 /* ========================================================================= */
-uLong ZEXPORT crc32_combine(crc1, crc2, len2)
-    uLong crc1;
-    uLong crc2;
+U32 ZEXPORT crc32_combine(crc1, crc2, len2)
+    U32 crc1;
+    U32 crc2;
     z_off_t len2;
 {
     return crc32_combine_(crc1, crc2, len2);
 }
 
-uLong ZEXPORT crc32_combine64(crc1, crc2, len2)
-    uLong crc1;
-    uLong crc2;
+U32 ZEXPORT crc32_combine64(crc1, crc2, len2)
+    U32 crc1;
+    U32 crc2;
     z_off64_t len2;
 {
     return crc32_combine_(crc1, crc2, len2);

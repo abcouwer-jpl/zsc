@@ -70,7 +70,7 @@ ZlibReturn ZEXPORT zsc_compress_gzip2(
     }
 
     z_stream stream;
-    zmemzero((Byte*)&stream, sizeof(stream));
+    zmemzero((U8*)&stream, sizeof(stream));
     stream.next_work = work;
     stream.avail_work = work_len;
 
@@ -108,7 +108,7 @@ ZlibReturn ZEXPORT zsc_compress_gzip2(
 
     stream.next_out = dest;
     stream.avail_out = 0;
-    stream.next_in = (const Byte *)source;
+    stream.next_in = (const U8 *)source;
     stream.avail_in = 0;
 
     U32 bytes_left_dest = *dest_len;
@@ -118,14 +118,14 @@ ZlibReturn ZEXPORT zsc_compress_gzip2(
     do {
         if (stream.avail_out == 0) { // provide more output
             stream.avail_out =
-                    bytes_left_dest < (U32) max_block_len ?
-                            (uInt) bytes_left_dest : max_block_len;
+                    bytes_left_dest < max_block_len ?
+                            bytes_left_dest : max_block_len;
             bytes_left_dest -= stream.avail_out;
         }
         if (stream.avail_in == 0) { // provide more input
             stream.avail_in =
-                    source_len < (U32) max_block_len ?
-                            (uInt) source_len : max_block_len;
+                    source_len <  max_block_len ?
+                             source_len : max_block_len;
             source_len -= stream.avail_in;
         }
         ZlibFlush flush = (source_len > 0) ? Z_FULL_FLUSH : Z_FINISH;

@@ -494,8 +494,8 @@ ZEXTERN int ZEXPORT deflateInit2 OF((z_stream * strm,
 */
 
 ZEXTERN ZlibReturn ZEXPORT deflateSetDictionary OF((z_stream * strm,
-                                             const Byte *dictionary,
-                                             uInt  dictLength));
+                                             const U8 *dictionary,
+                                             U32  dictLength));
 /*
      Initializes the compression dictionary from the given byte sequence
    without producing any compressed output.  When using the zlib format, this
@@ -538,8 +538,8 @@ ZEXTERN ZlibReturn ZEXPORT deflateSetDictionary OF((z_stream * strm,
 */
 
 ZEXTERN ZlibReturn ZEXPORT deflateGetDictionary OF((z_stream * strm,
-                                             Byte *dictionary,
-                                             uInt  *dictLength));
+                                             U8 *dictionary,
+                                             U32  *dictLength));
 /*
      Returns the sliding dictionary being maintained by deflate.  dictLength is
    set to the number of bytes in the dictionary, and that many bytes are copied
@@ -647,8 +647,8 @@ ZEXTERN ZlibReturn ZEXPORT deflateTune OF((z_stream * strm,
    returns Z_OK on success, or Z_STREAM_ERROR for an invalid deflate stream.
  */
 
-ZEXTERN uLong ZEXPORT deflateBound OF((z_stream * strm,
-                                       uLong sourceLen));
+ZEXTERN U32 ZEXPORT deflateBound OF((z_stream * strm,
+                                       U32 sourceLen));
 /*
      deflateBound() returns an upper bound on the compressed size after
    deflation of sourceLen bytes.  It must be called after deflateInit() or
@@ -662,12 +662,12 @@ ZEXTERN uLong ZEXPORT deflateBound OF((z_stream * strm,
    than Z_FINISH or Z_NO_FLUSH are used.
 */
 
-ZEXTERN ZlibReturn ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
+ZEXTERN ZlibReturn ZEXPORT deflateBoundNoStream OF((U32 sourceLen,
                                                    I32 level,
                                                    I32 windowBits,
                                                    I32 memLevel,
                                                    gz_header * gz_head,
-                                                   uLong *size_out));
+                                                   U32 *size_out));
 
 /**
  * @brief Get minimum size of a work buffer, default compression settings
@@ -677,7 +677,7 @@ ZEXTERN ZlibReturn ZEXPORT deflateBoundNoStream OF((uLong sourceLen,
  * @param size_out  Minimum size required for working memory
  * @return Z_OK if there was no error
  */
-ZlibReturn deflateWorkSize(uLong *size_out);
+ZlibReturn deflateWorkSize(U32 *size_out);
 
 /**
  * @brief Get minimum size of a work buffer, custom compression settings
@@ -691,7 +691,7 @@ ZlibReturn deflateWorkSize(uLong *size_out);
  * @param size_out      Minimum size required for working memory
  * @return Z_STREAM_ERROR if parameters are improper, Z_OK otherwise
  */
-ZlibReturn deflateWorkSize2(I32 window_bits, I32 mem_level, uLong *size_out);
+ZlibReturn deflateWorkSize2(I32 window_bits, I32 mem_level, U32 *size_out);
 
 
 
@@ -817,13 +817,13 @@ ZEXTERN int ZEXPORT inflateInit2 OF((z_stream * strm,
  * @param size_out      Minimum size required for working memory
  * @return  Z_STREAM_ERROR if parameters are improper, Z_OK otherwise
  */
-ZEXTERN ZlibReturn ZEXPORT inflateWorkSize2(I32 windowBits, uLong * size_out);
-ZEXTERN ZlibReturn ZEXPORT inflateWorkSize(uLong * size_out);
+ZEXTERN ZlibReturn ZEXPORT inflateWorkSize2(I32 windowBits, U32 * size_out);
+ZEXTERN ZlibReturn ZEXPORT inflateWorkSize(U32 * size_out);
 
 
 ZEXTERN ZlibReturn ZEXPORT inflateSetDictionary OF((z_stream * strm,
-                                             const Byte *dictionary,
-                                             uInt  dictLength));
+                                             const U8 *dictionary,
+                                             U32  dictLength));
 /*
      Initializes the decompression dictionary from the given uncompressed byte
    sequence.  This function must be called immediately after a call of inflate,
@@ -845,8 +845,8 @@ ZEXTERN ZlibReturn ZEXPORT inflateSetDictionary OF((z_stream * strm,
 */
 
 ZEXTERN ZlibReturn ZEXPORT inflateGetDictionary OF((z_stream * strm,
-                                             Byte *dictionary,
-                                             uInt  *dictLength));
+                                             U8 *dictionary,
+                                             U32  *dictLength));
 /*
      Returns the sliding dictionary being maintained by inflate.  dictLength is
    set to the number of bytes in the dictionary, and that many bytes are copied
@@ -1117,12 +1117,12 @@ ZEXTERN ZlibReturn ZEXPORT inflateBackEnd OF((z_stream * strm));
    state was inconsistent.
 */
 
-ZEXTERN uLong ZEXPORT zlibCompileFlags OF((void));
+ZEXTERN U32 ZEXPORT zlibCompileFlags OF((void));
 /* Return flags indicating compile-time options.
 
     Type sizes, two bits each, 00 = 16 bits, 01 = 32, 10 = 64, 11 = other:
      1.0: size of uInt
-     3.2: size of uLong
+     3.2: size of U32
      5.4: size of voidpf (pointer)
      7.6: size of z_off_t
 
@@ -1170,7 +1170,7 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags OF((void));
    library.
 */
 
-ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Byte *buf, uInt len));
+ZEXTERN U32 ZEXPORT adler32 OF((U32 adler, const U8 *buf, U32 len));
 /*
      Update a running Adler-32 checksum with the bytes buf[0..len-1] and
    return the updated checksum.  If buf is Z_NULL, this function returns the
@@ -1181,7 +1181,7 @@ ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Byte *buf, uInt len));
 
    Usage example:
 
-     uLong adler = adler32(0L, Z_NULL, 0);
+     U32 adler = adler32(0L, Z_NULL, 0);
 
      while (read_buffer(buffer, length) != EOF) {
        adler = adler32(adler, buffer, length);
@@ -1189,14 +1189,14 @@ ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Byte *buf, uInt len));
      if (adler != original_adler) error();
 */
 
-ZEXTERN uLong ZEXPORT adler32_z OF((uLong adler, const Byte *buf,
+ZEXTERN U32 ZEXPORT adler32_z OF((U32 adler, const U8 *buf,
                                     z_size_t len));
 /*
      Same as adler32(), but with a size_t length.
 */
 
 /*
-ZEXTERN uLong ZEXPORT adler32_combine OF((uLong adler1, uLong adler2,
+ZEXTERN U32 ZEXPORT adler32_combine OF((U32 adler1, U32 adler2,
                                           z_off_t len2));
 
      Combine two Adler-32 checksums into one.  For two sequences of bytes, seq1
@@ -1207,7 +1207,7 @@ ZEXTERN uLong ZEXPORT adler32_combine OF((uLong adler1, uLong adler2,
    negative, the result has no meaning or utility.
 */
 
-ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Byte *buf, uInt len));
+ZEXTERN U32 ZEXPORT crc32   OF((U32 crc, const U8 *buf, U32 len));
 /*
      Update a running CRC-32 with the bytes buf[0..len-1] and return the
    updated CRC-32.  If buf is Z_NULL, this function returns the required
@@ -1216,7 +1216,7 @@ ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Byte *buf, uInt len));
 
    Usage example:
 
-     uLong crc = crc32(0L, Z_NULL, 0);
+     U32 crc = crc32(0L, Z_NULL, 0);
 
      while (read_buffer(buffer, length) != EOF) {
        crc = crc32(crc, buffer, length);
@@ -1224,14 +1224,14 @@ ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Byte *buf, uInt len));
      if (crc != original_crc) error();
 */
 
-ZEXTERN uLong ZEXPORT crc32_z OF((uLong crc, const Byte *buf,
+ZEXTERN U32 ZEXPORT crc32_z OF((U32 crc, const U8 *buf,
                                   z_size_t len));
 /*
      Same as crc32(), but with a size_t length.
 */
 
 /*
-ZEXTERN uLong ZEXPORT crc32_combine OF((uLong crc1, uLong crc2, z_off_t len2));
+ZEXTERN U32 ZEXPORT crc32_combine OF((U32 crc1, U32 crc2, z_off_t len2));
 
      Combine two CRC-32 check values into one.  For two sequences of bytes,
    seq1 and seq2 with lengths len1 and len2, CRC-32 check values were
@@ -1293,8 +1293,8 @@ ZEXTERN ZlibReturn ZEXPORT inflateBackInit_ OF((z_stream * strm, I32 windowBits,
 // Abcouwer ZSC - Remove gz functions
 
 
-ZEXTERN uLong ZEXPORT adler32_combine OF((uLong, uLong, z_off_t));
-ZEXTERN uLong ZEXPORT crc32_combine OF((uLong, uLong, z_off_t));
+ZEXTERN U32 ZEXPORT adler32_combine OF((U32, U32, z_off_t));
+ZEXTERN U32 ZEXPORT crc32_combine OF((U32, U32, z_off_t));
 
 
 /* undocumented functions */

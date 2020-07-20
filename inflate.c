@@ -101,8 +101,7 @@ local I32 inflateStateCheck(strm)
 z_stream * strm;
 {
     struct inflate_state FAR *state;
-    if (strm == Z_NULL/* ||
-        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0*/)
+    if (strm == Z_NULL)
         return 1;
     state = (struct inflate_state FAR *)strm->state;
     if (state == Z_NULL || state->strm != strm ||
@@ -113,12 +112,12 @@ z_stream * strm;
 
 local void * inflate_get_work_mem(strm, items, size)
     z_stream * strm;
-    uInt items;
-    uInt size;
+    U32 items;
+    U32 size;
 {
     void * new_ptr = Z_NULL;
     // FIXME assert stream not null
-    uLong bytes = items * size;
+    U32 bytes = items * size;
     // FIXME asset no overflow
 
     if (strm->avail_work >= bytes) {
@@ -131,7 +130,7 @@ local void * inflate_get_work_mem(strm, items, size)
 
 ZlibReturn ZEXPORT inflateWorkSize2(windowBits, size_out)
     I32 windowBits;
-    uLong *size_out;
+    U32 *size_out;
 {
     /* check for wrapper bits within windowBits */
     if (windowBits < 0) {
@@ -151,7 +150,7 @@ ZlibReturn ZEXPORT inflateWorkSize2(windowBits, size_out)
         return Z_STREAM_ERROR;
     }
 
-    uLong size = 0;
+    U32 size = 0;
     size += sizeof(struct inflate_state);
     size += (1U << windowBits) * sizeof(U8);
     *size_out = size;
@@ -160,7 +159,7 @@ ZlibReturn ZEXPORT inflateWorkSize2(windowBits, size_out)
 }
 
 ZlibReturn ZEXPORT inflateWorkSize(size_out)
-    uLong *size_out;
+    U32 *size_out;
 {
     return inflateWorkSize2(DEF_WBITS, size_out);
 }
@@ -261,7 +260,7 @@ I32 stream_size;
     if (strm == Z_NULL) {
         return Z_STREAM_ERROR;
     }
-    uLong work_size = (uLong)(-1);
+    U32 work_size = (U32)(-1);
     if(strm->next_work == Z_NULL
             || inflateWorkSize2(windowBits, &work_size) != Z_OK
             || strm->avail_work < work_size) {
@@ -312,12 +311,12 @@ I32 value;
         state->bits = 0;
         return Z_OK;
     }
-    if (bits > 16 || state->bits + (uInt)bits > 32) {
+    if (bits > 16 || state->bits + (U32)bits > 32) {
         return Z_STREAM_ERROR;
     }
     value &= (1L << bits) - 1;
     state->hold += (U32)value << state->bits;
-    state->bits += (uInt)bits;
+    state->bits += (U32)bits;
     return Z_OK;
 }
 
@@ -358,7 +357,7 @@ struct inflate_state FAR *state;
  */
 local I32 updatewindow(strm, end, copy)
 z_stream * strm;
-const Byte *end;
+const U8 *end;
 U32 copy;
 {
     struct inflate_state FAR *state;
@@ -758,7 +757,7 @@ ZlibFlush flush;
                     if (state->head != Z_NULL &&
                             state->head->name != Z_NULL &&
                             state->length < state->head->name_max)
-                        state->head->name[state->length++] = (Byte)len;
+                        state->head->name[state->length++] = (U8)len;
                 } while (len && copy < have);
                 if ((state->flags & 0x0200) && (state->wrap & 4))
                     state->check = crc32(state->check, next, copy);
@@ -782,7 +781,7 @@ ZlibFlush flush;
                     if (state->head != Z_NULL &&
                             state->head->comment != Z_NULL &&
                             state->length < state->head->comm_max)
-                        state->head->comment[state->length++] = (Byte)len;
+                        state->head->comment[state->length++] = (U8)len;
                 } while (len && copy < have);
                 if ((state->flags & 0x0200) && (state->wrap & 4))
                     state->check = crc32(state->check, next, copy);
@@ -1303,8 +1302,8 @@ z_stream * strm;
 
 ZlibReturn ZEXPORT inflateGetDictionary(strm, dictionary, dictLength)
 z_stream * strm;
-Byte *dictionary;
-uInt *dictLength;
+U8 *dictionary;
+U32 *dictLength;
 {
     struct inflate_state FAR *state;
 
@@ -1326,8 +1325,8 @@ uInt *dictLength;
 
 ZlibReturn ZEXPORT inflateSetDictionary(strm, dictionary, dictLength)
 z_stream * strm;
-const Byte *dictionary;
-uInt dictLength;
+const U8 *dictionary;
+U32 dictLength;
 {
     struct inflate_state FAR *state;
     U32 dictid;

@@ -28,18 +28,18 @@ const U8 * ZEXPORT zlibVersion()
     return (U8*)ZLIB_VERSION;
 }
 
-uLong ZEXPORT zlibCompileFlags()
+U32 ZEXPORT zlibCompileFlags()
 {
-    uLong flags;
+    U32 flags;
 
     flags = 0;
-    switch ((int)(sizeof(uInt))) {
+    switch ((int)(sizeof(U32))) {
     case 2:     break;
     case 4:     flags += 1;     break;
     case 8:     flags += 2;     break;
     default:    flags += 3;
     }
-    switch ((int)(sizeof(uLong))) {
+    switch ((int)(sizeof(U32))) {
     case 2:     break;
     case 4:     flags += 1 << 2;        break;
     case 8:     flags += 2 << 2;        break;
@@ -144,9 +144,9 @@ const U8 * ZEXPORT zError(err)
 #ifndef HAVE_MEMCPY
 
 void ZLIB_INTERNAL zmemcpy(dest, source, len)
-    Byte* dest;
-    const Byte* source;
-    uInt  len;
+    U8* dest;
+    const U8* source;
+    U32  len;
 {
     if (len == 0) return;
     do {
@@ -155,12 +155,12 @@ void ZLIB_INTERNAL zmemcpy(dest, source, len)
     } while (len != 0);
 }
 
-int ZLIB_INTERNAL zmemcmp(s1, s2, len)
-    const Byte* s1;
-    const Byte* s2;
-    uInt  len;
+I32 ZLIB_INTERNAL zmemcmp(s1, s2, len)
+    const U8* s1;
+    const U8* s2;
+    U32  len;
 {
-    uInt j;
+    U32 j;
 
     for (j = 0; j < len; j++) {
         if (s1[j] != s2[j]) return 2*(s1[j] > s2[j])-1;
@@ -169,8 +169,8 @@ int ZLIB_INTERNAL zmemcmp(s1, s2, len)
 }
 
 void ZLIB_INTERNAL zmemzero(dest, len)
-    Byte* dest;
-    uInt  len;
+    U8* dest;
+    U32  len;
 {
     if (len == 0) return;
     do {

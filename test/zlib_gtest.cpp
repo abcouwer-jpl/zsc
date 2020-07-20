@@ -123,15 +123,15 @@ char *corpus_files[NUM_CORPUS] = {
 // */
 //
 //static const char dictionary[] = "hello";
-//static uLong dictId;    /* Adler32 value of the dictionary */
+//static U32 dictId;    /* Adler32 value of the dictionary */
 
 
-static const Byte * alice_dictionary = (const Byte *)
+static const U8 * alice_dictionary = (const U8 *)
         "queen" "time" "thought" "could" "and the" "in the" "would" "went"
                 "like" "know" "in a" "one" "said Alice" "little" "of the"
                 "said the" "Alice" "said";
 
-static const Byte * big_dictionary = (const Byte *)
+static const U8 * big_dictionary = (const U8 *)
     "queen" "time" "thought" "could" "and the" "in the" "would" "went"
     "like" "know" "in a" "one" "said Alice" "little" "of the"
     "said the" "Alice" "said"
@@ -186,7 +186,7 @@ class ZlibTest : public ::testing::Test {
 int good_allocs_allowed = 0;
 
 //// a bad allocator function which only returns NULL, for testing fault cases
-//voidpf zlib_test_bad_alloc(voidpf opaque, uInt items, uInt size)
+//voidpf zlib_test_bad_alloc(voidpf opaque, U32 items, U32 size)
 //{
 //    if (good_allocs_allowed > 0) {
 //        good_allocs_allowed--;
@@ -198,7 +198,7 @@ int good_allocs_allowed = 0;
 //}
 
 void zlib_test(
-        Byte * source_buf,
+        U8 * source_buf,
         int source_buf_len,
         WrapType wrapper = WRAP_ZLIB,
         unsigned long scenarios = 0, // bit mask of scenarios
@@ -233,12 +233,12 @@ void zlib_test(
              && memLevel == DEF_MEM_LEVEL
              && strategy == Z_DEFAULT_STRATEGY);
 
-    uLong compressed_buf_len;
-    Byte * compressed_buf;
-    uLong work_buf_len;
-    Byte * work_buf;
-    uLong compressed_buf_len_out;
-    uLong source_buf_len_out;
+    U32 compressed_buf_len;
+    U8 * compressed_buf;
+    U32 work_buf_len;
+    U8 * work_buf;
+    U32 compressed_buf_len_out;
+    U32 source_buf_len_out;
 
     gz_header head_in;
     memset(&head_in, 0, sizeof(head_in));
@@ -260,9 +260,9 @@ void zlib_test(
             len = 50;
         }
 
-        head_in.comment = (Byte *) malloc(len);
-        head_in.name = (Byte *) malloc(len);
-        head_in.extra = (Byte *) malloc(len);
+        head_in.comment = (U8 *) malloc(len);
+        head_in.name = (U8 *) malloc(len);
+        head_in.extra = (U8 *) malloc(len);
         head_in.extra_len = len;
 
         sprintf((char*)head_in.comment,"I am the man with no name.");
@@ -282,14 +282,14 @@ void zlib_test(
             head_in.extra_len = len;
         }
     }
-    head_out.name = (Byte *)malloc(80);
+    head_out.name = (U8 *)malloc(80);
     head_out.name_max = 80;
-    head_out.comment = (Byte *)malloc(80);
+    head_out.comment = (U8 *)malloc(80);
     head_out.comm_max = 80;
-    head_out.extra = (Byte *)malloc(80);
+    head_out.extra = (U8 *)malloc(80);
     head_out.extra_max = 80;
 
-    const Byte * dictionary = alice_dictionary;
+    const U8 * dictionary = alice_dictionary;
     if (scenarios & SCENARIO_BIG_DICTIONARY) {
         dictionary = big_dictionary;
     }
@@ -317,7 +317,7 @@ void zlib_test(
         break;
     }
 
-    uLong predicted_max_output_size;
+    U32 predicted_max_output_size;
     // get max output size
     switch(wrapper) {
     case WRAP_NONE:
@@ -354,8 +354,8 @@ void zlib_test(
     printf("max_output calculated at %u.\n", predicted_max_output_size);
     compressed_buf_len = predicted_max_output_size;
 
-    compressed_buf = (Byte *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (Byte*)NULL);
+    compressed_buf = (U8 *) malloc(compressed_buf_len);
+    ASSERT_NE(compressed_buf, (U8*)NULL);
 
     // get work buf
 
@@ -365,8 +365,8 @@ void zlib_test(
         err = zsc_compress_get_min_work_buf_size2(windowBits, memLevel, &work_buf_len);
     }
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Byte*)NULL);
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8*)NULL);
     compressed_buf_len_out = compressed_buf_len;
     // fill work buffer with garbage
     memset((void*)work_buf, 0xa5,work_buf_len);
@@ -495,10 +495,10 @@ void zlib_test(
                         pending_bytes, pending_bits);
             }
 
-            uInt max_in = (uInt) -1;
-            uInt max_out = (uInt) -1;
-            uLong bytes_left_dest = compressed_buf_len_out;
-            uLong bytes_left_source = source_buf_len;
+            U32 max_in = (U32) -1;
+            U32 max_out = (U32) -1;
+            U32 bytes_left_dest = compressed_buf_len_out;
+            U32 bytes_left_source = source_buf_len;
 
             stream.next_out = compressed_buf;
             stream.avail_out = 0;
@@ -545,14 +545,14 @@ void zlib_test(
                 if (stream.avail_out == 0) {
                     // provide more output
                     stream.avail_out =
-                            bytes_left_dest > (uLong) max_out ?
-                                    max_out : (uInt) bytes_left_dest;
+                            bytes_left_dest > (U32) max_out ?
+                                    max_out : (U32) bytes_left_dest;
                     bytes_left_dest -= stream.avail_out;
                 }
                 if (stream.avail_in == 0) {
                     stream.avail_in =
-                            bytes_left_source > (uLong) max_in ?
-                                    max_in : (uInt) bytes_left_source;
+                            bytes_left_source > (U32) max_in ?
+                                    max_in : (U32) bytes_left_source;
                     bytes_left_source -= stream.avail_in;
                 }
                 err = deflate(&stream,
@@ -564,8 +564,8 @@ void zlib_test(
                     if (stream.avail_out == 0) {
                         // provide more output
                         stream.avail_out =
-                                bytes_left_dest > (uLong) max_out ?
-                                        max_out : (uInt) bytes_left_dest;
+                                bytes_left_dest > (U32) max_out ?
+                                        max_out : (U32) bytes_left_dest;
                         bytes_left_dest -= stream.avail_out;
                     }
                     err = deflateParams(&stream, 8, Z_HUFFMAN_ONLY);
@@ -582,11 +582,11 @@ void zlib_test(
             compressed_buf_len_out = stream.total_out;
 
             if (scenarios & SCENARIO_DICTIONARY) {
-                Byte * dictionary_out = (Byte *) malloc(32768);
-                ASSERT_NE(dictionary_out, (Byte* )NULL);
+                U8 * dictionary_out = (U8 *) malloc(32768);
+                ASSERT_NE(dictionary_out, (U8* )NULL);
                 memset(dictionary_out, 0, 32768);
 
-                uInt dict_out_len = 0;
+                U32 dict_out_len = 0;
 
                 printf("getting dictionary\n");
                 err = deflateGetDictionary(&stream, dictionary_out,
@@ -717,20 +717,20 @@ void zlib_test(
         compressed_buf[first_sync_loc > 0 ? first_sync_loc / 3 : 42]++;
     }
 
-    uLong uncompressed_buf_len = source_buf_len;
-    Byte * uncompressed_buf = (Byte *) malloc(uncompressed_buf_len);
-    EXPECT_NE(uncompressed_buf, (Byte * )NULL);
+    U32 uncompressed_buf_len = source_buf_len;
+    U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
+    EXPECT_NE(uncompressed_buf, (U8 * )NULL);
     err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Byte *)Z_NULL);
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8 *)Z_NULL);
     // fill work buffer with garbage
     memset((void*)work_buf, 0x5a,work_buf_len);
 
     printf("Uncompress. Work buf size: %u.\n",
             work_buf_len);
 
-    uLong uncompressed_buf_len_out = uncompressed_buf_len;
+    U32 uncompressed_buf_len_out = uncompressed_buf_len;
 
 
 
@@ -790,10 +790,10 @@ void zlib_test(
 
         z_stream stream;
 
-        uInt max_in = (uInt)-1;
-        uInt max_out = (uInt)-1;
+        U32 max_in = (U32)-1;
+        U32 max_out = (U32)-1;
 
-        stream.next_in = (z_const Byte *) compressed_buf;
+        stream.next_in = (z_const U8 *) compressed_buf;
         stream.avail_in = 0;
 
         stream.next_work = work_buf;
@@ -824,10 +824,10 @@ void zlib_test(
 
 
         do {
-            uLong bytes_left_dest =  uncompressed_buf_len;
-            uLong bytes_left_source =  compressed_buf_len_out;
+            U32 bytes_left_dest =  uncompressed_buf_len;
+            U32 bytes_left_source =  compressed_buf_len_out;
 
-            stream.next_in = (z_const Byte *) compressed_buf;
+            stream.next_in = (z_const U8 *) compressed_buf;
             stream.avail_in = 0;
             stream.next_out = uncompressed_buf;
             stream.avail_out = 0;
@@ -855,14 +855,14 @@ void zlib_test(
 
                 if (stream.avail_out == 0) {
                     stream.avail_out =
-                            bytes_left_dest > (uLong) max_out ?
-                                    max_out : (uInt) bytes_left_dest;
+                            bytes_left_dest > (U32) max_out ?
+                                    max_out : (U32) bytes_left_dest;
                     bytes_left_dest -= stream.avail_out;
                 }
                 if (stream.avail_in == 0) {
                     stream.avail_in =
-                            bytes_left_source > (uLong) max_in ?
-                                    max_in : (uInt) bytes_left_source;
+                            bytes_left_source > (U32) max_in ?
+                                    max_in : (U32) bytes_left_source;
                     bytes_left_source -= stream.avail_in;
                 }
                 printf("before: stream.avail_in = %d. stream.avail_out = %d.\n",
@@ -936,9 +936,9 @@ void zlib_test(
             uncompressed_buf_len_out = stream.total_out;
 
             if(scenarios & SCENARIO_DICTIONARY) {
-                Byte * dictionary_out_inf = (Byte *) malloc(32768);
-                ASSERT_NE(dictionary_out_inf, (Byte*)NULL);
-                uInt dict_out_inf_len = 0;
+                U8 * dictionary_out_inf = (U8 *) malloc(32768);
+                ASSERT_NE(dictionary_out_inf, (U8*)NULL);
+                U32 dict_out_inf_len = 0;
                 printf("getting dictionary\n");
                 err = inflateGetDictionary(&stream, dictionary_out_inf,
                         &dict_out_inf_len);
@@ -1033,7 +1033,7 @@ void zlib_test_file(
     ASSERT_FALSE(file == NULL);
 
     int source_buf_len = CORPUS_MAX_SIZE;
-    Byte * source_buf = (Byte *) malloc(source_buf_len);
+    U8 * source_buf = (U8 *) malloc(source_buf_len);
     int nread = fread(source_buf, 1, source_buf_len, file);
     ASSERT_FALSE(ferror(file));
     fclose(file);
@@ -1072,12 +1072,12 @@ TEST_F(ZlibTest, Version) {
         fprintf(stderr, "warning: different zlib version\n");
     }
 
-    uLong compile_flags = zlibCompileFlags();
+    U32 compile_flags = zlibCompileFlags();
     printf("zlib version %s = 0x%04x, compile flags = 0x%x\n",
             ZLIB_VERSION, ZLIB_VERNUM, zlibCompileFlags());
 
     // Neil's unit testing was conducted on machine where
-    // sizeof(uInt) = 4, sizeof(uLong) = 8,
+    // sizeof(U32) = 4, sizeof(U32) = 8,
     // (but both were switched to 32-bit)
     // sizeof(voidpf) = 8, sizeof(z_off_t) = 8,
     // allow debug flag
@@ -1403,16 +1403,16 @@ TEST_F(ZlibTest, Bounds) {
     head1.name = Z_NULL;
     head1.comment = Z_NULL;
 
-    uLong source_len = 1000;
-    uLong max_block_len = 10000;
+    U32 source_len = 1000;
+    U32 max_block_len = 10000;
     int level = Z_DEFAULT_COMPRESSION;
-    uLong size_out1 = -1;
+    U32 size_out1 = -1;
     zsc_compress_get_max_output_size_gzip(
             source_len, max_block_len, level, &head1, &size_out1);
 
-    head1.name = (Byte *) malloc(50);
+    head1.name = (U8 *) malloc(50);
     sprintf((char*)head1.name,"Hello");
-    uLong size_out2 = -1;
+    U32 size_out2 = -1;
     zsc_compress_get_max_output_size_gzip(
             source_len, max_block_len, level, &head1, &size_out2);
 
@@ -1452,7 +1452,7 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     ASSERT_FALSE(file == NULL);
 
     int source_buf_len = CORPUS_MAX_SIZE;
-    Byte * source_buf = (Byte *) malloc(source_buf_len);
+    U8 * source_buf = (U8 *) malloc(source_buf_len);
     int nread = fread(source_buf, 1, source_buf_len, file);
     ASSERT_FALSE(ferror(file));
     fclose(file);
@@ -1462,23 +1462,23 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     ZlibReturn err;
     int level = Z_DEFAULT_COMPRESSION;
 
-    uLong compressed_buf_len;
-    Byte * compressed_buf;
-    uLong work_buf_len;
-    Byte * work_buf;
-    uLong compressed_buf_len_out;
+    U32 compressed_buf_len;
+    U8 * compressed_buf;
+    U32 work_buf_len;
+    U8 * work_buf;
+    U32 compressed_buf_len_out;
     int max_block_size = 10000;
 
     err = zsc_compress_get_max_output_size(source_buf_len, max_block_size, level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
-    compressed_buf = (Byte *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (Byte*)NULL);
+    compressed_buf = (U8 *) malloc(compressed_buf_len);
+    ASSERT_NE(compressed_buf, (U8*)NULL);
 
 
     err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Byte*)NULL);
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8*)NULL);
     compressed_buf_len_out = compressed_buf_len;
 
     printf("bad window and mem level\n");
@@ -1526,7 +1526,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     ASSERT_FALSE(file == NULL);
 
     int source_buf_len = CORPUS_MAX_SIZE;
-    Byte * source_buf = (Byte *) malloc(source_buf_len);
+    U8 * source_buf = (U8 *) malloc(source_buf_len);
     int nread = fread(source_buf, 1, source_buf_len, file);
     ASSERT_FALSE(ferror(file));
     fclose(file);
@@ -1535,11 +1535,11 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
 
     ZlibReturn err;
 
-    uLong compressed_buf_len;
-    Byte * compressed_buf;
-    uLong work_buf_len;
-    Byte * work_buf;
-    uLong compressed_buf_len_out;
+    U32 compressed_buf_len;
+    U8 * compressed_buf;
+    U32 work_buf_len;
+    U8 * work_buf;
+    U32 compressed_buf_len_out;
     int max_block_size = 10000;
 
     int level = Z_DEFAULT_COMPRESSION;
@@ -1547,14 +1547,14 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     err = zsc_compress_get_max_output_size(source_buf_len, max_block_size,
             level, &compressed_buf_len);
     EXPECT_EQ(err, Z_OK);
-    compressed_buf = (Byte *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (Byte*)NULL);
+    compressed_buf = (U8 *) malloc(compressed_buf_len);
+    ASSERT_NE(compressed_buf, (U8*)NULL);
 
 
     err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Byte*)NULL);
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8*)NULL);
     compressed_buf_len_out = compressed_buf_len;
 
     err = zsc_compress(compressed_buf, &compressed_buf_len_out,
@@ -1564,15 +1564,15 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
 
     free(work_buf);
 
-    uLong uncompressed_buf_len = source_buf_len;
-    Byte * uncompressed_buf = (Byte *) malloc(uncompressed_buf_len);
-    EXPECT_NE(uncompressed_buf, (Byte * )NULL);
+    U32 uncompressed_buf_len = source_buf_len;
+    U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
+    EXPECT_NE(uncompressed_buf, (U8 * )NULL);
     err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
+    work_buf = (U8 *) malloc(work_buf_len);
 
-    uLong compressed_buf_len_out2;
-    uLong uncompressed_buf_len_out;
+    U32 compressed_buf_len_out2;
+    U32 uncompressed_buf_len_out;
 
     printf("work buf size = 0\n");
     compressed_buf_len_out2 = compressed_buf_len_out;
@@ -1644,12 +1644,12 @@ TEST_F(ZlibTest, DeflateErrors) {
 
     printf("null alloc gives error\n");
 
-    uLong work_buf_size = (uLong)(10000);
+    U32 work_buf_size = (U32)(10000);
     err = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
-    Byte *work_buf = (Byte*)malloc(work_buf_size);
-    ASSERT_NE(work_buf, (Byte*)NULL);
+    U8 *work_buf = (U8*)malloc(work_buf_size);
+    ASSERT_NE(work_buf, (U8*)NULL);
 
 
 //    z_static_mem mem;
@@ -1745,7 +1745,7 @@ TEST_F(ZlibTest, DeflateErrors) {
     err = deflateTune(Z_NULL, 0, 0, 0, 0);
     EXPECT_EQ(err, Z_STREAM_ERROR);
 
-    uLong bound = deflateBound(Z_NULL, 424242);
+    U32 bound = deflateBound(Z_NULL, 424242);
     EXPECT_EQ(bound, 424242
             + ((424242 + 7) >> 3) + ((424242 + 63) >> 6) +5 + 6);
 
@@ -1783,16 +1783,16 @@ TEST_F(ZlibTest, InflateErrors) {
 
     printf("null alloc gives error\n");
 
-    uLong work_buf_size = (uLong)(10000);
+    U32 work_buf_size = (U32)(10000);
     err = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL,
             &work_buf_size);
     ASSERT_EQ(err, Z_OK);
-    Byte *work_buf = (Byte*)malloc(work_buf_size);
-    ASSERT_NE(work_buf, (Byte*)NULL);
+    U8 *work_buf = (U8*)malloc(work_buf_size);
+    ASSERT_NE(work_buf, (U8*)NULL);
 
-    uLong out_buf_size = (uLong)(10000);
-    Byte *out_buf = (Byte*)malloc(out_buf_size);
-    ASSERT_NE(out_buf, (Byte*)NULL);
+    U32 out_buf_size = (U32)(10000);
+    U8 *out_buf = (U8*)malloc(out_buf_size);
+    ASSERT_NE(out_buf, (U8*)NULL);
 
 
 //    z_static_mem mem;
@@ -1881,18 +1881,18 @@ TEST_F(ZlibTest, InflateErrors) {
 
     printf("incorrect header check\n");
 
-    uInt header = (Z_DEFLATED + ((DEF_WBITS-8)<<4)) << 8;
-    uInt level_flags = 2;
+    U32 header = (Z_DEFLATED + ((DEF_WBITS-8)<<4)) << 8;
+    U32 level_flags = 2;
     header |= (level_flags << 6);
     header += 31 - (header % 31);
     header++; // BAD!
-    Byte header_arr[2];
-    header_arr[0] = (Byte)(header >> 8);
-    header_arr[1] = (Byte)(header & 0xFF);
+    U8 header_arr[2];
+    header_arr[0] = (U8)(header >> 8);
+    header_arr[1] = (U8)(header & 0xFF);
     printf("header = 0x%02x 0x%02x\n", header_arr[0], header_arr[1]);
 
-    uLong out_buf_len_out = out_buf_size;
-    uLong source_len_out = 2;
+    U32 out_buf_len_out = out_buf_size;
+    U32 source_len_out = 2;
     err = zsc_uncompress(out_buf, &out_buf_len_out,
             header_arr, &source_len_out,
                             work_buf, work_buf_size);
@@ -1904,8 +1904,8 @@ TEST_F(ZlibTest, InflateErrors) {
     level_flags = 2;
     header |= (level_flags << 6);
     header += 31 - (header % 31);
-    header_arr[0] = (Byte)(header >> 8);
-    header_arr[1] = (Byte)(header & 0xFF);
+    header_arr[0] = (U8)(header >> 8);
+    header_arr[1] = (U8)(header & 0xFF);
 
     printf("header = 0x%02x 0x%02x\n", header_arr[0], header_arr[1]);
 
@@ -1922,8 +1922,8 @@ TEST_F(ZlibTest, InflateErrors) {
     level_flags = 2;
     header |= (level_flags << 6);
     header += 31 - (header % 31);
-    header_arr[0] = (Byte)(header >> 8);
-    header_arr[1] = (Byte)(header & 0xFF);
+    header_arr[0] = (U8)(header >> 8);
+    header_arr[1] = (U8)(header & 0xFF);
 
     printf("header = 0x%02x 0x%02x\n", header_arr[0], header_arr[1]);
 
@@ -1937,7 +1937,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     printf("incorrect header check, gzip\n");
 
-    Byte header_arr4[4];
+    U8 header_arr4[4];
     header_arr4[0] = 31;
     header_arr4[1] = 139+1;
     header_arr4[2] = 8;
@@ -1986,7 +1986,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
 //    printf("bad gzip crc\n");
 //
-//    Byte header_arr_bad_crc[] = { 31, 139, 8, 2,
+//    U8 header_arr_bad_crc[] = { 31, 139, 8, 2,
 //            0, 0, 0, 0, // time
 //            0, // level
 //            0, // os
@@ -2045,16 +2045,16 @@ TEST_F(ZlibTest, DeflatePrime) {
 
     int windowBits = -15;
 
-    uLong work_buf_len;
-    Byte * work_buf;
+    U32 work_buf_len;
+    U8 * work_buf;
 
-    Byte outbuf[256];
+    U8 outbuf[256];
 
 
     err = zsc_compress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Byte *)Z_NULL);
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8 *)Z_NULL);
 
 //    z_static_mem mem_inf;
 //    mem_inf.work = work_buf;
@@ -2100,13 +2100,13 @@ TEST_F(ZlibTest, InflatePrime) {
 
     int windowBits = -15;
 
-    uLong work_buf_len;
-    Byte * work_buf;
+    U32 work_buf_len;
+    U8 * work_buf;
 
     err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
-    work_buf = (Byte *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (Byte *)Z_NULL);
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8 *)Z_NULL);
 
 //    z_static_mem mem_inf;
 //    mem_inf.work = work_buf;
