@@ -81,13 +81,12 @@
  */
 
 #include "zutil.h"
+#include "zsc_conf_private.h"
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
 #include "inffixed.h"
 
-// FIXME remove
-#include <stdio.h>
 
 /* function prototypes */
 local I32 inflateStateCheck OF((z_stream * strm));
@@ -136,13 +135,11 @@ ZlibReturn ZEXPORT inflateWorkSize2(windowBits, size_out)
     if (windowBits < 0) {
         windowBits = -windowBits;
     } else {
-#ifdef GUNZIP
         if (windowBits < 48) {
             windowBits &= 15;
         } else {
             // no special bits to properize
         }
-#endif
     }
 
     if (windowBits && (windowBits < 8 || windowBits > 15)) {
@@ -222,11 +219,9 @@ I32 windowBits;
     }
     else {
         wrap = (windowBits >> 4) + 5;
-#ifdef GUNZIP
         if (windowBits < 48) {
             windowBits &= 15;
         }
-#endif
     }
 
     /* set number of window bits, free window if different */
@@ -408,15 +403,10 @@ U32 copy;
 /* Macros for inflate(): */
 
 /* check function to use adler32() for zlib or crc32() for gzip */
-#ifdef GUNZIP
 #  define UPDATE(check, buf, len) \
     (state->flags ? crc32(check, buf, len) : adler32(check, buf, len))
-#else
-#  define UPDATE(check, buf, len) adler32(check, buf, len)
-#endif
 
 /* check macros for header crc */
-#ifdef GUNZIP
 #  define CRC2(check, word) \
     do { \
         hbuf[0] = (U8)(word); \
@@ -432,7 +422,6 @@ U32 copy;
         hbuf[3] = (U8)((word) >> 24); \
         check = crc32(check, hbuf, 4); \
     } while (0)
-#endif
 
 /* Load registers with state in inflate() for speed */
 #define LOAD() \
@@ -599,9 +588,7 @@ ZlibFlush flush;
     code last;                  /* parent table entry */
     U32 len;               /* length to copy for repeats, bits to drop */
     I32 ret;                    /* return code */
-#ifdef GUNZIP
     U8 hbuf[4];      /* buffer for gzip header crc calculation */
-#endif
     static const U16 order[19] = /* permutation of code lengths */
         {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
@@ -623,7 +610,6 @@ ZlibFlush flush;
                 break;
             }
             NEEDBITS(16);
-#ifdef GUNZIP
             if ((state->wrap & 2) && hold == 0x8b1f) {  /* gzip header */
                 if (state->wbits == 0) {
                     state->wbits = 15;
@@ -639,9 +625,6 @@ ZlibFlush flush;
                 state->head->done = -1;
             }
             if (!(state->wrap & 1) ||   /* check if zlib header allowed */
-#else
-            if (
-#endif
                 ((BITS(8) << 8) + (hold >> 8)) % 31) {
                 strm->msg = (U8*)"incorrect header check";
                 state->mode = BAD;
@@ -668,7 +651,6 @@ ZlibFlush flush;
             state->mode = hold & 0x200 ? DICTID : TYPE;
             INITBITS();
             break;
-#ifdef GUNZIP
         case FLAGS:
             NEEDBITS(16);
             state->flags = (I32)(hold);
@@ -812,7 +794,6 @@ ZlibFlush flush;
             strm->adler = state->check = crc32(0L, Z_NULL, 0);
             state->mode = TYPE;
             break;
-#endif
         case DICTID:
             NEEDBITS(32);
             strm->adler = state->check = ZSWAP32(hold);
@@ -917,13 +898,11 @@ ZlibFlush flush;
             DROPBITS(5);
             state->ncode = BITS(4) + 4;
             DROPBITS(4);
-#ifndef PKZIP_BUG_WORKAROUND
             if (state->nlen > 286 || state->ndist > 30) {
                 strm->msg = (U8*)"too many length or distance symbols";
                 state->mode = BAD;
                 break;
             }
-#endif
             Tracev((stderr, "inflate:       table sizes ok\n"));
             state->have = 0;
             state->mode = LENLENS;
@@ -1135,13 +1114,11 @@ ZlibFlush flush;
                 DROPBITS(state->extra);
                 state->back += state->extra;
             }
-#ifdef INFLATE_STRICT
             if (state->offset > state->dmax) {
                 strm->msg = (U8*)"invalid distance too far back";
                 state->mode = BAD;
                 break;
             }
-#endif
             Tracevv((stderr, "inflate:         distance %u\n", state->offset));
             state->mode = MATCH;
             break;
@@ -1156,19 +1133,6 @@ ZlibFlush flush;
                         state->mode = BAD;
                         break;
                     }
-#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
-                    Trace((stderr, "inflate.c too far\n"));
-                    copy -= state->whave;
-                    if (copy > state->length) copy = state->length;
-                    if (copy > left) copy = left;
-                    left -= copy;
-                    state->length -= copy;
-                    do {
-                        *put++ = 0;
-                    } while (--copy);
-                    if (state->length == 0) state->mode = LEN;
-                    break;
-#endif
                 }
                 if (copy > state->wnext) {
                     copy -= state->wnext;
@@ -1208,9 +1172,7 @@ ZlibFlush flush;
                         UPDATE(state->check, put - out, out);
                 out = left;
                 if ((state->wrap & 4) && (
-#ifdef GUNZIP
                      state->flags ? hold :
-#endif
                      ZSWAP32(hold)) != state->check) {
                     strm->msg = (U8*)"incorrect data check";
                     state->mode = BAD;
@@ -1219,7 +1181,6 @@ ZlibFlush flush;
                 INITBITS();
                 Tracev((stderr, "inflate:   check matches trailer\n"));
             }
-#ifdef GUNZIP
             state->mode = LENGTH;
             break;
         case LENGTH:
@@ -1233,7 +1194,6 @@ ZlibFlush flush;
                 INITBITS();
                 Tracev((stderr, "inflate:   length matches trailer\n"));
             }
-#endif
             state->mode = DONE;
             break;
         case DONE:
@@ -1488,59 +1448,8 @@ z_stream * strm;
     return state->mode == STORED && state->bits == 0;
 }
 
-// Abcouwer ZSC
+// Abcouwer ZSC - remove inflateCopy()
 // copying then doing allocs will spool more memory from the work buffer
-// maybe revisit
-#if 0
-I32 ZEXPORT inflateCopy(dest, source)
-z_stream * dest;
-z_stream * source;
-{
-    struct inflate_state FAR *state;
-    struct inflate_state FAR *copy;
-    U8 FAR *window;
-    U32 wsize;
-
-    /* check input */
-    if (inflateStateCheck(source) || dest == Z_NULL)
-        return Z_STREAM_ERROR;
-    state = (struct inflate_state FAR *)source->state;
-
-    /* allocate space */
-    copy = (struct inflate_state FAR *)
-           ZALLOC(source, 1, sizeof(struct inflate_state));
-    if (copy == Z_NULL) return Z_MEM_ERROR;
-    window = Z_NULL;
-    if (state->window != Z_NULL) {
-        window = (U8 FAR *)
-                 ZALLOC(source, 1U << state->wbits, sizeof(U8));
-        if (window == Z_NULL) {
-            ZFREE(source, copy);
-            return Z_MEM_ERROR;
-        }
-    }
-
-    /* copy state */
-    zmemcpy((voidpf)dest, (voidpf)source, sizeof(z_stream));
-    zmemcpy((voidpf)copy, (voidpf)state, sizeof(struct inflate_state));
-    copy->strm = dest;
-    if (state->lencode >= state->codes &&
-        state->lencode <= state->codes + ENOUGH - 1) {
-        copy->lencode = copy->codes + (state->lencode - state->codes);
-        copy->distcode = copy->codes + (state->distcode - state->codes);
-    }
-    copy->next = copy->codes + (state->next - state->codes);
-    if (window != Z_NULL) {
-        wsize = 1U << state->wbits;
-        zmemcpy(window, state->window, wsize);
-    }
-    copy->window = window;
-    dest->state = (struct internal_state FAR *)copy;
-    return Z_OK;
-}
-#endif
-
-
 
 ZlibReturn ZEXPORT inflateUndermine(strm, subvert)
 z_stream * strm;
@@ -1552,14 +1461,9 @@ I32 subvert;
         return Z_STREAM_ERROR;
     }
     state = (struct inflate_state FAR *)strm->state;
-#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
-    state->sane = !subvert;
-    return Z_OK;
-#else
     (void)subvert;
     state->sane = 1;
     return Z_DATA_ERROR;
-#endif
 }
 
 ZlibReturn ZEXPORT inflateValidate(strm, check)

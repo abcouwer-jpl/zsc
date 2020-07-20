@@ -1087,8 +1087,8 @@ ZEXTERN U32 ZEXPORT zlibCompileFlags OF((void));
     or are in the process of being, removed.
 
     Type sizes, two bits each, 00 = 16 bits, 01 = 32, 10 = 64, 11 = other:
-     1.0: size of uInt
-     3.2: size of U32
+     1.0: size of uInt  - replaced by U32, should be 01 = 32
+     3.2: size of uLong - replaced by U32, should be 01 = 32
      5.4: size of voidpf (pointer)
      7.6: size of z_off_t
 

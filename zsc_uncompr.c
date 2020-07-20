@@ -18,6 +18,7 @@
  */
 
 #include "zsc_pub.h"
+#include "zsc_conf_private.h"
 #include "zutil.h"
 
 

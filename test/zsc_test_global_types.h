@@ -92,11 +92,6 @@ typedef uint64_t U64;
 #define U32_MAX ((U32)0xFFFFFFFF)
 
 
-// FIXME delete
-
-//typedef U8  Byte;  /* 8 bits */
-//typedef U32 uInt;  /* 16 bits or more */
-//typedef U32 uLong; /* 32 bits or more */
 
 // CRCs are 32 bits
 typedef U32 z_crc_t;

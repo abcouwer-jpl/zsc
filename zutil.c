@@ -6,7 +6,7 @@
 /* @(#) $Id$ */
 
 #include "zutil.h"
-// Abcouwer ZSC - no gz files
+// Abcouwer ZSC - removed gz files
 
 
 const U8 * const z_errmsg[10] = {
@@ -45,12 +45,14 @@ U32 ZEXPORT zlibCompileFlags()
     U32 flags;
 
     flags = 0;
+    ZSC_COMPILE_ASSERT((int)(sizeof(U32)) == 4, bad_u32_1);
     switch ((int)(sizeof(U32))) {
     case 2:     break;
     case 4:     flags += 1;     break;
     case 8:     flags += 2;     break;
     default:    flags += 3;
     }
+    ZSC_COMPILE_ASSERT((int)(sizeof(U32)) == 4, bad_u32_2);
     switch ((int)(sizeof(U32))) {
     case 2:     break;
     case 4:     flags += 1 << 2;        break;
@@ -72,36 +74,14 @@ U32 ZEXPORT zlibCompileFlags()
 #ifdef ZLIB_DEBUG
     flags += 1 << 8;
 #endif
+
     /* Abcouwer ZSC - removed conditional compilation flags:
      * ASMV/ASMINF, ZLIB_WINAPI, BUILDFIXED, DYNAMIC_CRC_TABLE, NO_GZCOMPRESS,
-     * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST
-     *
-     */
+     * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST     */
 
-#if defined(STDC) || defined(Z_HAVE_STDARG_H)
-#  ifdef NO_vsnprintf
-    flags += 1L << 25;
-#    ifdef HAS_vsprintf_void
-    flags += 1L << 26;
-#    endif
-#  else
-#    ifdef HAS_vsnprintf_void
-    flags += 1L << 26;
-#    endif
-#  endif
-#else
-    flags += 1L << 24;
-#  ifdef NO_snprintf
-    flags += 1L << 25;
-#    ifdef HAS_sprintf_void
-    flags += 1L << 26;
-#    endif
-#  else
-#    ifdef HAS_snprintf_void
-    flags += 1L << 26;
-#    endif
-#  endif
-#endif
+    /* Abcouwer ZSC - sprintf variants not checked, as used in gzprintf,
+     * and gz code not included */
+
     return flags;
 }
 
@@ -130,43 +110,6 @@ const U8 * ZEXPORT zError(err)
 }
 
 
-#ifndef HAVE_MEMCPY
-
-void ZLIB_INTERNAL zmemcpy(dest, source, len)
-    U8* dest;
-    const U8* source;
-    U32  len;
-{
-    if (len == 0) return;
-    do {
-        *dest++ = *source++; /* ??? to be unrolled */
-        len--;
-    } while (len != 0);
-}
-
-I32 ZLIB_INTERNAL zmemcmp(s1, s2, len)
-    const U8* s1;
-    const U8* s2;
-    U32  len;
-{
-    U32 j;
-
-    for (j = 0; j < len; j++) {
-        if (s1[j] != s2[j]) return 2*(s1[j] > s2[j])-1;
-    }
-    return 0;
-}
-
-void ZLIB_INTERNAL zmemzero(dest, len)
-    U8* dest;
-    U32  len;
-{
-    if (len == 0) return;
-    do {
-        *dest++ = 0;  /* ??? to be unrolled */
-        len--;
-    } while (len != 0);
-}
-#endif
+// Abcouwer ZSC - removed solo memcpy and related functions
 
 // Abcouwer ZSC - removed dynamic memory allocation functions

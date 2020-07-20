@@ -32,7 +32,7 @@
 
 /* @(#) $Id$ */
 
-
+#include "zsc_conf_private.h"
 #include "deflate.h"
 
 #ifdef ZLIB_DEBUG

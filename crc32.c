@@ -16,18 +16,11 @@
 #include "zutil.h"      /* for STDC and FAR definitions */
 
 /* Definitions for doing the crc four data bytes at a time. */
-#if !defined(NOBYFOUR) && defined(Z_U4)
-#  define BYFOUR
-#endif
-#ifdef BYFOUR
-   local U32 crc32_little OF((U32,
-                        const U8 FAR *, z_size_t));
-   local U32 crc32_big OF((U32,
-                        const U8 FAR *, z_size_t));
-#  define TBLS 8
-#else
-#  define TBLS 1
-#endif /* BYFOUR */
+local U32 crc32_little OF((U32,
+                    const U8 FAR *, z_size_t));
+local U32 crc32_big OF((U32,
+                    const U8 FAR *, z_size_t));
+#define TBLS 8
 
 /* Local functions for crc concatenation */
 local U32 gf2_matrix_times OF((U32 *mat,
@@ -61,7 +54,6 @@ U32 ZEXPORT crc32_z(crc, buf, len)
 {
     if (buf == Z_NULL) return 0UL;
 
-#ifdef BYFOUR
     if (sizeof(void *) == sizeof(ptrdiff_t)) {
         z_crc_t endian;
 
@@ -71,7 +63,6 @@ U32 ZEXPORT crc32_z(crc, buf, len)
         else
             return crc32_big(crc, buf, len);
     }
-#endif /* BYFOUR */
     crc = crc ^ 0xffffffffUL;
     while (len >= 8) {
         DO8;
@@ -93,7 +84,6 @@ U32 ZEXPORT crc32(crc, buf, len)
     return crc32_z(crc, buf, len);
 }
 
-#ifdef BYFOUR
 
 /*
    This BYFOUR code accesses the passed unsigned char * buffer with a 32-bit
@@ -189,7 +179,6 @@ local U32 crc32_big(crc, buf, len)
     return (U32)(ZSWAP32(c));
 }
 
-#endif /* BYFOUR */
 
 #define GF2_DIM 32      /* dimension of GF(2) vectors (length of CRC) */
 
