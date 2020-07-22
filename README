@@ -40,6 +40,17 @@ Use of assertions
 Use of types that define the size and sign - this has not yet been tested 
 on 16 bit systems, be wary.
 
+
+Exceptions
+
+In violation of required MISRA Directive R15.2, backward gotos have been left 
+in inffast.c, rather than restructure the code.
+
+In violation of advisory MISRA Directive R15.1, gotos have been left 
+in the code, rather than restructure.
+
+
+
 --
 
 

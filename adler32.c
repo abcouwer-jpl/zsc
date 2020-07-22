@@ -7,7 +7,6 @@
 
 #include "zutil.h"
 
-local U32 adler32_combine_ OF((U32 adler1, U32 adler2, z_off64_t len2));
 
 #define BASE 65521U     /* largest prime smaller than 65536 */
 #define NMAX 5552
@@ -19,48 +18,13 @@ local U32 adler32_combine_ OF((U32 adler1, U32 adler2, z_off64_t len2));
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
-/* use NO_DIVIDE if your processor does not do division in hardware --
-   try it both ways to see which is faster */
-#ifdef NO_DIVIDE
-/* note that this assumes BASE is 65521, where 65536 % 65521 == 15
-   (thank you to John Reiser for pointing this out) */
-#  define CHOP(a) \
-    do { \
-        unsigned long tmp = a >> 16; \
-        a &= 0xffffUL; \
-        a += (tmp << 4) - tmp; \
-    } while (0)
-#  define MOD28(a) \
-    do { \
-        CHOP(a); \
-        if (a >= BASE) a -= BASE; \
-    } while (0)
-#  define MOD(a) \
-    do { \
-        CHOP(a); \
-        MOD28(a); \
-    } while (0)
-#  define MOD63(a) \
-    do { /* this assumes a is not negative */ \
-        z_off64_t tmp = a >> 32; \
-        a &= 0xffffffffL; \
-        a += (tmp << 8) - (tmp << 5) + tmp; \
-        tmp = a >> 16; \
-        a &= 0xffffL; \
-        a += (tmp << 4) - tmp; \
-        tmp = a >> 16; \
-        a &= 0xffffL; \
-        a += (tmp << 4) - tmp; \
-        if (a >= BASE) a -= BASE; \
-    } while (0)
-#else
-#  define MOD(a) a %= BASE
-#  define MOD28(a) a %= BASE
-#  define MOD63(a) a %= BASE
-#endif
+// Abcouwer ZSC - remove NO_DIVIDE conditional
+#define MOD(a) a %= BASE
+#define MOD28(a) a %= BASE
+#define MOD63(a) a %= BASE
 
 /* ========================================================================= */
-U32 ZEXPORT adler32_z(adler, buf, len)
+U32 adler32_z(adler, buf, len)
     U32 adler;
     const U8 *buf;
     z_size_t len;
@@ -138,7 +102,7 @@ U32 ZEXPORT adler32_z(adler, buf, len)
 }
 
 /* ========================================================================= */
-U32 ZEXPORT adler32(adler, buf, len)
+U32 adler32(adler, buf, len)
     U32 adler;
     const U8 *buf;
     U32 len;
@@ -146,48 +110,5 @@ U32 ZEXPORT adler32(adler, buf, len)
     return adler32_z(adler, buf, len);
 }
 
-/* ========================================================================= */
-local U32 adler32_combine_(adler1, adler2, len2)
-    U32 adler1;
-    U32 adler2;
-    z_off64_t len2;
-{
-    U32 sum1;
-    U32 sum2;
-    U32 rem;
-
-    /* for negative len, return invalid adler32 as a clue for debugging */
-    if (len2 < 0)
-        return 0xffffffffUL;
-
-    /* the derivation of this formula is left as an exercise for the reader */
-    MOD63(len2);                /* assumes len2 >= 0 */
-    rem = (U32)len2;
-    sum1 = adler1 & 0xffff;
-    sum2 = rem * sum1;
-    MOD(sum2);
-    sum1 += (adler2 & 0xffff) + BASE - 1;
-    sum2 += ((adler1 >> 16) & 0xffff) + ((adler2 >> 16) & 0xffff) + BASE - rem;
-    if (sum1 >= BASE) sum1 -= BASE;
-    if (sum1 >= BASE) sum1 -= BASE;
-    if (sum2 >= ((U32)BASE << 1)) sum2 -= ((U32)BASE << 1);
-    if (sum2 >= BASE) sum2 -= BASE;
-    return sum1 | (sum2 << 16);
-}
-
-/* ========================================================================= */
-U32 ZEXPORT adler32_combine(adler1, adler2, len2)
-    U32 adler1;
-    U32 adler2;
-    z_off_t len2;
-{
-    return adler32_combine_(adler1, adler2, len2);
-}
-
-U32 ZEXPORT adler32_combine64(adler1, adler2, len2)
-    U32 adler1;
-    U32 adler2;
-    z_off64_t len2;
-{
-    return adler32_combine_(adler1, adler2, len2);
-}
+// Abcouwer ZSC - Remove adler combine functions
+// Joining two compressed buffers is beyond scope of ZSC.

@@ -11,6 +11,7 @@ Changes in 1.2.11.f-abcouwer-safety-v0 (TBD)
 - Remove conditional compilation
 - Remove allocation functions from stream type, in favor of work buffer.
 - Remove code for building fixed tables (not thread safe) 
+- Remove crc combine functions
 - Use fixed size types
 - Remove types that obscure pointers
 - Enclose some one line conditional blocks in brackets.

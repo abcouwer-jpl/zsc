@@ -31,7 +31,7 @@
    define "local" for the non-static meaning of "static", for readability
    (compile with -Dlocal if your debugger can't find static symbols) */
 
-extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
+extern const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* (size given to avoid silly warnings with Visual C++) */
 
 #define ERR_MSG(err) z_errmsg[Z_NEED_DICT-(err)]
@@ -115,12 +115,8 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
 // Abcouwer ZSC - Remove target dependencies related to fdopen and dynamic memory
 
-/* provide prototypes for these when building zlib without LFS */
-#if !defined(_WIN32) && \
-    (!defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0)
-    ZEXTERN U32 ZEXPORT adler32_combine64 OF((U32, U32, z_off_t));
-    ZEXTERN U32 ZEXPORT crc32_combine64 OF((U32, U32, z_off_t));
-#endif
+// Abcouwer ZSC - Remove crc combine functions
+// Joining two compressed buffers is beyond scope of ZSC.
 
          /* functions */
 
@@ -149,5 +145,9 @@ extern z_const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* Reverse the bytes in a 32-bit value */
 #define ZSWAP32(q) ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
                     (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
+
+#define ZMIN(a,b) ((a)<(b) ?  (a) : (b))
+#define ZMAX(a,b) ((a)>(b) ?  (a) : (b))
+
 
 #endif /* ZUTIL_H */

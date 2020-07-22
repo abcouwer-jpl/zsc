@@ -100,7 +100,6 @@ set(ZLIB_PUBLIC_HDRS
     zsc_pub.h
 )
 set(ZLIB_PRIVATE_HDRS
-    crc32.h
     deflate.h
     inffast.h
     inffixed.h

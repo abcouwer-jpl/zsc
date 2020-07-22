@@ -42,56 +42,17 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// FIXME delete when removed
-#define Z_SOLO
-#ifdef __STDC_VERSION__
-#  ifndef STDC
-#    define STDC
-#  endif
-#  if __STDC_VERSION__ >= 199901L
-#    ifndef STDC99
-#      define STDC99
-#    endif
-#  endif
-#endif
-#if !defined(STDC) && (defined(__STDC__) || defined(__cplusplus))
-#  define STDC
-#endif
-#define OF(args)  args
-#define Z_ARG(args)  args
-#define ZEXPORT
-#define ZEXTERN extern
-#define ZEXPORTVA
-#define FAR
-#define Z_U4 U32
-#define z_const const
-
-#define z_off_t I64
-#define z_off64_t I64
-
-
-
-
-
 // throw a compilation error if test is not true
 #define ZSC_COMPILE_ASSERT(test, msg) \
   typedef U8 (msg)[ ((test) ? 1 : -1) ]
 
-#ifndef NULL
-#define NULL  (0)
-#endif
-
-
+// signed, sized types
 typedef  int32_t I32;
-typedef  int64_t I64;
 typedef  uint8_t  U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
-typedef uint64_t U64;
 
 #define U32_MAX ((U32)0xFFFFFFFF)
-
-
 
 // CRCs are 32 bits
 typedef U32 z_crc_t;
@@ -100,7 +61,5 @@ typedef U32 z_crc_t;
 typedef size_t z_size_t;
 // ptrdiff_t must be defined,
 // can include stddef, or use signed version of z_size_ts
-
-
 
 #endif /* ZSC_CONF_GLOBAL_TYPES_H */

@@ -58,19 +58,22 @@
    Asserts could also be disabled, but this is is discouraged.
  */
 #define ZSC_ASSERT(test) assert(test)
-#define ZSC_ASSERT_1(test, arg1) assert(test)
-#define ZSC_ASSERT_2(test, arg1, arg2) assert(test)
-#define ZSC_ASSERT_DBL_1(test, arg1) assert(test)
-
-
+#define ZSC_ASSERT1(test, arg1) assert(test)
+#define ZSC_ASSERT2(test, arg1, arg2) assert(test)
+#define ZSC_ASSERT3(test, arg1, arg2, arg3) assert(test)
+#define ZSC_ASSERT_DBL1(test, arg1) assert(test)
 
 // if your framework has messaging/logging infrastructure, replace here
 // or define as nothing to disable
-// FIXME make better
-#define ZSC_WARN(fmt) printf("WARNING "fmt"\n")
-#define ZSC_WARN1(fmt, arg1) printf("WARNING "fmt"\n", arg1)
-#define ZSC_WARN2(fmt, arg1, arg2) printf("WARNING "fmt"\n", arg1, arg2)
-#define ZSC_WARN3(fmt, arg1, arg2, arg3) printf("WARNING "fmt"\n", arg1, arg2, arg3)
+#define ZSC_WARN(fmt) printf("ZSC WARNING "fmt"\n")
+#define ZSC_WARN1(fmt, arg1) printf("ZSC WARNING "fmt"\n", arg1)
+#define ZSC_WARN2(fmt, arg1, arg2) printf("ZSC WARNING "fmt"\n", arg1, arg2)
+#define ZSC_WARN3(fmt, arg1, arg2, arg3) \
+    printf("ZSC WARNING "fmt"\n", arg1, arg2, arg3)
+#define ZSC_WARN4(fmt, arg1, arg2, arg3, arg4) \
+    printf("ZSC WARNING "fmt"\n", arg1, arg2, arg3, arg4)
+#define ZSC_WARN5(fmt, arg1, arg2, arg3, arg4, arg5) \
+    printf("ZSC WARNING "fmt"\n", arg1, arg2, arg3, arg4, arg5)
 
 /*
  define zmemcpy, zmemcmp, zmemzero appropriately

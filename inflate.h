@@ -93,7 +93,7 @@ struct inflate_state {
     U32 wsize;             /* window size or zero if not using window */
     U32 whave;             /* valid bytes in the window */
     U32 wnext;             /* window write index */
-    U8 FAR *window;  /* allocated sliding window, if needed */
+    U8 *window;  /* allocated sliding window, if needed */
         /* bit accumulator */
     U32 hold;         /* input bit accumulator */
     U32 bits;              /* number of bits in "in" */
@@ -103,8 +103,8 @@ struct inflate_state {
         /* for table and code decoding */
     U32 extra;             /* extra bits needed */
         /* fixed and dynamic code tables */
-    code const FAR *lencode;    /* starting table for length/literal codes */
-    code const FAR *distcode;   /* starting table for distance codes */
+    code const *lencode;    /* starting table for length/literal codes */
+    code const *distcode;   /* starting table for distance codes */
     U32 lenbits;           /* index bits for lencode */
     U32 distbits;          /* index bits for distcode */
         /* dynamic table building */
@@ -112,7 +112,7 @@ struct inflate_state {
     U32 nlen;              /* number of length code lengths */
     U32 ndist;             /* number of distance code lengths */
     U32 have;              /* number of code lengths in lens[] */
-    code FAR *next;             /* next available space in codes[] */
+    code *next;             /* next available space in codes[] */
     U16 lens[320];   /* temporary storage for code lengths */
     U16 work[288];   /* work area for code table building */
     code codes[ENOUGH];         /* space for code tables */

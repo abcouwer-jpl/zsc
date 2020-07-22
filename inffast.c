@@ -49,21 +49,21 @@ void ZLIB_INTERNAL inflate_fast(strm, start)
 z_stream * strm;
 U32 start;         /* inflate()'s starting value for strm->avail_out */
 {
-    struct inflate_state FAR *state;
-    z_const U8 FAR *in;      /* local strm->next_in */
-    z_const U8 FAR *last;    /* have enough input while in < last */
-    U8 FAR *out;     /* local strm->next_out */
-    U8 FAR *beg;     /* inflate()'s initial strm->next_out */
-    U8 FAR *end;     /* while out < end, enough space available */
+    struct inflate_state *state;
+    const U8 *in;      /* local strm->next_in */
+    const U8 *last;    /* have enough input while in < last */
+    U8 *out;     /* local strm->next_out */
+    U8 *beg;     /* inflate()'s initial strm->next_out */
+    U8 *end;     /* while out < end, enough space available */
     U32 dmax;              /* maximum distance from zlib header */
     U32 wsize;             /* window size or zero if not using window */
     U32 whave;             /* valid bytes in the window */
     U32 wnext;             /* window write index */
-    U8 FAR *window;  /* allocated sliding window, if wsize != 0 */
+    U8 *window;  /* allocated sliding window, if wsize != 0 */
     U32 hold;         /* local strm->hold */
     U32 bits;              /* local strm->bits */
-    code const FAR *lcode;      /* local strm->lencode */
-    code const FAR *dcode;      /* local strm->distcode */
+    code const *lcode;      /* local strm->lencode */
+    code const *dcode;      /* local strm->distcode */
     U32 lmask;             /* mask for first level of length codes */
     U32 dmask;             /* mask for first level of distance codes */
     code here;                  /* retrieved table entry */
@@ -71,10 +71,10 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                                 /*  window position, window bytes to copy */
     U32 len;               /* match length, unused bytes */
     U32 dist;              /* match distance */
-    U8 FAR *from;    /* where to copy match from */
+    U8 *from;    /* where to copy match from */
 
     /* copy state to local variables */
-    state = (struct inflate_state FAR *)strm->state;
+    state = (struct inflate_state *)strm->state;
     in = strm->next_in;
     last = in + (strm->avail_in - 5);
     out = strm->next_out;

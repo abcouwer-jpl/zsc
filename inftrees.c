@@ -31,11 +31,11 @@ const U8 inflate_copyright[] =
  */
 I32 ZLIB_INTERNAL inflate_table(type, lens, codes, table, bits, work)
 codetype type;
-U16 FAR *lens;
+U16 *lens;
 U32 codes;
-code FAR * FAR *table;
-U32 FAR *bits;
-U16 FAR *work;
+code **table;
+U32 *bits;
+U16 *work;
 {
     U32 len;               /* a code's length in bits */
     U32 sym;               /* index of code symbols */
@@ -51,9 +51,9 @@ U16 FAR *work;
     U32 low;               /* low bits for current root entry */
     U32 mask;              /* mask for low root bits */
     code here;                  /* table entry for duplication */
-    code FAR *next;             /* next available space in table */
-    const U16 FAR *base;     /* base value table to use */
-    const U16 FAR *extra;    /* extra bits table to use */
+    code *next;             /* next available space in table */
+    const U16 *base;     /* base value table to use */
+    const U16 *extra;    /* extra bits table to use */
     U32 match;             /* use base and extra for symbol >= match */
     U16 count[MAXBITS+1];    /* number of codes of each length */
     U16 offs[MAXBITS+1];     /* offsets in table for each length */

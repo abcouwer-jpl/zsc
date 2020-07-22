@@ -39,11 +39,9 @@
 // check that conf_global_types defined signed sized types correctly
 
 ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
-ZSC_COMPILE_ASSERT(sizeof(I64) == 8, I64BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U8)  == 1,  U8BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U16) == 2, U16BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
-ZSC_COMPILE_ASSERT(sizeof(U64) == 8, U64BadSize);
 
 
 #define Z_NULL  0  /// for initializing zalloc, zfree, opaque

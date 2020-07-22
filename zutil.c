@@ -23,7 +23,7 @@ const U8 * const z_errmsg[10] = {
 };
 
 
-const U8 * ZEXPORT zlibVersion()
+const U8 * zlibVersion()
 {
     return (U8*)ZLIB_VERSION;
 }
@@ -31,47 +31,58 @@ const U8 * ZEXPORT zlibVersion()
 /*
 Abcouwer ZSC - As it is impossible to test the 2^N variations of zlib that
 could exist with conditional compilation, most of these variations have been removed.
+This function should return the same flags as a version of zlib compiled
+with the same settings as ZSC has hardcoded. So users that check the value
+of this function should be able to call and tell whether their application
+is compatible with ZSC.
+
 Unless noted elsewhere, the code has been changed to match the compilation
 in the case where these flags are not defined.
 
 If your favorite option has been removed, but the option is compatible with
-the goals of ZSC, consider a pull request! But implement that option is such a way
-that the source code compiles the same, the option is a run-time option.
+the goals of ZSC, consider a pull request! But implement that option is such
+a way that the source code compiles the same, the option is a run-time option.
 That allows unit testing of all the options.
-
 */
-U32 ZEXPORT zlibCompileFlags()
+U32 zlibCompileFlags()
 {
     U32 flags;
 
     flags = 0;
-    ZSC_COMPILE_ASSERT((int)(sizeof(U32)) == 4, bad_u32_1);
-    switch ((int)(sizeof(U32))) {
+    // Abcouwer ZSC - uShrt and uInt replaced with U32, per MISRA.
+    // So this returns size of U32 twice
+    ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_1);
+    switch ((I32)(sizeof(U32))) {
     case 2:     break;
     case 4:     flags += 1;     break;
     case 8:     flags += 2;     break;
     default:    flags += 3;
     }
-    ZSC_COMPILE_ASSERT((int)(sizeof(U32)) == 4, bad_u32_2);
-    switch ((int)(sizeof(U32))) {
+    ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_2);
+    switch ((I32)(sizeof(U32))) {
     case 2:     break;
     case 4:     flags += 1 << 2;        break;
     case 8:     flags += 2 << 2;        break;
     default:    flags += 3 << 2;
     }
-    switch ((int)(sizeof(void*))) {
+    switch ((I32)(sizeof(void*))) {
     case 2:     break;
     case 4:     flags += 1 << 4;        break;
     case 8:     flags += 2 << 4;        break;
     default:    flags += 3 << 4;
     }
-    switch ((int)(sizeof(z_off_t))) {
+
+    // Abcouwer ZSC - crc combine functions were removed, no need for z_off_t type
+    // z_off_t would be size that can represent largest offset in system
+    // providing size of unsigned long
+    switch ((I32)(sizeof(unsigned long))) {
     case 2:     break;
     case 4:     flags += 1 << 6;        break;
     case 8:     flags += 2 << 6;        break;
     default:    flags += 3 << 6;
     }
-#ifdef ZLIB_DEBUG
+
+    #ifdef ZLIB_DEBUG
     flags += 1 << 8;
 #endif
 
@@ -90,7 +101,7 @@ U32 ZEXPORT zlibCompileFlags()
 #  ifndef verbose
 #    define verbose 0
 #  endif
-int ZLIB_INTERNAL z_verbose = verbose;
+I32 ZLIB_INTERNAL z_verbose = verbose;
 
 void ZLIB_INTERNAL z_error (m)
     U8 *m;
@@ -103,7 +114,7 @@ void ZLIB_INTERNAL z_error (m)
 /* exported to allow conversion of error code to string for compress() and
  * uncompress()
  */
-const U8 * ZEXPORT zError(err)
+const U8 * zError(err)
     ZlibReturn err;
 {
     return ERR_MSG(err);
