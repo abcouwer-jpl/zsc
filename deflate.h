@@ -294,7 +294,7 @@ ZSC_COMPILE_ASSERT(Z_DEFLATE_STATE_SIZE >= sizeof(deflate_state),
 
         /* in trees.c */
 void ZLIB_INTERNAL _tr_init (deflate_state *s);
-I32 ZLIB_INTERNAL _tr_tally (deflate_state *s, U32 dist, U32 lc);
+I32  ZLIB_INTERNAL _tr_tally (deflate_state *s, U32 dist, U32 lc);
 void ZLIB_INTERNAL _tr_flush_block (deflate_state *s, U8 *buf,
                         U32 stored_len, I32 last);
 void ZLIB_INTERNAL _tr_flush_bits (deflate_state *s);

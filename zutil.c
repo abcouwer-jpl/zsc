@@ -6,7 +6,8 @@
 /* @(#) $Id$ */
 
 #include "zutil.h"
-// Abcouwer ZSC - removed gz files
+
+// Abcouwer ZSC - removed gz file incldes
 
 
 const U8 * const z_errmsg[10] = {

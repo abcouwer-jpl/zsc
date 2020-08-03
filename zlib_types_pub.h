@@ -37,12 +37,10 @@
 #include "zsc_conf_global_types.h"
 
 // check that conf_global_types defined signed sized types correctly
-
-ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U8)  == 1,  U8BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U16) == 2, U16BadSize);
 ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
-
+ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 
 #define Z_NULL  0  /// for initializing zalloc, zfree, opaque
 
@@ -68,8 +66,8 @@ ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
      (Z_DEFLATE_OUTPUT_BOUND((source_len)) / (min_max_block_len) + 1) * 4)
 
 
-// size of the private deflate state
-#define Z_DEFLATE_STATE_SIZE 8656
+// size of the private deflate state, with margin for pointer sizes changing
+#define Z_DEFLATE_STATE_SIZE 7000
 // size of work buffer needed for compression
 #define Z_COMPRESS_WORK_SIZE2(window_bits, mem_level) \
     (Z_DEFLATE_STATE_SIZE + \
@@ -78,8 +76,8 @@ ZSC_COMPILE_ASSERT(sizeof(U32) == 4, U32BadSize);
             (1 << ((mem_level)+7)) * sizeof(Pos) + \
             (1 << ((mem_level)+6)) * (sizeof(U16) +2) )
 
-// size of the private inflate state
-#define Z_INFLATE_STATE_SIZE 7160
+// size of the private inflate state, with margin for pointer sizes changing
+#define Z_INFLATE_STATE_SIZE 8000
 // size of work buffer needed for decompression
 #define Z_UNCOMPRESS_WORK_SIZE2(window_bits) \
     (Z_INFLATE_STATE_SIZE + (1 << (window_bits)) * sizeof(U8))

@@ -76,7 +76,7 @@ typedef enum {
 
 /* State maintained between inflate() calls -- approximately 7K bytes, not
    including the allocated sliding window, which is up to 32K bytes. */
-struct inflate_state {
+typedef struct  {
     z_stream * strm;             /* pointer back to this zlib stream */
     inflate_mode mode;          /* current inflate mode */
     I32 last;                   /* true if processing last block */
@@ -119,8 +119,8 @@ struct inflate_state {
     I32 sane;                   /* if false, allow invalid distance too far */
     I32 back;                   /* bits back of last unprocessed length/lit */
     U32 was;               /* initial length of match */
-};
+} inflate_state;
 
 // check that our macro for size of the private deflate state is correct
-ZSC_COMPILE_ASSERT(Z_INFLATE_STATE_SIZE >= sizeof(struct inflate_state),
+ZSC_COMPILE_ASSERT(Z_INFLATE_STATE_SIZE >= sizeof(inflate_state),
         bad_inflate_state_size);

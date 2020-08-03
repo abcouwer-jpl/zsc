@@ -74,23 +74,23 @@ typedef enum {
 typedef block_state (*compress_func) (deflate_state *s, ZlibFlush flush);
 /* Compression function. Returns the block state after the call. */
 
-local I32 deflateStateCheck      (z_stream * strm);
-local void slide_hash     (deflate_state *s);
-local void fill_window    (deflate_state *s);
-local block_state deflate_stored (deflate_state *s, ZlibFlush flush);
-local block_state deflate_fast   (deflate_state *s, ZlibFlush flush);
-local block_state deflate_slow   (deflate_state *s, ZlibFlush flush);
-local block_state deflate_rle    (deflate_state *s, ZlibFlush flush);
-local block_state deflate_huff   (deflate_state *s, ZlibFlush flush);
-local void lm_init        (deflate_state *s);
-local void putShortMSB    (deflate_state *s, U32 b);
-local void flush_pending  (z_stream * strm);
-local U32 read_buf   (z_stream * strm, U8 *buf, U32 size);
+ZSC_PRIVATE I32 deflateStateCheck      (z_stream * strm);
+ZSC_PRIVATE void slide_hash     (deflate_state *s);
+ZSC_PRIVATE void fill_window    (deflate_state *s);
+ZSC_PRIVATE block_state deflate_stored (deflate_state *s, ZlibFlush flush);
+ZSC_PRIVATE block_state deflate_fast   (deflate_state *s, ZlibFlush flush);
+ZSC_PRIVATE block_state deflate_slow   (deflate_state *s, ZlibFlush flush);
+ZSC_PRIVATE block_state deflate_rle    (deflate_state *s, ZlibFlush flush);
+ZSC_PRIVATE block_state deflate_huff   (deflate_state *s, ZlibFlush flush);
+ZSC_PRIVATE void lm_init        (deflate_state *s);
+ZSC_PRIVATE void putShortMSB    (deflate_state *s, U32 b);
+ZSC_PRIVATE void flush_pending  (z_stream * strm);
+ZSC_PRIVATE U32 read_buf   (z_stream * strm, U8 *buf, U32 size);
 // Abcouwer ZSC - remove assembly functions
-local U32 longest_match  (deflate_state *s, U32 cur_match);
+ZSC_PRIVATE U32 longest_match  (deflate_state *s, U32 cur_match);
 
 #ifdef ZLIB_DEBUG
-local  void check_match (deflate_state *s, U32 start, U32 match, int length);
+ZSC_PRIVATE  void check_match (deflate_state *s, U32 start, U32 match, int length);
 #endif
 
 /* ===========================================================================
@@ -116,7 +116,7 @@ typedef struct config_s {
    compress_func func;
 } config;
 
-local const config configuration_table[10] = {
+ZSC_PRIVATE const config configuration_table[10] = {
 /*      good lazy nice chain */
 /* 0 */ {0,    0,  0,    0, deflate_stored},  /* store only */
 /* 1 */ {4,    4,  8,    4, deflate_fast}, /* max speed, no lazy matches */
@@ -173,7 +173,7 @@ local const config configuration_table[10] = {
  * bit values at the expense of memory usage). We slide even when level == 0 to
  * keep the hash table consistent if we switch back to level > 0 later.
  */
-local void slide_hash(deflate_state *s)
+ZSC_PRIVATE void slide_hash(deflate_state *s)
 {
     ZSC_ASSERT(s != Z_NULL);
 
@@ -202,7 +202,7 @@ local void slide_hash(deflate_state *s)
     } while (n);
 }
 
-local void * deflate_get_work_mem(z_stream * strm, U32 items, U32 size)
+ZSC_PRIVATE void * deflate_get_work_mem(z_stream * strm, U32 items, U32 size)
 {
     ZSC_ASSERT(strm != Z_NULL);
     ZSC_ASSERT(items != 0);
@@ -354,7 +354,7 @@ ZlibReturn deflateInit2_(z_stream * strm, I32 level,
 /* =========================================================================
  * Check for a valid deflate stream state. Return 0 if ok, 1 if not.
  */
-local I32 deflateStateCheck (z_stream *strm)
+ZSC_PRIVATE I32 deflateStateCheck (z_stream *strm)
 {
     deflate_state *s;
     if (strm == Z_NULL) {
@@ -845,7 +845,7 @@ ZlibReturn deflateWorkSize(U32 *size_out)
  * IN assertion: the stream state is correct and there is enough room in
  * pending_buf.
  */
-local void putShortMSB (deflate_state *s, U32 b)
+ZSC_PRIVATE void putShortMSB (deflate_state *s, U32 b)
 {
     put_byte(s, (U8)(b >> 8));
     put_byte(s, (U8)(b & 0xff));
@@ -857,7 +857,7 @@ local void putShortMSB (deflate_state *s, U32 b)
  * applications may wish to modify it to avoid allocating a large
  * strm->next_out buffer and copying into it. (See also read_buf()).
  */
-local void flush_pending(z_stream *strm)
+ZSC_PRIVATE void flush_pending(z_stream *strm)
 {
     U32 len;
     deflate_state *s = strm->state;
@@ -1227,7 +1227,7 @@ ZlibReturn deflateEnd (z_stream * strm)
  * allocating a large strm->next_in buffer and copying from it.
  * (See also flush_pending()).
  */
-local U32 read_buf(z_stream * strm, U8 *buf, U32 size)
+ZSC_PRIVATE U32 read_buf(z_stream * strm, U8 *buf, U32 size)
 {
     U32 len = strm->avail_in;
 
@@ -1255,7 +1255,7 @@ local U32 read_buf(z_stream * strm, U8 *buf, U32 size)
 /* ===========================================================================
  * Initialize the "longest match" routines for a new zlib stream
  */
-local void lm_init (deflate_state *s)
+ZSC_PRIVATE void lm_init (deflate_state *s)
 {
     s->window_size = (U32)2L*s->w_size;
 
@@ -1289,7 +1289,7 @@ local void lm_init (deflate_state *s)
  * OUT assertion: the match length is not greater than s->lookahead.
  */
 // Abcouwer ZSC - remove assembly functions
-local U32 longest_match( deflate_state *s, U32 cur_match)
+ZSC_PRIVATE U32 longest_match( deflate_state *s, U32 cur_match)
 {
     U32 chain_length = s->max_chain_length;/* max hash chain length */
     register U8 *scan = s->window + s->strstart; /* current string */
@@ -1312,7 +1312,9 @@ local U32 longest_match( deflate_state *s, U32 cur_match)
     /* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
      * It is easy to get rid of this optimization if necessary.
      */
-    Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
+    // Assert: "Code too clever"
+    ZSC_COMPILE_ASSERT(MAX_MATCH == 258, bad_max_match);
+    ZSC_ASSERT1(s->hash_bits >= 8, s->hash_bits);
 
     /* Do not waste too much time if we already have a good match: */
     if (s->prev_length >= s->good_match) {
@@ -1323,10 +1325,14 @@ local U32 longest_match( deflate_state *s, U32 cur_match)
      */
     if ((U32)nice_match > s->lookahead) nice_match = (I32)s->lookahead;
 
-    Assert((U32)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
+    // Assert: "need lookahead"
+    ZSC_ASSERT3((U32)s->strstart <= s->window_size-MIN_LOOKAHEAD,
+            (U32)s->strstart, s->window_size, MIN_LOOKAHEAD);
+
 
     do {
-        Assert(cur_match < s->strstart, "no future");
+        // Assert: cur_match < s->strstart, "no future"
+        ZSC_ASSERT2(cur_match < s->strstart, cur_match, s->strstart);
         match = s->window + cur_match;
 
         /* Skip to next match if the match length cannot increase
@@ -1354,7 +1360,8 @@ local U32 longest_match( deflate_state *s, U32 cur_match)
          * the hash keys are equal and that HASH_BITS >= 8.
          */
         scan += 2; match += 2;
-        Assert(*scan == *match, "match[2]?");
+        // Assert: "match[2]?"
+        ZSC_ASSERT2(*scan == *match, *scan, *match);
 
         /* We check for insufficient lookahead only every 8th comparison;
          * the 256th check will be made at strstart+258. */
@@ -1364,7 +1371,9 @@ local U32 longest_match( deflate_state *s, U32 cur_match)
             match++;
         } while (*scan == *match && scan < strend);
 
-        Assert(scan <= s->window+(U32)(s->window_size-1), "wild scan");
+        // Assert: "wild scan"
+        ZSC_ASSERT3(scan <= s->window+(U32)(s->window_size-1),
+                scan, s->window, s->window_size);
 
         len = MAX_MATCH - (I32)(strend - scan);
         scan = strend - MAX_MATCH;
@@ -1400,7 +1409,7 @@ local U32 longest_match( deflate_state *s, U32 cur_match)
 /* ===========================================================================
  * Check that the match at match_start is indeed a match.
  */
-local void check_match(s, start, match, length)
+ZSC_PRIVATE void check_match(s, start, match, length)
     deflate_state *s;
     U32 start, match;
     int length;
@@ -1434,13 +1443,14 @@ local void check_match(s, start, match, length)
  *    performed for at least two bytes (required for the zip translate_eol
  *    option -- not supported here).
  */
-local void fill_window(deflate_state *s)
+ZSC_PRIVATE void fill_window(deflate_state *s)
 {
     U32 n;
     U32 more;    /* Amount of free space at the end of the window. */
     U32 wsize = s->w_size;
 
-    Assert(s->lookahead < MIN_LOOKAHEAD, "already enough lookahead");
+    // Assert: "already enough lookahead"
+    ZSC_ASSERT2(s->lookahead < MIN_LOOKAHEAD, s->lookahead, MIN_LOOKAHEAD);
 
     do {
         more = (U32)(s->window_size -(U32)s->lookahead -(U32)s->strstart);
@@ -1485,7 +1495,8 @@ local void fill_window(deflate_state *s)
          * Otherwise, window_size == 2*WSIZE so more >= 2.
          * If there was sliding, more >= WSIZE. So in all cases, more >= 2.
          */
-        Assert(more >= 2, "more < 2");
+        // Assert: "more < 2"
+        ZSC_ASSERT1(more >= 2, more);
 
         n = read_buf(s->strm, s->window + s->strstart + s->lookahead, more);
         s->lookahead += n;
@@ -1548,8 +1559,9 @@ local void fill_window(deflate_state *s)
         }
     }
 
-    Assert((U32)s->strstart <= s->window_size - MIN_LOOKAHEAD,
-           "not enough room for search");
+    // Assert: "not enough room for search"
+    ZSC_ASSERT3((U32)s->strstart <= s->window_size - MIN_LOOKAHEAD,
+            s->strstart, s->window_size, MIN_LOOKAHEAD);
 }
 
 /* ===========================================================================
@@ -1591,7 +1603,7 @@ local void fill_window(deflate_state *s)
  * copied. It is most efficient with large input and output buffers, which
  * maximizes the opportunities to have a single copy from next_in to next_out.
  */
-local block_state deflate_stored(deflate_state *s, ZlibFlush flush)
+ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
 {
     /* Smallest worthy block size when not flushing or finishing. By default
      * this is 32K. This can be as small as 507 bytes for memLevel == 1. For
@@ -1773,7 +1785,7 @@ local block_state deflate_stored(deflate_state *s, ZlibFlush flush)
  * new strings in the dictionary only for unmatched strings or for short
  * matches. It is used only for the fast compression options.
  */
-local block_state deflate_fast(deflate_state *s, ZlibFlush flush)
+ZSC_PRIVATE block_state deflate_fast(deflate_state *s, ZlibFlush flush)
 {
     U32 hash_head;       /* head of the hash chain */
     I32 bflush;           /* set if current block must be flushed */
@@ -1869,7 +1881,7 @@ local block_state deflate_fast(deflate_state *s, ZlibFlush flush)
  * evaluation for matches: a match is finally adopted only if there is
  * no better match at the next window position.
  */
-local block_state deflate_slow(deflate_state *s, ZlibFlush flush)
+ZSC_PRIVATE block_state deflate_slow(deflate_state *s, ZlibFlush flush)
 {
     U32 hash_head;          /* head of hash chain */
     I32 bflush;              /* set if current block must be flushed */
@@ -1979,7 +1991,8 @@ local block_state deflate_slow(deflate_state *s, ZlibFlush flush)
             s->lookahead--;
         }
     }
-    Assert (flush != Z_NO_FLUSH, "no flush?");
+    // Assert: "no flush?"
+    ZSC_ASSERT2(flush != Z_NO_FLUSH, flush, Z_NO_FLUSH);
     if (s->match_available) {
         Tracevv((stderr,"%c", s->window[s->strstart-1]));
         _tr_tally_lit(s, s->window[s->strstart-1], bflush);
@@ -2000,7 +2013,7 @@ local block_state deflate_slow(deflate_state *s, ZlibFlush flush)
  * one.  Do not maintain a hash table.  (It will be regenerated if this run of
  * deflate switches away from Z_RLE.)
  */
-local block_state deflate_rle(deflate_state *s, ZlibFlush flush)
+ZSC_PRIVATE block_state deflate_rle(deflate_state *s, ZlibFlush flush)
 {
     I32 bflush;             /* set if current block must be flushed */
     U32 prev;              /* byte at distance one to match */
@@ -2036,7 +2049,9 @@ local block_state deflate_rle(deflate_state *s, ZlibFlush flush)
                 if (s->match_length > s->lookahead)
                     s->match_length = s->lookahead;
             }
-            Assert(scan <= s->window+(U32)(s->window_size-1), "wild scan");
+            // Assert: "wild scan"
+            ZSC_ASSERT3(scan <= s->window+(U32)(s->window_size-1),
+                    scan, s->window, s->window_size);
         }
 
         /* Emit match if have run of MIN_MATCH or longer, else emit literal */
@@ -2071,7 +2086,7 @@ local block_state deflate_rle(deflate_state *s, ZlibFlush flush)
  * For Z_HUFFMAN_ONLY, do not look for matches.  Do not maintain a hash table.
  * (It will be regenerated if this run of deflate switches away from Huffman.)
  */
-local block_state deflate_huff(deflate_state *s, ZlibFlush flush)
+ZSC_PRIVATE block_state deflate_huff(deflate_state *s, ZlibFlush flush)
 {
     I32 bflush;             /* set if current block must be flushed */
 

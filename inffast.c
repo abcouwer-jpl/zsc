@@ -4,6 +4,7 @@
  */
 
 #include "zutil.h"
+#include "zutil.h"
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
@@ -49,7 +50,7 @@ void ZLIB_INTERNAL inflate_fast(strm, start)
 z_stream * strm;
 U32 start;         /* inflate()'s starting value for strm->avail_out */
 {
-    struct inflate_state *state;
+    inflate_state *state;
     const U8 *in;      /* local strm->next_in */
     const U8 *last;    /* have enough input while in < last */
     U8 *out;     /* local strm->next_out */
@@ -74,7 +75,7 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
     U8 *from;    /* where to copy match from */
 
     /* copy state to local variables */
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     in = strm->next_in;
     last = in + (strm->avail_in - 5);
     out = strm->next_out;

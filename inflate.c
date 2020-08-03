@@ -89,24 +89,24 @@
 
 
 /* function prototypes */
-local I32 inflateStateCheck (z_stream * strm);
-local void fixedtables (struct inflate_state *state);
-local I32 updatewindow (z_stream * strm, const U8 *end,U32 copy);
-local U32 syncsearch (U32 *have, const U8 *buf, U32 len);
+ZSC_PRIVATE I32 inflateStateCheck (z_stream * strm);
+ZSC_PRIVATE void fixedtables (inflate_state *state);
+ZSC_PRIVATE I32 updatewindow (z_stream * strm, const U8 *end,U32 copy);
+ZSC_PRIVATE U32 syncsearch (U32 *have, const U8 *buf, U32 len);
 
-local I32 inflateStateCheck(z_stream * strm)
+ZSC_PRIVATE I32 inflateStateCheck(z_stream * strm)
 {
-    struct inflate_state *state;
+    inflate_state *state;
     if (strm == Z_NULL)
         return 1;
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if (state == Z_NULL || state->strm != strm ||
         state->mode < HEAD || state->mode > SYNC)
         return 1;
     return 0;
 }
 
-local void * inflate_get_work_mem(z_stream * strm, U32 items, U32 size)
+ZSC_PRIVATE void * inflate_get_work_mem(z_stream * strm, U32 items, U32 size)
 {
     void * new_ptr = Z_NULL;
     // FIXME assert stream not null
@@ -140,7 +140,7 @@ ZlibReturn inflateWorkSize2(I32 windowBits, U32 *size_out)
     }
 
     U32 size = 0;
-    size += sizeof(struct inflate_state);
+    size += sizeof(inflate_state);
     size += (1U << windowBits) * sizeof(U8);
     *size_out = size;
 
@@ -154,10 +154,10 @@ ZlibReturn inflateWorkSize(U32 *size_out)
 
 ZlibReturn inflateResetKeep(z_stream * strm)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     strm->total_in = strm->total_out = state->total = 0;
     strm->msg = Z_NULL;
     if (state->wrap)        /* to support ill-conceived Java test suite */
@@ -178,10 +178,10 @@ ZlibReturn inflateResetKeep(z_stream * strm)
 
 ZlibReturn inflateReset(z_stream * strm)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     state->wsize = 0;
     state->whave = 0;
     state->wnext = 0;
@@ -191,13 +191,13 @@ ZlibReturn inflateReset(z_stream * strm)
 ZlibReturn inflateReset2(z_stream * strm, I32 windowBits)
 {
     I32 wrap;
-    struct inflate_state *state;
+    inflate_state *state;
 
     /* get the state */
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
 
     /* extract wrap request from windowBits parameter */
     if (windowBits < 0) {
@@ -230,7 +230,7 @@ I32 inflateInit2_(z_stream * strm,
         I32 windowBits, const U8 *version, I32 stream_size)
 {
     I32 ret;
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (version == Z_NULL || version[0] != ZLIB_VERSION[0] ||
         stream_size != (I32)(sizeof(z_stream))){
@@ -249,8 +249,8 @@ I32 inflateInit2_(z_stream * strm,
 
     // Abcouwer ZSC -  dynamic allocation disallowed, removed functions
 
-    state = (struct inflate_state *)
-        inflate_get_work_mem(strm, 1, sizeof(struct inflate_state));
+    state = (inflate_state *)
+        inflate_get_work_mem(strm, 1, sizeof(inflate_state));
     if (state == Z_NULL) {
         return Z_MEM_ERROR;
     }
@@ -273,12 +273,12 @@ ZlibReturn inflateInit_(z_stream * strm, const U8 *version, I32 stream_size)
 
 ZlibReturn inflatePrime(z_stream * strm, I32 bits, I32 value)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if (bits < 0) {
         state->hold = 0;
         state->bits = 0;
@@ -303,7 +303,7 @@ ZlibReturn inflatePrime(z_stream * strm, I32 bits, I32 value)
    used for threaded applications, since the rewriting of the tables and virgin
    may not be thread-safe.
  */
-local void fixedtables(struct inflate_state *state)
+ZSC_PRIVATE void fixedtables(inflate_state *state)
 {
     state->lencode = lenfix;
     state->lenbits = 9;
@@ -325,12 +325,12 @@ local void fixedtables(struct inflate_state *state)
    output will fall in the output data, making match copies simpler and faster.
    The advantage may be dependent on the size of the processor's data caches.
  */
-local I32 updatewindow(z_stream * strm, const U8 *end, U32 copy)
+ZSC_PRIVATE I32 updatewindow(z_stream * strm, const U8 *end, U32 copy)
 {
-    struct inflate_state *state;
+    inflate_state *state;
     U32 dist;
 
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
 
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {
@@ -545,7 +545,7 @@ local I32 updatewindow(z_stream * strm, const U8 *end, U32 copy)
 
 ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
 {
-    struct inflate_state *state;
+    inflate_state *state;
     const U8 *next;    /* next input */
     U8 *put;     /* next output */
     U32 have, left;        /* available input and output */
@@ -566,7 +566,7 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
         (strm->next_in == Z_NULL && strm->avail_in != 0))
         return Z_STREAM_ERROR;
 
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if (state->mode == TYPE) state->mode = TYPEDO;      /* skip check */
     LOAD();
     in = have;
@@ -1232,11 +1232,11 @@ ZlibReturn inflateEnd(z_stream * strm)
 ZlibReturn inflateGetDictionary(z_stream * strm,
         U8 *dictionary, U32 *dictLength)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     /* check state */
     if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
 
     /* copy dictionary */
     if (state->whave && dictionary != Z_NULL) {
@@ -1253,7 +1253,7 @@ ZlibReturn inflateGetDictionary(z_stream * strm,
 ZlibReturn inflateSetDictionary(z_stream * strm,
         const U8 *dictionary, U32 dictLength)
 {
-    struct inflate_state *state;
+    inflate_state *state;
     U32 dictid;
     I32 ret;
 
@@ -1261,7 +1261,7 @@ ZlibReturn inflateSetDictionary(z_stream * strm,
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if (state->wrap != 0 && state->mode != DICT) {
         return Z_STREAM_ERROR;
     }
@@ -1289,13 +1289,13 @@ ZlibReturn inflateSetDictionary(z_stream * strm,
 
 ZlibReturn inflateGetHeader(z_stream * strm, gz_header * head)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     /* check state */
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if ((state->wrap & 2) == 0) return Z_STREAM_ERROR;
 
     /* save header structure */
@@ -1315,7 +1315,7 @@ ZlibReturn inflateGetHeader(z_stream * strm, gz_header * head)
    called again with more data and the *have state.  *have is initialized to
    zero for the first call.
  */
-local U32 syncsearch(U32 *have, const U8 *buf, U32 len)
+ZSC_PRIVATE U32 syncsearch(U32 *have, const U8 *buf, U32 len)
 {
     U32 got;
     U32 next;
@@ -1341,13 +1341,13 @@ ZlibReturn inflateSync(z_stream * strm)
     U32 len;               /* number of bytes to look at or looked at */
     U32 in, out;      /* temporary to save total_in and total_out */
     U8 buf[4];       /* to restore bit buffer to byte string */
-    struct inflate_state *state;
+    inflate_state *state;
 
     /* check parameters */
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if (strm->avail_in == 0 && state->bits < 8) {
         return Z_BUF_ERROR;
     }
@@ -1397,12 +1397,12 @@ ZlibReturn inflateSync(z_stream * strm)
  */
 ZlibReturn inflateSyncPoint(z_stream * strm)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     return state->mode == STORED && state->bits == 0;
 }
 
@@ -1411,12 +1411,12 @@ ZlibReturn inflateSyncPoint(z_stream * strm)
 
 ZlibReturn inflateUndermine(z_stream * strm, I32 subvert)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     (void)subvert;
     state->sane = 1;
     return Z_DATA_ERROR;
@@ -1424,12 +1424,12 @@ ZlibReturn inflateUndermine(z_stream * strm, I32 subvert)
 
 ZlibReturn inflateValidate(z_stream * strm, I32 check)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) {
         return Z_STREAM_ERROR;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     if (check)
         state->wrap |= 4;
     else
@@ -1439,12 +1439,12 @@ ZlibReturn inflateValidate(z_stream * strm, I32 check)
 
 I32 inflateMark(z_stream * strm)
 {
-    struct inflate_state *state;
+    inflate_state *state;
 
     if (inflateStateCheck(strm)) {
         return -(1L << 16);
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     return (I32)(((U32)((I32)state->back)) << 16) +
         (state->mode == COPY ? state->length :
             (state->mode == MATCH ? state->was - state->length : 0));
@@ -1452,10 +1452,10 @@ I32 inflateMark(z_stream * strm)
 
 U32 inflateCodesUsed(z_stream * strm)
 {
-    struct inflate_state *state;
+    inflate_state *state;
     if (inflateStateCheck(strm)) {
         return (U32)-1;
     }
-    state = (struct inflate_state *)strm->state;
+    state = (inflate_state *)strm->state;
     return (U32)(state->next - state->codes);
 }

@@ -1237,10 +1237,8 @@ ZlibReturn inflateBackInit_ (z_stream * strm, I32 windowBits,
           inflateBackInit_((strm), (windowBits), (window), \
                   (U8*)ZLIB_VERSION, (I32)sizeof(z_stream))
 
-// Abcouwer ZSC - Remove gz functions
-
-// Abcouwer ZSC - Remove crc combine functions
-// Joining two compressed buffers is beyond scope of ZSC.
+// Abcouwer ZSC - Removed gz functions, crc combine functions
+// File access, joining two compressed buffers is beyond scope of ZSC.
 
 /* undocumented functions */
 const U8     * zError           (ZlibReturn);

@@ -47,10 +47,10 @@
   typedef U8 (msg)[ ((test) ? 1 : -1) ]
 
 // signed, sized types
-typedef  int32_t I32;
 typedef  uint8_t  U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
+typedef  int32_t I32;
 
 #define U32_MAX ((U32)0xFFFFFFFF)
 

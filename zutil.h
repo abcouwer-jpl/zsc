@@ -24,12 +24,8 @@
 
 // Abcouwer ZSC - typedef ptrdiff_t moved to zsc_conf_global_types
 
-#ifndef local
-#  define local static
-#endif
-/* since "static" is used to mean two completely different things in C, we
-   define "local" for the non-static meaning of "static", for readability
-   (compile with -Dlocal if your debugger can't find static symbols) */
+// Abcouwer ZSC - removed definition of "local" as "static"
+//                in favor of ZSC_PRIVATE in configuration header.
 
 extern const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* (size given to avoid silly warnings with Visual C++) */
@@ -125,14 +121,14 @@ extern const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  include <stdio.h>
    extern int ZLIB_INTERNAL z_verbose;
    extern void ZLIB_INTERNAL z_error OF((char *m));
-#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
+//#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
 #  define Trace(x) {if (z_verbose>=0) fprintf x ;}
 #  define Tracev(x) {if (z_verbose>0) fprintf x ;}
 #  define Tracevv(x) {if (z_verbose>1) fprintf x ;}
 #  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf x ;}
 #  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf x ;}
 #else
-#  define Assert(cond,msg)
+//#  define Assert(cond,msg)
 #  define Trace(x)
 #  define Tracev(x)
 #  define Tracevv(x)

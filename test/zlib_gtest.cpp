@@ -1422,7 +1422,8 @@ TEST_F(ZlibTest, Bounds) {
 
     U32 fcn_size;
     U32 macro_size;
-    printf("sizeof(deflate_state)=%lu\n", sizeof(deflate_state));
+    printf("sizeof(deflate_state)=%lu, Z_DEFLATE_STATE_SIZE = %d\n",
+            sizeof(deflate_state), Z_DEFLATE_STATE_SIZE);
     for(int window_bits = 9; window_bits <=15; window_bits++ ) {
         for(int mem_level = 1; mem_level <= 9; mem_level++ ) {
             ZlibReturn ret = zsc_compress_get_min_work_buf_size2(
@@ -1433,7 +1434,8 @@ TEST_F(ZlibTest, Bounds) {
         }
     }
 
-    printf("sizeof(inflate_state)=%lu\n", sizeof(inflate_state));
+    printf("sizeof(inflate_state)=%lu, Z_INFLATE_STATE_SIZE = %d\n",
+            sizeof(inflate_state), Z_INFLATE_STATE_SIZE);
     for(int window_bits = 9; window_bits <=15; window_bits++ ) {
         ZlibReturn ret = zsc_uncompress_get_min_work_buf_size2(
                 window_bits, &fcn_size);
@@ -1857,8 +1859,8 @@ TEST_F(ZlibTest, InflateErrors) {
 
 
     printf("reset with different windowbits and allocated window gives error\n");
-    struct inflate_state *state;
-    state = (struct inflate_state *)stream.state;
+    inflate_state *state;
+    state = (inflate_state *)stream.state;
     state->window = work_buf;
     err = inflateReset2(&stream, DEF_WBITS-1);
     EXPECT_EQ(err, Z_STREAM_ERROR);
