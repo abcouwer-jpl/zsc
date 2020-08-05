@@ -35,7 +35,7 @@
 #ifndef DEFLATE_H
 #define DEFLATE_H
 
-#include "zutil.h"
+#include "zsc/zutil.h"
 
 // Abcouwer ZSC - remove compilation conditional on GZIP/NO_GZIP
 

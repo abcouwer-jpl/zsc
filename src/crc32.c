@@ -35,8 +35,8 @@
 
 // Abcouwer ZSC - remove MAKECRCH, DYNAMIC_CRC_TABLE code
 
-#include "zsc_conf_private.h"
-#include "zutil.h"      /* for STDC and definitions */
+#include "zsc/zsc_conf_private.h"
+#include "zsc/zutil.h"      /* for STDC and definitions */
 
 /* Definitions for doing the crc four data bytes at a time. */
 ZSC_PRIVATE U32 crc32_little (U32, const U8 *, z_size_t);

@@ -32,8 +32,8 @@
 
 // Abcouwer ZSC - remove compilation conditional on GZIP/GUNZIP/NO_GZIP
 
-#include "zlib.h"
-#include "inftrees.h"
+#include "zsc/zlib.h"
+#include "zsc/inftrees.h"
 
 /* Possible inflate modes between inflate() calls */
 typedef enum {

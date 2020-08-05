@@ -26,7 +26,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h> // memset, etc
-#include <zsc_conf_global_types.h>
+#include <zsc/zsc_conf_global_types.h>
 
 // private functions are preceded by ZSC_PRIVATE
 // this can be defined as 0 when compiling unit tests to allow access

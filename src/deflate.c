@@ -75,8 +75,8 @@
 
 /* @(#) $Id$ */
 
-#include "deflate.h"
-#include "zsc_conf_private.h"
+#include "zsc/deflate.h"
+#include "zsc/zsc_conf_private.h"
 
 const U8 deflate_copyright[] =
    " deflate 1.2.11.f Copyright 1995-2017 Jean-loup Gailly and Mark Adler, Modifications Neil Abcouwer ";

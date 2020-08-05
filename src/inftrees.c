@@ -25,8 +25,8 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#include "zutil.h"
-#include "inftrees.h"
+#include "zsc/zutil.h"
+#include "zsc/inftrees.h"
 
 #define MAXBITS 15
 

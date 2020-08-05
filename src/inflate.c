@@ -106,11 +106,11 @@
  * The history for versions after 1.2.0 are in ChangeLog in zlib distribution.
  */
 
-#include "zutil.h"
-#include "zsc_conf_private.h"
-#include "inftrees.h"
-#include "inflate.h"
-#include "inffast.h"
+#include "zsc/zutil.h"
+#include "zsc/zsc_conf_private.h"
+#include "zsc/inftrees.h"
+#include "zsc/inflate.h"
+#include "zsc/inffast.h"
 
 // ABcouwer ZSC - declare the iffixed tables in c file
 

@@ -17,9 +17,9 @@
  * @brief       Function definitions for safety-critical decompressing.
  */
 
-#include "zsc_pub.h"
-#include "zsc_conf_private.h"
-#include "zutil.h"
+#include "zsc/zsc_pub.h"
+#include "zsc/zsc_conf_private.h"
+#include "zsc/zutil.h"
 
 #define GZIP_CODE (16)
 

@@ -10,7 +10,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-long-long -pedantic -Werror -Wno-
 
 set(VERSION "1.2.11.f-abcouwer-safety-critical-v0")
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include)
 
 
 #============================================================================
@@ -18,34 +18,34 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 #============================================================================
 
 set(ZLIB_PUBLIC_HDRS
-    zlib_types_pub.h
-    zlib.h
-    zsc_pub.h
+    include/zsc/zlib_types_pub.h
+    include/zsc/zlib.h
+    include/zsc/zsc_pub.h
 )
 set(ZLIB_PRIVATE_HDRS
-    deflate.h
-    inffast.h
-    inflate.h
-    inftrees.h
-    zutil.h
-    zsc_conf_global_types.h
-    zsc_conf_private.h
+    include/zsc/deflate.h
+    include/zsc/inffast.h
+    include/zsc/inflate.h
+    include/zsc/inftrees.h
+    include/zsc/zutil.h
+    include/zsc/zsc_conf_global_types.h
+    include/zsc/zsc_conf_private.h
 )
 set(ZLIB_SRCS
-    adler32.c
-    crc32.c
-    deflate.c
-    inflate.c
-    inftrees.c
-    inffast.c
-    trees.c
-    zsc_compress.c
-    zsc_uncompr.c
-    zutil.c
+    src/adler32.c
+    src/crc32.c
+    src/deflate.c
+    src/inflate.c
+    src/inftrees.c
+    src/inffast.c
+    src/trees.c
+    src/zsc_compress.c
+    src/zsc_uncompr.c
+    src/zutil.c
 )
 
 # parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/include/zsc/zlib.h _zlib_h_contents)
 string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
     "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
 
@@ -81,11 +81,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
 
   configure_file(
       ${CMAKE_SOURCE_DIR}/test/zsc_test_global_types.h 
-      ${CMAKE_SOURCE_DIR}/zsc_conf_global_types.h)
+      ${CMAKE_SOURCE_DIR}/include/zsc/zsc_conf_global_types.h)
       
   configure_file(
       ${CMAKE_SOURCE_DIR}/test/zsc_test_private.h 
-      ${CMAKE_SOURCE_DIR}/zsc_conf_private.h)
+      ${CMAKE_SOURCE_DIR}/include/zsc/zsc_conf_private.h)
 
   set(CMAKE_BUILD_TYPE "Debug")
   add_definitions(-DSTATIC=)

@@ -11,8 +11,8 @@
 #ifndef INFTREES_H
 #define INFTREES_H
 
-#include "zutil.h"
-#include "zsc_conf_global_types.h"
+#include "zsc/zutil.h"
+#include "zsc/zsc_conf_global_types.h"
 
 /* Structure for decoding tables.  Each entry provides either the
    information needed to do the operation requested by the code that

@@ -5,12 +5,12 @@
 
 /* @(#) $Id$ */
 
-#include "zutil.h"
-#include "zlib.h"
-#include "zsc_pub.h"
-#include "deflate.h"
-#include "inftrees.h"
-#include "inflate.h"
+#include "zsc/zutil.h"
+#include "zsc/zlib.h"
+#include "zsc/zsc_pub.h"
+#include "zsc/deflate.h"
+#include "zsc/inftrees.h"
+#include "zsc/inflate.h"
 #include "gtest/gtest.h"
 
 #include <stdio.h>

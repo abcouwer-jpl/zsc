@@ -34,7 +34,7 @@
 #ifndef ZLIB_TYPES_PUB_H
 #define ZLIB_TYPES_PUB_H
 
-#include "zsc_conf_global_types.h"
+#include "zsc/zsc_conf_global_types.h"
 
 // check that conf_global_types defined signed sized types correctly
 ZSC_COMPILE_ASSERT(sizeof(U8)  == 1,  U8BadSize);

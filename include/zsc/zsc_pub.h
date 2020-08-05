@@ -63,8 +63,8 @@
 #ifndef ZSC_PUB_H
 #define ZSC_PUB_H
 
-#include "zsc_conf_global_types.h"
-#include "zlib.h"
+#include "zsc/zsc_conf_global_types.h"
+#include "zsc/zlib.h"
 
 #ifdef __cplusplus
 extern "C" {

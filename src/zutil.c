@@ -27,7 +27,7 @@
 
 /* @(#) $Id$ */
 
-#include "zutil.h"
+#include "zsc/zutil.h"
 
 // Abcouwer ZSC - removed gz file incldes
 

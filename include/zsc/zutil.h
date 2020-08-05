@@ -37,7 +37,7 @@
 
 // Abcouwer ZSC - remove ZLIB_INTERNAL
 
-#include "zlib.h"
+#include "zsc/zlib.h"
 
 // Abcouwer ZSC - typedef ptrdiff_t moved to zsc_conf_global_types
 

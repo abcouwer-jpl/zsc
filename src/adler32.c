@@ -5,7 +5,7 @@
 
 /* @(#) $Id$ */
 
-#include "zutil.h"
+#include "zsc/zutil.h"
 
 
 #define BASE 65521U     /* largest prime smaller than 65536 */

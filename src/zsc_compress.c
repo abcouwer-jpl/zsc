@@ -17,9 +17,9 @@
  * @brief       Function definitions for safety-critical compressing.
  */
 
-#include "zsc_pub.h"
-#include "zutil.h"
-#include "zsc_conf_private.h"
+#include "zsc/zsc_pub.h"
+#include "zsc/zutil.h"
+#include "zsc/zsc_conf_private.h"
 
 #define GZIP_CODE (16)
 

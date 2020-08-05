@@ -26,11 +26,10 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#include "zutil.h"
-#include "zutil.h"
-#include "inftrees.h"
-#include "inflate.h"
-#include "inffast.h"
+#include "zsc/zutil.h"
+#include "zsc/inftrees.h"
+#include "zsc/inflate.h"
+#include "zsc/inffast.h"
 
 // Abcouwer ZSC - no assembly included, warnings removed
 

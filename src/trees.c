@@ -32,8 +32,8 @@
 
 /* @(#) $Id$ */
 
-#include "zsc_conf_private.h"
-#include "deflate.h"
+#include "zsc/zsc_conf_private.h"
+#include "zsc/deflate.h"
 
 /* ===========================================================================
  * Constants
