@@ -102,10 +102,8 @@ set(ZLIB_PUBLIC_HDRS
 set(ZLIB_PRIVATE_HDRS
     deflate.h
     inffast.h
-    inffixed.h
     inflate.h
     inftrees.h
-    trees.h
     zutil.h
     zsc_conf_global_types.h
     zsc_conf_private.h

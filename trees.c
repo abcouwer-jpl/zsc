@@ -35,10 +35,6 @@
 #include "zsc_conf_private.h"
 #include "deflate.h"
 
-#ifdef ZLIB_DEBUG
-#  include <ctype.h>
-#endif
-
 /* ===========================================================================
  * Constants
  */
@@ -79,7 +75,134 @@ ZSC_PRIVATE const U8 bl_order[BL_CODES]
 
 #define DIST_CODE_LEN  512 /* see definition of array dist_code below */
 
-#include "trees.h"
+// Abcouwer ZSC - include tree buffers directly
+
+ZSC_PRIVATE const ct_data static_ltree[L_CODES+2] = {
+{{ 12},{  8}}, {{140},{  8}}, {{ 76},{  8}}, {{204},{  8}}, {{ 44},{  8}},
+{{172},{  8}}, {{108},{  8}}, {{236},{  8}}, {{ 28},{  8}}, {{156},{  8}},
+{{ 92},{  8}}, {{220},{  8}}, {{ 60},{  8}}, {{188},{  8}}, {{124},{  8}},
+{{252},{  8}}, {{  2},{  8}}, {{130},{  8}}, {{ 66},{  8}}, {{194},{  8}},
+{{ 34},{  8}}, {{162},{  8}}, {{ 98},{  8}}, {{226},{  8}}, {{ 18},{  8}},
+{{146},{  8}}, {{ 82},{  8}}, {{210},{  8}}, {{ 50},{  8}}, {{178},{  8}},
+{{114},{  8}}, {{242},{  8}}, {{ 10},{  8}}, {{138},{  8}}, {{ 74},{  8}},
+{{202},{  8}}, {{ 42},{  8}}, {{170},{  8}}, {{106},{  8}}, {{234},{  8}},
+{{ 26},{  8}}, {{154},{  8}}, {{ 90},{  8}}, {{218},{  8}}, {{ 58},{  8}},
+{{186},{  8}}, {{122},{  8}}, {{250},{  8}}, {{  6},{  8}}, {{134},{  8}},
+{{ 70},{  8}}, {{198},{  8}}, {{ 38},{  8}}, {{166},{  8}}, {{102},{  8}},
+{{230},{  8}}, {{ 22},{  8}}, {{150},{  8}}, {{ 86},{  8}}, {{214},{  8}},
+{{ 54},{  8}}, {{182},{  8}}, {{118},{  8}}, {{246},{  8}}, {{ 14},{  8}},
+{{142},{  8}}, {{ 78},{  8}}, {{206},{  8}}, {{ 46},{  8}}, {{174},{  8}},
+{{110},{  8}}, {{238},{  8}}, {{ 30},{  8}}, {{158},{  8}}, {{ 94},{  8}},
+{{222},{  8}}, {{ 62},{  8}}, {{190},{  8}}, {{126},{  8}}, {{254},{  8}},
+{{  1},{  8}}, {{129},{  8}}, {{ 65},{  8}}, {{193},{  8}}, {{ 33},{  8}},
+{{161},{  8}}, {{ 97},{  8}}, {{225},{  8}}, {{ 17},{  8}}, {{145},{  8}},
+{{ 81},{  8}}, {{209},{  8}}, {{ 49},{  8}}, {{177},{  8}}, {{113},{  8}},
+{{241},{  8}}, {{  9},{  8}}, {{137},{  8}}, {{ 73},{  8}}, {{201},{  8}},
+{{ 41},{  8}}, {{169},{  8}}, {{105},{  8}}, {{233},{  8}}, {{ 25},{  8}},
+{{153},{  8}}, {{ 89},{  8}}, {{217},{  8}}, {{ 57},{  8}}, {{185},{  8}},
+{{121},{  8}}, {{249},{  8}}, {{  5},{  8}}, {{133},{  8}}, {{ 69},{  8}},
+{{197},{  8}}, {{ 37},{  8}}, {{165},{  8}}, {{101},{  8}}, {{229},{  8}},
+{{ 21},{  8}}, {{149},{  8}}, {{ 85},{  8}}, {{213},{  8}}, {{ 53},{  8}},
+{{181},{  8}}, {{117},{  8}}, {{245},{  8}}, {{ 13},{  8}}, {{141},{  8}},
+{{ 77},{  8}}, {{205},{  8}}, {{ 45},{  8}}, {{173},{  8}}, {{109},{  8}},
+{{237},{  8}}, {{ 29},{  8}}, {{157},{  8}}, {{ 93},{  8}}, {{221},{  8}},
+{{ 61},{  8}}, {{189},{  8}}, {{125},{  8}}, {{253},{  8}}, {{ 19},{  9}},
+{{275},{  9}}, {{147},{  9}}, {{403},{  9}}, {{ 83},{  9}}, {{339},{  9}},
+{{211},{  9}}, {{467},{  9}}, {{ 51},{  9}}, {{307},{  9}}, {{179},{  9}},
+{{435},{  9}}, {{115},{  9}}, {{371},{  9}}, {{243},{  9}}, {{499},{  9}},
+{{ 11},{  9}}, {{267},{  9}}, {{139},{  9}}, {{395},{  9}}, {{ 75},{  9}},
+{{331},{  9}}, {{203},{  9}}, {{459},{  9}}, {{ 43},{  9}}, {{299},{  9}},
+{{171},{  9}}, {{427},{  9}}, {{107},{  9}}, {{363},{  9}}, {{235},{  9}},
+{{491},{  9}}, {{ 27},{  9}}, {{283},{  9}}, {{155},{  9}}, {{411},{  9}},
+{{ 91},{  9}}, {{347},{  9}}, {{219},{  9}}, {{475},{  9}}, {{ 59},{  9}},
+{{315},{  9}}, {{187},{  9}}, {{443},{  9}}, {{123},{  9}}, {{379},{  9}},
+{{251},{  9}}, {{507},{  9}}, {{  7},{  9}}, {{263},{  9}}, {{135},{  9}},
+{{391},{  9}}, {{ 71},{  9}}, {{327},{  9}}, {{199},{  9}}, {{455},{  9}},
+{{ 39},{  9}}, {{295},{  9}}, {{167},{  9}}, {{423},{  9}}, {{103},{  9}},
+{{359},{  9}}, {{231},{  9}}, {{487},{  9}}, {{ 23},{  9}}, {{279},{  9}},
+{{151},{  9}}, {{407},{  9}}, {{ 87},{  9}}, {{343},{  9}}, {{215},{  9}},
+{{471},{  9}}, {{ 55},{  9}}, {{311},{  9}}, {{183},{  9}}, {{439},{  9}},
+{{119},{  9}}, {{375},{  9}}, {{247},{  9}}, {{503},{  9}}, {{ 15},{  9}},
+{{271},{  9}}, {{143},{  9}}, {{399},{  9}}, {{ 79},{  9}}, {{335},{  9}},
+{{207},{  9}}, {{463},{  9}}, {{ 47},{  9}}, {{303},{  9}}, {{175},{  9}},
+{{431},{  9}}, {{111},{  9}}, {{367},{  9}}, {{239},{  9}}, {{495},{  9}},
+{{ 31},{  9}}, {{287},{  9}}, {{159},{  9}}, {{415},{  9}}, {{ 95},{  9}},
+{{351},{  9}}, {{223},{  9}}, {{479},{  9}}, {{ 63},{  9}}, {{319},{  9}},
+{{191},{  9}}, {{447},{  9}}, {{127},{  9}}, {{383},{  9}}, {{255},{  9}},
+{{511},{  9}}, {{  0},{  7}}, {{ 64},{  7}}, {{ 32},{  7}}, {{ 96},{  7}},
+{{ 16},{  7}}, {{ 80},{  7}}, {{ 48},{  7}}, {{112},{  7}}, {{  8},{  7}},
+{{ 72},{  7}}, {{ 40},{  7}}, {{104},{  7}}, {{ 24},{  7}}, {{ 88},{  7}},
+{{ 56},{  7}}, {{120},{  7}}, {{  4},{  7}}, {{ 68},{  7}}, {{ 36},{  7}},
+{{100},{  7}}, {{ 20},{  7}}, {{ 84},{  7}}, {{ 52},{  7}}, {{116},{  7}},
+{{  3},{  8}}, {{131},{  8}}, {{ 67},{  8}}, {{195},{  8}}, {{ 35},{  8}},
+{{163},{  8}}, {{ 99},{  8}}, {{227},{  8}}
+};
+
+ZSC_PRIVATE const ct_data static_dtree[D_CODES] = {
+{{ 0},{ 5}}, {{16},{ 5}}, {{ 8},{ 5}}, {{24},{ 5}}, {{ 4},{ 5}},
+{{20},{ 5}}, {{12},{ 5}}, {{28},{ 5}}, {{ 2},{ 5}}, {{18},{ 5}},
+{{10},{ 5}}, {{26},{ 5}}, {{ 6},{ 5}}, {{22},{ 5}}, {{14},{ 5}},
+{{30},{ 5}}, {{ 1},{ 5}}, {{17},{ 5}}, {{ 9},{ 5}}, {{25},{ 5}},
+{{ 5},{ 5}}, {{21},{ 5}}, {{13},{ 5}}, {{29},{ 5}}, {{ 3},{ 5}},
+{{19},{ 5}}, {{11},{ 5}}, {{27},{ 5}}, {{ 7},{ 5}}, {{23},{ 5}}
+};
+
+const U8 _dist_code[DIST_CODE_LEN] = {
+ 0,  1,  2,  3,  4,  4,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,
+ 8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  9,  9, 10, 10, 10, 10, 10, 10, 10, 10,
+10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
+11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13, 13,
+13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+13, 13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,  0,  0, 16, 17,
+18, 18, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22,
+23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+24, 24, 24, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
+26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27,
+27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+27, 27, 27, 27, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+28, 28, 28, 28, 28, 28, 28, 28, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29
+};
+
+const U8 _length_code[MAX_MATCH-MIN_MATCH+1]= {
+ 0,  1,  2,  3,  4,  5,  6,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 12, 12,
+13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 16, 16, 16, 16,
+17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19,
+19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22,
+22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23,
+23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 26, 26, 26, 26, 26, 26, 26,
+26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
+26, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 28
+};
+
+ZSC_PRIVATE const I32 base_length[LENGTH_CODES] = {
+0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56,
+64, 80, 96, 112, 128, 160, 192, 224, 0
+};
+
+ZSC_PRIVATE const I32 base_dist[D_CODES] = {
+    0,     1,     2,     3,     4,     6,     8,    12,    16,    24,
+   32,    48,    64,    96,   128,   192,   256,   384,   512,   768,
+ 1024,  1536,  2048,  3072,  4096,  6144,  8192, 12288, 16384, 24576
+};
+
 
 struct static_tree_desc_s {
     const ct_data *static_tree;  /* static tree or NULL */
@@ -120,82 +243,45 @@ ZSC_PRIVATE void bi_windup      (deflate_state *s);
 ZSC_PRIVATE void bi_flush       (deflate_state *s);
 
 
-#ifndef ZLIB_DEBUG
-#  define send_code(s, c, tree) send_bits(s, tree[c].Code, tree[c].Len)
+#  define send_code(s, c, tree) send_bits((s), (tree)[(c)].Code, (tree)[(c)].Len)
    /* Send a code of the given tree. c and tree must not have side effects */
-
-#else /* !ZLIB_DEBUG */
-#  define send_code(s, c, tree) \
-     { if (z_verbose>2) fprintf(stderr,"\ncd %3d ",(c)); \
-       send_bits(s, tree[c].Code, tree[c].Len); }
-#endif
 
 /* ===========================================================================
  * Output a short LSB first on the stream.
  * IN assertion: there is enough room in pendingBuf.
  */
 #define put_short(s, w) { \
-    put_byte(s, (U8)((w) & 0xff)); \
-    put_byte(s, (U8)((U16)(w) >> 8)); \
+    put_byte((s), (U8)((w) & 0xff)); \
+    put_byte((s), (U8)((U16)(w) >> 8)); \
 }
 
 /* ===========================================================================
  * Send a value on a given number of bits.
  * IN assertion: length <= 16 and value fits in length bits.
  */
-#ifdef ZLIB_DEBUG
-ZSC_PRIVATE void send_bits      OF((deflate_state *s, I32 value, I32 length));
-
-ZSC_PRIVATE void send_bits(s, value, length)
-    deflate_state *s;
-    I32 value;  /* value to send */
-    I32 length; /* number of bits */
-{
-    Tracevv((stderr," l %2d v %4x ", length, value));
-    Assert(length > 0 && length <= 15, "invalid length");
-    s->bits_sent += (U32)length;
-
-    /* If not enough room in bi_buf, use (valid) bits from bi_buf and
-     * (16 - bi_valid) bits from value, leaving (width - (16-bi_valid))
-     * unused bits in value.
-     */
-    if (s->bi_valid > (I32)Buf_size - length) {
-        s->bi_buf |= (U16)value << s->bi_valid;
-        put_short(s, s->bi_buf);
-        s->bi_buf = (U16)value >> (Buf_size - s->bi_valid);
-        s->bi_valid += length - Buf_size;
-    } else {
-        s->bi_buf |= (U16)value << s->bi_valid;
-        s->bi_valid += length;
-    }
-}
-#else /* !ZLIB_DEBUG */
-
 #define send_bits(s, value, length) \
-{ I32 len = length;\
-  if (s->bi_valid > (I32)Buf_size - len) {\
-    I32 val = (I32)value;\
-    s->bi_buf |= (U16)val << s->bi_valid;\
-    put_short(s, s->bi_buf);\
-    s->bi_buf = (U16)val >> (Buf_size - s->bi_valid);\
-    s->bi_valid += len - Buf_size;\
+{ I32 len = (length);\
+  if ((s)->bi_valid > (I32)Buf_size - len) {\
+    I32 val = (I32)(value);\
+    (s)->bi_buf |= (U16)val << (s)->bi_valid;\
+    put_short((s), (s)->bi_buf);\
+    (s)->bi_buf = (U16)val >> (Buf_size - (s)->bi_valid);\
+    (s)->bi_valid += len - Buf_size;\
   } else {\
-    s->bi_buf |= (U16)(value) << s->bi_valid;\
-    s->bi_valid += len;\
+    (s)->bi_buf |= (U16)(value) << (s)->bi_valid;\
+    (s)->bi_valid += len;\
   }\
 }
-#endif /* ZLIB_DEBUG */
-
 
 /* the arguments must not have side effects */
-
-
 
 /* ===========================================================================
  * Initialize the tree data structures for a new zlib stream.
  */
-void ZLIB_INTERNAL _tr_init(deflate_state *s)
+void _tr_init(deflate_state *s)
 {
+    ZSC_ASSERT(s != Z_NULL);
+
     // Abcouwer ZSC - no static init needed, tables hardcoded
 
     s->l_desc.dyn_tree = s->dyn_ltree;
@@ -209,10 +295,6 @@ void ZLIB_INTERNAL _tr_init(deflate_state *s)
 
     s->bi_buf = 0;
     s->bi_valid = 0;
-#ifdef ZLIB_DEBUG
-    s->compressed_len = 0L;
-    s->bits_sent = 0L;
-#endif
 
     /* Initialize the first block of the first file: */
     init_block(s);
@@ -223,6 +305,8 @@ void ZLIB_INTERNAL _tr_init(deflate_state *s)
  */
 ZSC_PRIVATE void init_block(deflate_state *s)
 {
+    ZSC_ASSERT(s != Z_NULL);
+
     I32 n; /* iterates over tree elements */
 
     /* Initialize the trees. */
@@ -251,9 +335,9 @@ ZSC_PRIVATE void init_block(deflate_state *s)
  */
 #define pqremove(s, tree, top) \
 {\
-    top = s->heap[SMALLEST]; \
-    s->heap[SMALLEST] = s->heap[s->heap_len--]; \
-    pqdownheap(s, tree, SMALLEST); \
+    (top) = (s)->heap[SMALLEST]; \
+    (s)->heap[SMALLEST] = (s)->heap[(s)->heap_len--]; \
+    pqdownheap((s), (tree), SMALLEST); \
 }
 
 /* ===========================================================================
@@ -261,8 +345,8 @@ ZSC_PRIVATE void init_block(deflate_state *s)
  * the subtrees have equal frequency. This minimizes the worst case length.
  */
 #define smaller(tree, n, m, depth) \
-   (tree[n].Freq < tree[m].Freq || \
-   (tree[n].Freq == tree[m].Freq && depth[n] <= depth[m]))
+   ((tree)[(n)].Freq < (tree)[(m)].Freq || \
+   ((tree)[(n)].Freq == (tree)[(m)].Freq && (depth)[(n)] <= (depth)[(m)]))
 
 /* ===========================================================================
  * Restore the heap property by moving down the tree starting at node k,
@@ -274,6 +358,9 @@ ZSC_PRIVATE void pqdownheap(deflate_state *s,
         ct_data *tree, /* the tree to restore */
         I32 k) /* node to move down */
 {
+    ZSC_ASSERT(s != Z_NULL);
+    ZSC_ASSERT(tree != Z_NULL);
+
     I32 v = s->heap[k];
     I32 j = k << 1;  /* left son of k */
     while (j <= s->heap_len) {
@@ -307,6 +394,9 @@ ZSC_PRIVATE void pqdownheap(deflate_state *s,
 ZSC_PRIVATE void gen_bitlen(deflate_state *s,
         tree_desc *desc)    /* the tree descriptor */
 {
+    ZSC_ASSERT(s != Z_NULL);
+    ZSC_ASSERT(desc != Z_NULL);
+
     ct_data *tree        = desc->dyn_tree;
     I32 max_code         = desc->max_code;
     const ct_data *stree = desc->stat_desc->static_tree;
@@ -347,7 +437,6 @@ ZSC_PRIVATE void gen_bitlen(deflate_state *s,
     }
     if (overflow == 0) return;
 
-    Tracev((stderr,"\nbit length overflow\n"));
     /* This happens for example on obj2 and pic of the Calgary corpus */
 
     /* Find the first bit length which could increase: */
@@ -376,7 +465,6 @@ ZSC_PRIVATE void gen_bitlen(deflate_state *s,
             m = s->heap[--h];
             if (m > max_code) continue;
             if ((U32) tree[m].Len != (U32) bits) {
-                Tracev((stderr,"code %d bits %d->%d\n", m, tree[m].Len, bits));
                 s->opt_len += ((U32)bits - tree[m].Len) * tree[m].Freq;
                 tree[m].Len = (U16)bits;
             }
@@ -415,16 +503,12 @@ ZSC_PRIVATE void gen_codes(ct_data *tree, /* the tree to decorate */
     // Assert: "inconsistent bit counts"
     ZSC_ASSERT3(code + bl_count[MAX_BITS]-1 == (1<<MAX_BITS)-1,
             code, bl_count[MAX_BITS], MAX_BITS);
-    Tracev((stderr,"\ngen_codes: max_code %d ", max_code));
 
     for (n = 0;  n <= max_code; n++) {
         I32 len = tree[n].Len;
         if (len == 0) continue;
         /* Now reverse the bits */
         tree[n].Code = (U16)bi_reverse(next_code[len]++, len);
-
-        Tracecv(tree != static_ltree, (stderr,"\nn %3d %c l %2d c %4x (%x) ",
-             n, (isgraph(n) ? n : ' '), len, tree[n].Code, next_code[len]-1));
     }
 }
 
@@ -439,6 +523,9 @@ ZSC_PRIVATE void gen_codes(ct_data *tree, /* the tree to decorate */
 ZSC_PRIVATE void build_tree(deflate_state *s,
     tree_desc *desc) /* the tree descriptor */
 {
+    ZSC_ASSERT(s != Z_NULL);
+    ZSC_ASSERT(desc != Z_NULL);
+
     ct_data *tree         = desc->dyn_tree;
     const ct_data *stree  = desc->stat_desc->static_tree;
     I32 elems             = desc->stat_desc->elems;
@@ -523,6 +610,9 @@ ZSC_PRIVATE void scan_tree (deflate_state *s,
     ct_data *tree,   /* the tree to be scanned */
     I32 max_code)    /* and its largest code of non zero frequency */
 {
+    ZSC_ASSERT(s != Z_NULL);
+    ZSC_ASSERT(tree != Z_NULL);
+
     I32 n;                     /* iterates over all tree elements */
     I32 prevlen = -1;          /* last emitted length */
     I32 curlen;                /* length of current code */
@@ -568,6 +658,9 @@ ZSC_PRIVATE void send_tree (deflate_state *s,
     ct_data *tree, /* the tree to be scanned */
     I32 max_code)      /* and its largest code of non zero frequency */
 {
+    ZSC_ASSERT(s != Z_NULL);
+    ZSC_ASSERT(tree != Z_NULL);
+
     I32 n;                     /* iterates over all tree elements */
     I32 prevlen = -1;          /* last emitted length */
     I32 curlen;                /* length of current code */
@@ -644,8 +737,6 @@ ZSC_PRIVATE I32 build_bl_tree(deflate_state *s)
     }
     /* Update opt_len to include the bit length tree and counts */
     s->opt_len += 3*((U32)max_blindex+1) + 5+5+4;
-    Tracev((stderr, "\ndyn trees: dyn %ld, stat %ld",
-            s->opt_len, s->static_len));
 
     return max_blindex;
 }
@@ -667,27 +758,20 @@ ZSC_PRIVATE void send_all_trees(deflate_state *s,
     ZSC_ASSERT3(lcodes <= L_CODES && dcodes <= D_CODES && blcodes <= BL_CODES,
             lcodes, dcodes, blcodes);
 
-    Tracev((stderr, "\nbl counts: "));
     send_bits(s, lcodes-257, 5); /* not +255 as stated in appnote.txt */
     send_bits(s, dcodes-1,   5);
     send_bits(s, blcodes-4,  4); /* not -3 as stated in appnote.txt */
     for (rank = 0; rank < blcodes; rank++) {
-        Tracev((stderr, "\nbl code %2d ", bl_order[rank]));
         send_bits(s, s->bl_tree[bl_order[rank]].Len, 3);
     }
-    Tracev((stderr, "\nbl tree: sent %ld", s->bits_sent));
-
     send_tree(s, (ct_data *)s->dyn_ltree, lcodes-1); /* literal tree */
-    Tracev((stderr, "\nlit tree: sent %ld", s->bits_sent));
-
     send_tree(s, (ct_data *)s->dyn_dtree, dcodes-1); /* distance tree */
-    Tracev((stderr, "\ndist tree: sent %ld", s->bits_sent));
 }
 
 /* ===========================================================================
  * Send a stored block
  */
-void ZLIB_INTERNAL _tr_stored_block(deflate_state *s,
+void _tr_stored_block(deflate_state *s,
     U8 *buf,       /* input block */
     U32 stored_len,   /* length of input block */
     I32 last)         /* one if this is the last block for a file */
@@ -698,18 +782,12 @@ void ZLIB_INTERNAL _tr_stored_block(deflate_state *s,
     put_short(s, (U16)~stored_len);
     zmemcpy(s->pending_buf + s->pending, (U8 *)buf, stored_len);
     s->pending += stored_len;
-#ifdef ZLIB_DEBUG
-    s->compressed_len = (s->compressed_len + 3 + 7) & (U32)~7L;
-    s->compressed_len += (stored_len + 4) << 3;
-    s->bits_sent += 2*16;
-    s->bits_sent += stored_len<<3;
-#endif
 }
 
 /* ===========================================================================
  * Flush the bits in the bit buffer to pending output (leaves at most 7 bits)
  */
-void ZLIB_INTERNAL _tr_flush_bits(deflate_state *s)
+void _tr_flush_bits(deflate_state *s)
 {
     bi_flush(s);
 }
@@ -718,13 +796,10 @@ void ZLIB_INTERNAL _tr_flush_bits(deflate_state *s)
  * Send one empty static block to give enough lookahead for inflate.
  * This takes 10 bits, of which 7 may remain in the bit buffer.
  */
-void ZLIB_INTERNAL _tr_align(deflate_state *s)
+void _tr_align(deflate_state *s)
 {
     send_bits(s, STATIC_TREES<<1, 3);
     send_code(s, END_BLOCK, static_ltree);
-#ifdef ZLIB_DEBUG
-    s->compressed_len += 10L; /* 3 for block type, 7 for EOB */
-#endif
     bi_flush(s);
 }
 
@@ -732,7 +807,7 @@ void ZLIB_INTERNAL _tr_align(deflate_state *s)
  * Determine the best encoding for the current block: dynamic trees, static
  * trees or store, and write out the encoded block.
  */
-void ZLIB_INTERNAL _tr_flush_block(deflate_state *s,
+void _tr_flush_block(deflate_state *s,
     U8 *buf,       /* input block, or NULL if too old */
     U32 stored_len,   /* length of input block */
     I32 last)         /* one if this is the last block for a file */
@@ -749,12 +824,8 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s,
 
         /* Construct the literal and distance trees */
         build_tree(s, (tree_desc *)(&(s->l_desc)));
-        Tracev((stderr, "\nlit data: dyn %ld, stat %ld", s->opt_len,
-                s->static_len));
-
         build_tree(s, (tree_desc *)(&(s->d_desc)));
-        Tracev((stderr, "\ndist data: dyn %ld, stat %ld", s->opt_len,
-                s->static_len));
+
         /* At this point, opt_len and static_len are the total bit lengths of
          * the compressed block data, excluding the tree representations.
          */
@@ -767,10 +838,6 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s,
         /* Determine the best encoding. Compute the block lengths in bytes. */
         opt_lenb = (s->opt_len+3+7)>>3;
         static_lenb = (s->static_len+3+7)>>3;
-
-        Tracev((stderr, "\nopt %lu(%lu) stat %lu(%lu) stored %lu lit %u ",
-                opt_lenb, s->opt_len, static_lenb, s->static_len, stored_len,
-                s->last_lit));
 
         if (static_lenb <= opt_lenb) opt_lenb = static_lenb;
 
@@ -794,78 +861,22 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s,
         send_bits(s, (STATIC_TREES<<1)+last, 3);
         compress_block(s, (const ct_data *)static_ltree,
                        (const ct_data *)static_dtree);
-#ifdef ZLIB_DEBUG
-        s->compressed_len += 3 + s->static_len;
-#endif
     } else {
         send_bits(s, (DYN_TREES<<1)+last, 3);
         send_all_trees(s, s->l_desc.max_code+1, s->d_desc.max_code+1,
                        max_blindex+1);
         compress_block(s, (const ct_data *)s->dyn_ltree,
                        (const ct_data *)s->dyn_dtree);
-#ifdef ZLIB_DEBUG
-        s->compressed_len += 3 + s->opt_len;
-#endif
     }
 
-#ifdef ZLIB_DEBUG
-    // Assert: "bad compressed size"
-    ZSC_ASSERT2(s->compressed_len == s->bits_sent, s->compressed_len, s->bits_sent);
-    /* The above check is made mod 2^32, for files larger than 512 MB
-     * and uLong implemented on 32 bits.
-     */
-#endif
     init_block(s);
 
     if (last) {
         bi_windup(s);
-#ifdef ZLIB_DEBUG
-        s->compressed_len += 7;  /* align on byte boundary */
-#endif
     }
-    Tracev((stderr,"\ncomprlen %lu(%lu) ", s->compressed_len>>3,
-           s->compressed_len-7*last));
 }
 
-/*modified Neil Abcouwer for zlib-safe
- _tr_tally is done inline when DEBUG is not defined
- and this code is unused
- see deflate.h */
-#ifdef ZLIB_DEBUG
-
-/* ===========================================================================
- * Save the match info and tally the frequency counts. Return true if
- * the current block must be flushed.
- */
-I32 ZLIB_INTERNAL _tr_tally (s, dist, lc)
-    deflate_state *s;
-    U32 dist;  /* distance of matched string */
-    U32 lc;    /* match length-MIN_MATCH or unmatched char (if dist==0) */
-{
-    s->d_buf[s->last_lit] = (U16)dist;
-    s->l_buf[s->last_lit++] = (U8)lc;
-    if (dist == 0) {
-        /* lc is the unmatched char */
-        s->dyn_ltree[lc].Freq++;
-    } else {
-        s->matches++;
-        /* Here, lc is the match length - MIN_MATCH */
-        dist--;             /* dist = match distance - 1 */
-        Assert((U16)dist < (U16)MAX_DIST(s) &&
-               (U16)lc <= (U16)(MAX_MATCH-MIN_MATCH) &&
-               (U16)d_code(dist) < (U16)D_CODES,  "_tr_tally: bad match");
-
-        s->dyn_ltree[_length_code[lc]+LITERALS+1].Freq++;
-        s->dyn_dtree[d_code(dist)].Freq++;
-    }
-
-    return (s->last_lit == s->lit_bufsize-1);
-    /* We avoid equality with lit_bufsize because of wraparound at 64K
-     * on 16 bit machines and because stored blocks are restricted to
-     * 64K-1 bytes.
-     */
-}
-#endif
+// Abcouwer ZSC - remove debug-only code including _tr_tally
 
 /* ===========================================================================
  * Send the block data compressed using the given Huffman trees
@@ -885,7 +896,6 @@ ZSC_PRIVATE void compress_block(deflate_state *s,
         lc = s->l_buf[lx++];
         if (dist == 0) {
             send_code(s, lc, ltree); /* send a literal byte */
-            Tracecv(isgraph(lc), (stderr," '%c' ", lc));
         } else {
             /* Here, lc is the match length - MIN_MATCH */
             code = _length_code[lc];
@@ -1014,7 +1024,4 @@ ZSC_PRIVATE void bi_windup(deflate_state *s)
     }
     s->bi_buf = 0;
     s->bi_valid = 0;
-#ifdef ZLIB_DEBUG
-    s->bits_sent = (s->bits_sent+7) & ~7;
-#endif
 }

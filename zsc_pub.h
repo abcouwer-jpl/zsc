@@ -70,9 +70,6 @@
 extern "C" {
 #endif
 
-
-// FIXME add macros for sizes
-
 /**
  * @brief Get minimum size of a work buffer, default compression settings
  * Returns the size of working memory that must be provided to a compression function

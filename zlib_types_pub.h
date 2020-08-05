@@ -13,7 +13,7 @@
  *
  * @file        zlib_types_pub.h
  * @date        2020-07-01
- * @author      Neil Abcouwer (based on Gailly and Adler)
+ * @author      Jean-loup Gailly, Mark Adler, Neil Abcouwer
  * @brief       Public zlib types.
  *
  * These types, or their analogs, used to reside in zlib.h. Splitting out
@@ -46,29 +46,58 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 
 // macros for users to define sizes of buffers at compile time
 
-// conservative bound on the largest size of a "compressed" output, given an input
-// assumes the largest wrapper, gzip, will be used, but without filling the
-// name, comment, or extra fields. If those will be filled, the user should add more
-// margin
+
+
+/**
+ * @brief conservative bound on the size of a compressed output
+ *
+ * conservative bound on the largest size of a "compressed" output, given an input.
+ * Note the return value is larger than the input:
+ * input may be incompressible, and the output may be larger.
+ * Assumes the largest wrapper, gzip, will be used, but without filling the
+ * "name", "comment", or "extra" fields. If those will be filled,
+ * the user should add more margin.
+ *
+ * @param source_len  Size of source buffer
+ * @return maximum size of output
+ */
 #define Z_DEFLATE_OUTPUT_BOUND(source_len) \
     ((source_len) + \
            (((source_len)+7) >> 3) + (((source_len)+63) >> 6) + 5 + \
            18 + 2)
 
-// conservative bound on the largest size of a "compressed" output, given an input
-// and the minimum value max_block_len could take. With a smaller the block size,
-// there will be more overhead
-// assumes the largest wrapper, gzip, will be used, but without filling the
-// name, comment, or extra fields. If those will be filled, the user should add more
-// margin
+/**
+ * @brief conservative bound on the size of a compressed output, given a block length
+ *
+ * conservative bound on the largest size of a "compressed" output, given an input
+ * and the minimum value max_block_len could take.
+ * With a smaller the block size, there will be more overhead.
+ * Note the return value is larger than the input:
+ * input may be incompressible, and the output may be larger.
+ * assumes the largest wrapper, gzip, will be used, but without filling the
+ * "name", "comment", or "extra" fields. If those will be filled,
+ * the user should add more margin.
+ *
+ * @param source_len  Size of source buffer
+ * @param min_max_block_len  Smallest size that the maximum block length could be.
+ * @return maximum size of output
+ */
 #define Z_DEFLATE_OUTPUT_BOUND_BLOCKS(source_len, min_max_block_len) \
     (Z_DEFLATE_OUTPUT_BOUND((source_len)) + \
      (Z_DEFLATE_OUTPUT_BOUND((source_len)) / (min_max_block_len) + 1) * 4)
 
 
-// size of the private deflate state, with margin for pointer sizes changing
+/// size of the private deflate state, with margin for pointer sizes changing
 #define Z_DEFLATE_STATE_SIZE 7000
-// size of work buffer needed for compression
+
+/**
+ * @brief Size of work buffer needed for compression
+ *
+ * @param window_bits   The base two logarithm of the window size.
+ *                      Should be in the range 9 to 15.
+ * @param mem_level     How much memory to use for internal state.
+ *                      Should be in the range 1 to 9.
+ */
 #define Z_COMPRESS_WORK_SIZE2(window_bits, mem_level) \
     (Z_DEFLATE_STATE_SIZE + \
             (1 << (window_bits)) * 2 * sizeof(U8) + \
@@ -76,9 +105,15 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
             (1 << ((mem_level)+7)) * sizeof(Pos) + \
             (1 << ((mem_level)+6)) * (sizeof(U16) +2) )
 
-// size of the private inflate state, with margin for pointer sizes changing
+/// size of the private inflate state, with margin for pointer sizes changing
 #define Z_INFLATE_STATE_SIZE 8000
-// size of work buffer needed for decompression
+
+/**
+ * @brief Size of work buffer needed for decompression
+ *
+ * @param window_bits   The base two logarithm of the window size.
+ *                      Should be in the range 9 to 15.
+ */
 #define Z_UNCOMPRESS_WORK_SIZE2(window_bits) \
     (Z_INFLATE_STATE_SIZE + (1 << (window_bits)) * sizeof(U8))
 
@@ -101,20 +136,18 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
  for small objects.
 */
 enum {
-    MAX_MEM_LEVEL = 9, ///Maximum value for memLevel in deflateInit2
-    DEF_MEM_LEVEL = 8,    //!< DEF_MEM_LEVEL
+    MAX_MEM_LEVEL = 9,  /// Maximum value for memLevel in deflateInit2
+    DEF_MEM_LEVEL = 8,    /// Default memory level
     /* Maximum value for windowBits in deflateInit2 and inflateInit2.
      * WARNING: reducing MAX_WBITS makes minigzip unable to extract .gz files
      * created by gzip. (Files created by minigzip can still be extracted by
      * gzip.) */
     MAX_WBITS = 15, /// 32K LZ77 window
-    DEF_WBITS = MAX_WBITS,//!< DEF_WBITS
+    DEF_WBITS = MAX_WBITS, /// DEF_WBITS
 };
 
 ZSC_COMPILE_ASSERT(DEF_MEM_LEVEL <= MAX_MEM_LEVEL, bad_def_mem_level);
 ZSC_COMPILE_ASSERT(DEF_WBITS <= DEF_WBITS, bad_def_wbits);
-
-
 
 
 /** Allowed flush values - see deflate() and inflate() below for details */
@@ -173,23 +206,20 @@ typedef enum {
     Z_DEFLATED = 8,
 } ZlibMethod;
 
-// FIXME Doxygen all types
-
-
-
+// TODO Doxygen all types
 
 
 
 /*
 
-     ZSC - The application must pass a buffer to next_work (and its size to
+     Abcouwer ZSC - The application must pass a buffer to next_work (and its size to
    avail_work) before an init function is called.
 
      The application must update next_in and avail_in when avail_in has dropped
    to zero.  It must update next_out and avail_out when avail_out has dropped
    to zero.
 
-     ZSC - The z_stream originally had function pointers for allocation
+     Abcouwer ZSC - The z_stream originally had function pointers for allocation
    functions. These have been replaced with pointer to and size of a work buffer.
 
      The fields total_in and total_out can be used for statistics or progress

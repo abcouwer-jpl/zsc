@@ -63,7 +63,7 @@ typedef enum {
     DISTS
 } codetype;
 
-I32 ZLIB_INTERNAL inflate_table (codetype type, U16 *lens,
+I32 inflate_table (codetype type, U16 *lens,
                              U32 codes, code **table,
                              U32 *bits, U16 *work);
 

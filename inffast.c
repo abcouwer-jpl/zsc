@@ -1,3 +1,26 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        inffast.c
+ * @date        2020-08-05
+ * @author      Mark Adler, Neil Abcouwer
+ * @brief       Fast decoding
+ *
+ * Modified version of inffast.c for safety-critical applications.
+ * Original file header follows.
+ */
+
+
 /* inffast.c -- fast decoding
  * Copyright (C) 1995-2017 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -46,7 +69,7 @@
       requires strm->avail_out >= 258 for each loop to avoid checking for
       output space.
  */
-void ZLIB_INTERNAL inflate_fast(strm, start)
+void inflate_fast(strm, start)
 z_stream * strm;
 U32 start;         /* inflate()'s starting value for strm->avail_out */
 {
@@ -109,9 +132,6 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
         bits -= op;
         op = (U32)(here.op);
         if (op == 0) {                          /* literal */
-            Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
-                    "inflate:         literal '%c'\n" :
-                    "inflate:         literal 0x%02x\n", here.val));
             *out++ = (U8)(here.val);
         }
         else if (op & 16) {                     /* length base */
@@ -126,7 +146,6 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                 hold >>= op;
                 bits -= op;
             }
-            Tracevv((stderr, "inflate:         length %u\n", len));
             if (bits < 15) {
                 hold += (U32)(*in++) << bits;
                 bits += 8;
@@ -159,7 +178,6 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                 }
                 hold >>= op;
                 bits -= op;
-                Tracevv((stderr, "inflate:         distance %u\n", dist));
                 op = (U32)(out - beg);     /* max distance in output */
                 if (dist > op) {                /* see if copy from window */
                     op = dist - op;             /* distance back in window */
@@ -257,7 +275,6 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
             goto dolen;
         }
         else if (op & 32) {                     /* end-of-block */
-            Tracevv((stderr, "inflate:         end of block\n"));
             state->mode = TYPE;
             break;
         }

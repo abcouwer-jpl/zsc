@@ -1,3 +1,25 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        zutil.c
+ * @date        2020-08-05
+ * @author      Jean-loup Gailly, Neil Abcouwer
+ * @brief       Utility functions
+ *
+ * Stripped-down version of zutil.c for safety-critical applications.
+ * Original file header follows.
+ */
+
 /* zutil.c -- target dependent utility functions for the compression library
  * Copyright (C) 1995-2017 Jean-loup Gailly
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -83,34 +105,15 @@ U32 zlibCompileFlags()
     default:    flags += 3 << 6;
     }
 
-    #ifdef ZLIB_DEBUG
-    flags += 1 << 8;
-#endif
-
     /* Abcouwer ZSC - removed conditional compilation flags:
      * ASMV/ASMINF, ZLIB_WINAPI, BUILDFIXED, DYNAMIC_CRC_TABLE, NO_GZCOMPRESS,
-     * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST     */
+     * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST. ZLIB_DEBUG     */
 
     /* Abcouwer ZSC - sprintf variants not checked, as used in gzprintf,
      * and gz code not included */
 
     return flags;
 }
-
-#ifdef ZLIB_DEBUG
-#include <stdlib.h>
-#  ifndef verbose
-#    define verbose 0
-#  endif
-I32 ZLIB_INTERNAL z_verbose = verbose;
-
-void ZLIB_INTERNAL z_error (m)
-    U8 *m;
-{
-    fprintf(stderr, "%s\n", m);
-    exit(1);
-}
-#endif
 
 /* exported to allow conversion of error code to string for compress() and
  * uncompress()

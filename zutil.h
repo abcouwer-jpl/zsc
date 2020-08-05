@@ -1,3 +1,25 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        zutil.h
+ * @date        2020-08-05
+ * @author      Jean-loup Gailly, Mark Adler, Neil Abcouwer
+ * @brief       Internal macros and constants
+ *
+ * Stripped-down version of zutil.h for safety-critical applications.
+ * Original file header follows.
+ */
+
 /* zutil.h -- internal interface and configuration of the compression library
  * Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -13,14 +35,9 @@
 #ifndef ZUTIL_H
 #define ZUTIL_H
 
-#ifdef HAVE_HIDDEN
-#  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
-#else
-#  define ZLIB_INTERNAL
-#endif
+// Abcouwer ZSC - remove ZLIB_INTERNAL
 
 #include "zlib.h"
-
 
 // Abcouwer ZSC - typedef ptrdiff_t moved to zsc_conf_global_types
 
@@ -33,7 +50,7 @@ extern const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #define ERR_MSG(err) z_errmsg[Z_NEED_DICT-(err)]
 
 #define ERR_RETURN(strm,err) \
-  return (strm->msg = ERR_MSG(err), (err))
+  return ((strm)->msg = ERR_MSG(err), (err))
 /* To be used only when the state is known to be valid */
 
         /* common constants */
@@ -110,31 +127,12 @@ extern const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #endif
 
 // Abcouwer ZSC - Remove target dependencies related to fdopen and dynamic memory
+// File handling is beyond scope of ZSC.
 
 // Abcouwer ZSC - Remove crc combine functions
 // Joining two compressed buffers is beyond scope of ZSC.
 
-         /* functions */
-
-/* Diagnostic functions */
-#ifdef ZLIB_DEBUG
-#  include <stdio.h>
-   extern int ZLIB_INTERNAL z_verbose;
-   extern void ZLIB_INTERNAL z_error OF((char *m));
-//#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
-#  define Trace(x) {if (z_verbose>=0) fprintf x ;}
-#  define Tracev(x) {if (z_verbose>0) fprintf x ;}
-#  define Tracevv(x) {if (z_verbose>1) fprintf x ;}
-#  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf x ;}
-#  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf x ;}
-#else
-//#  define Assert(cond,msg)
-#  define Trace(x)
-#  define Tracev(x)
-#  define Tracevv(x)
-#  define Tracec(c,x)
-#  define Tracecv(c,x)
-#endif
+// Abcouwer ZSC - removed trace functions
 
 // Abcouwer ZSC - removed dynamic memory functions
 
@@ -142,8 +140,8 @@ extern const U8 * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #define ZSWAP32(q) ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
                     (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
+// Abcouwer ZSC - provide min/max macros
 #define ZMIN(a,b) ((a)<(b) ?  (a) : (b))
 #define ZMAX(a,b) ((a)>(b) ?  (a) : (b))
-
 
 #endif /* ZUTIL_H */

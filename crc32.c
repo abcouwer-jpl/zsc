@@ -1,3 +1,25 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        crc32.c
+ * @date        2020-08-05
+ * @author      Mark Adler, Neil Abcouwer
+ * @brief       compute the CRC-32 of a data stream
+ *
+ * Stripped-down version of crc32.c for safety-critical applications.
+ * Original file header follows.
+ */
+
 /* crc32.c -- compute the CRC-32 of a data stream
  * Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -13,24 +35,20 @@
 
 // Abcouwer ZSC - remove MAKECRCH, DYNAMIC_CRC_TABLE code
 
+#include "zsc_conf_private.h"
 #include "zutil.h"      /* for STDC and definitions */
 
 /* Definitions for doing the crc four data bytes at a time. */
-local U32 crc32_little (U32, const U8 *, z_size_t);
-local U32 crc32_big (U32, const U8 *, z_size_t);
+ZSC_PRIVATE U32 crc32_little (U32, const U8 *, z_size_t);
+ZSC_PRIVATE U32 crc32_big (U32, const U8 *, z_size_t);
 #define TBLS 8
-
-/* Local functions for crc concatenation */
-local U32 gf2_matrix_times (U32 *mat, U32 vec);
-local void gf2_matrix_square (U32 *square, U32 *mat);
-
 
 /* ========================================================================
  * Tables of CRC-32s of all single-byte values, made by make_crc_table().
  * Abcouwer ZSC - putting table here, rather than using header file
  */
 
-local const z_crc_t crc_table[TBLS][256] =
+ZSC_PRIVATE const z_crc_t crc_table[TBLS][256] =
 {
   {
     0x00000000UL, 0x77073096UL, 0xee0e612cUL, 0x990951baUL, 0x076dc419UL,
@@ -531,7 +549,7 @@ U32 crc32(crc, buf, len)
 #define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
 
 /* ========================================================================= */
-local U32 crc32_little(crc, buf, len)
+ZSC_PRIVATE U32 crc32_little(crc, buf, len)
     U32 crc;
     const U8 *buf;
     z_size_t len;
@@ -572,7 +590,7 @@ local U32 crc32_little(crc, buf, len)
 #define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
 
 /* ========================================================================= */
-local U32 crc32_big(crc, buf, len)
+ZSC_PRIVATE U32 crc32_big(crc, buf, len)
     U32 crc;
     const U8 *buf;
     z_size_t len;
@@ -606,36 +624,5 @@ local U32 crc32_big(crc, buf, len)
     return (U32)(ZSWAP32(c));
 }
 
-
-#define GF2_DIM 32      /* dimension of GF(2) vectors (length of CRC) */
-
-/* ========================================================================= */
-local U32 gf2_matrix_times(mat, vec)
-    U32 *mat;
-    U32 vec;
-{
-    U32 sum;
-
-    sum = 0;
-    while (vec) {
-        if (vec & 1)
-            sum ^= *mat;
-        vec >>= 1;
-        mat++;
-    }
-    return sum;
-}
-
-/* ========================================================================= */
-local void gf2_matrix_square(square, mat)
-    U32 *square;
-    U32 *mat;
-{
-    for (I32 n = 0; n < GF2_DIM; n++) {
-        square[n] = gf2_matrix_times(mat, mat[n]);
-    }
-}
-
-
-// Abcouwer ZSC - Remove crc combine functions
+// Abcouwer ZSC - Remove crc combine, gf2_matrix functions
 // Joining two compressed buffers is beyond scope of ZSC.

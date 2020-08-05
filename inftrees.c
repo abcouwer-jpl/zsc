@@ -1,3 +1,25 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        inftrees.c
+ * @date        2020-08-05
+ * @author      Mark Adler, Neil Abcouwer
+ * @brief       Generate Huffman trees for efficient decoding
+ *
+ * Modified version of inftrees,c for safety-critical applications.
+ * Original file header follows.
+ */
+
 /* inftrees.c -- generate Huffman trees for efficient decoding
  * Copyright (C) 1995-2017 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -29,7 +51,7 @@ const U8 inflate_copyright[] =
    table index bits.  It will differ if the request is greater than the
    longest code or if it is less than the shortest code.
  */
-I32 ZLIB_INTERNAL inflate_table(type, lens, codes, table, bits, work)
+I32 inflate_table(type, lens, codes, table, bits, work)
 codetype type;
 U16 *lens;
 U32 codes;
@@ -215,7 +237,7 @@ U16 *work;
     next = *table;              /* current table to fill in */
     curr = root;                /* current table index bits */
     drop = 0;                   /* current bits to drop from code for index */
-    low = (U32)(-1);       /* trigger new sub-table when len > root */
+    low = U32_MAX;       /* trigger new sub-table when len > root */
     used = 1U << root;          /* use root table entries */
     mask = used - 1;            /* mask for comparing low */
 

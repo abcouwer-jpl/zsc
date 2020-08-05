@@ -1,3 +1,25 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        deflate.h
+ * @date        2020-08-05
+ * @author      Jean-loup Gailly, Neil Abcouwer
+ * @brief       Internal compression state
+ *
+ * Modified version of deflate.h for safety-critical applications.
+ * Original file header follows.
+ */
+
 /* deflate.h -- internal compression state
  * Copyright (C) 1995-2016 Jean-loup Gailly
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -244,11 +266,6 @@ typedef struct internal_state {
     U32 matches;       /* number of string matches in current block */
     U32 insert;        /* bytes at end of window left to insert */
 
-#ifdef ZLIB_DEBUG
-    U32 compressed_len; /* total bit length of compressed file mod 2^32 */
-    U32 bits_sent;      /* bit length of compressed data sent mod 2^32 */
-#endif
-
     U16 bi_buf;
     /* Output buffer. bits are inserted starting at the bottom (least
      * significant bits).
@@ -275,7 +292,7 @@ ZSC_COMPILE_ASSERT(Z_DEFLATE_STATE_SIZE >= sizeof(deflate_state),
 /* Output a byte on the stream.
  * IN assertion: there is enough room in pending_buf.
  */
-#define put_byte(s, c) {s->pending_buf[s->pending++] = (U8)(c);}
+#define put_byte(s, c) {(s)->pending_buf[(s)->pending++] = (U8)(c);}
 
 
 #define MIN_LOOKAHEAD (MAX_MATCH+MIN_MATCH+1)
@@ -293,49 +310,42 @@ ZSC_COMPILE_ASSERT(Z_DEFLATE_STATE_SIZE >= sizeof(deflate_state),
    memory checker errors from longest match routines */
 
         /* in trees.c */
-void ZLIB_INTERNAL _tr_init (deflate_state *s);
-I32  ZLIB_INTERNAL _tr_tally (deflate_state *s, U32 dist, U32 lc);
-void ZLIB_INTERNAL _tr_flush_block (deflate_state *s, U8 *buf,
+void _tr_init (deflate_state *s);
+void _tr_flush_block (deflate_state *s, U8 *buf,
                         U32 stored_len, I32 last);
-void ZLIB_INTERNAL _tr_flush_bits (deflate_state *s);
-void ZLIB_INTERNAL _tr_align (deflate_state *s);
-void ZLIB_INTERNAL _tr_stored_block (deflate_state *s, U8 *buf,
+void _tr_flush_bits (deflate_state *s);
+void _tr_align (deflate_state *s);
+void _tr_stored_block (deflate_state *s, U8 *buf,
                         U32 stored_len, I32 last);
 
 #define d_code(dist) \
-   ((dist) < 256 ? _dist_code[dist] : _dist_code[256+((dist)>>7)])
+   ((dist) < 256 ? _dist_code[(dist)] : _dist_code[256+((dist)>>7)])
 /* Mapping from a distance to a distance code. dist is the distance - 1 and
  * must not have side effects. _dist_code[256] and _dist_code[257] are never
  * used.
  */
 
-#ifndef ZLIB_DEBUG
 /* Inline versions of _tr_tally for speed: */
 
-extern const U8 ZLIB_INTERNAL _length_code[];
-extern const U8 ZLIB_INTERNAL _dist_code[];
+extern const U8 _length_code[];
+extern const U8 _dist_code[];
 
 # define _tr_tally_lit(s, c, flush) \
   { U8 cc = (c); \
-    s->d_buf[s->last_lit] = 0; \
-    s->l_buf[s->last_lit++] = cc; \
-    s->dyn_ltree[cc].Freq++; \
-    flush = (s->last_lit == s->lit_bufsize-1); \
+    (s)->d_buf[(s)->last_lit] = 0; \
+    (s)->l_buf[(s)->last_lit++] = cc; \
+    (s)->dyn_ltree[cc].Freq++; \
+    (flush) = ((s)->last_lit == (s)->lit_bufsize-1); \
    }
 # define _tr_tally_dist(s, distance, length, flush) \
   { U8 len = (U8)(length); \
     U16 dist = (U16)(distance); \
-    s->d_buf[s->last_lit] = dist; \
-    s->l_buf[s->last_lit++] = len; \
+    (s)->d_buf[(s)->last_lit] = dist; \
+    (s)->l_buf[(s)->last_lit++] = len; \
     dist--; \
-    s->dyn_ltree[_length_code[len]+LITERALS+1].Freq++; \
-    s->dyn_dtree[d_code(dist)].Freq++; \
-    flush = (s->last_lit == s->lit_bufsize-1); \
+    (s)->dyn_ltree[_length_code[len]+LITERALS+1].Freq++; \
+    (s)->dyn_dtree[d_code(dist)].Freq++; \
+    (flush) = ((s)->last_lit == (s)->lit_bufsize-1); \
   }
-#else
-# define _tr_tally_lit(s, c, flush) flush = _tr_tally(s, 0, c)
-# define _tr_tally_dist(s, distance, length, flush) \
-              flush = _tr_tally(s, distance, length)
-#endif
 
 #endif /* DEFLATE_H */

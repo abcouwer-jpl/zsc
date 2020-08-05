@@ -1,17 +1,30 @@
-/* zlib.h -- interface of the 'zlib' general purpose compression library
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * This software may be subject to U.S. export control laws.
+ * By accepting this software, the user agrees to comply with
+ * all applicable U.S. export laws and regulations. User has the
+ * responsibility to obtain export licenses, or other export authority
+ * as may be required before exporting such information to foreign
+ * countries or providing access to foreign persons.
+ *
+ * @file        zlib.h
+ * @date        2020-08-05
+ * @author      Jean-loup Gailly, Mark Adler, Neil Abcouwer
+ * @brief       interface of the 'zlib' general purpose compression library
+ *
+ * Modified version of zlib.h for safety-critical applications.
+ * Modifications:
+ *   * Removed gzip and compress functions, deflateCopy, inflateCopy, crc combine.
+ *   * Added functions for sizing work buffers for deflation and inflation.
+ *   * Various modifications per MISRA and P10 guidelines.
+ * Original file header follows.
+ */
 
-  version 1.2.11.f-abcouwer-safety-crtical-v0
-
-  Neil Abcouwer, Jet Propulsion Laboratory, 2020-03
-
-  This is a version of zlib meant to be "flight safe".
-  That means, among other things, no dynamic memory,
-  no loops without bound, use of assert, etc.
-
-
-  ----
-
-
+/*
   version 1.2.11, January 15th, 2017
 
   Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler

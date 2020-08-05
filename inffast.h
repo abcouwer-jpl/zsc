@@ -8,4 +8,4 @@
    subject to change. Applications should only use zlib.h.
  */
 
-void ZLIB_INTERNAL inflate_fast (z_stream * strm, U32 start);
+void inflate_fast (z_stream * strm, U32 start);
