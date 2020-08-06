@@ -4,6 +4,23 @@
 Changes in 1.2.11.f-abcouwer-safety-v0 (TBD)
 - Updated README and version info
 - Add --werror (doesn't compile) option to configure script
+- zsc functions for (de)compressing with static memory
+- zsc functions have a block size for independent compressed blocks
+- zsc functions provide work buffer sizing functions
+- Split public headers between types and functions
+- Remove makefiles for various OSs
+- Remove conditional compilation
+- Remove allocation functions from stream type, in favor of work buffer.
+- Remove code for building fixed tables (not thread safe) 
+- Remove crc combine functions
+- Use fixed size types
+- Remove types that obscure pointers
+- Enclose some one line conditional blocks in brackets.
+- Enclose macro arguments in parens
+- Add google test unit test cpp file
+- Unit tests generate lcov coverage reports
+- CMakeLists clones repos for testing a corpus of data in unit tests
+- Added "Abcouwer ZSC" comments in place where significant changes made
 
 Changes in 1.2.11 (15 Jan 2017)
 - Fix deflate stored bug when pulling last block from window

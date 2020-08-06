@@ -1,6 +1,6 @@
-ZLIB DATA COMPRESSION LIBRARY - flight safety version
+ZLIB DATA COMPRESSION LIBRARY - safety-critical version
 
-zlib 1.2.11.f-abcouwer-safety-v0 is a version of zlib intended 
+zlib 1.2.11.f-abcouwer-safety-critical-v0 is a version of zlib intended 
 to be safe for flight software or other safety-critical applications.
 
 See https://www.zlib.net/ for information about zlib.
@@ -10,6 +10,49 @@ Owned/developed/maintained by Neil Abcouwer, neil.abcouwer@jpl.nasa.gov.
 
 If you fork from this repo for more than just playing around, 
 Neil would appreciate learning what it's being used for.
+
+--
+
+This version of zlib is targeted toward safety-critical applications, 
+such as spaceflight. Changes were made to follow the MISRA C 2012 guidelines: 
+
+https://www.misra.org.uk/MISRAHome/MISRAC2012/tabid/196/Default.aspx
+
+and the "Power of 10" rules:
+
+http://spinroot.com/p10/
+
+Changes have been noted in the Changelog and/or commented with the text 
+"Abcouwer ZSC". Notable changes include:
+
+No dynamic memory allocation - Dynamic allocation after initialization is not safe.
+Dynamic memory functions have been removed. Users must provide work buffers to the
+compression and decompression functions. Functions declared in zsc_pub.h will assist 
+with this.
+
+No conditional compilation - If code has N ifdefs, there are 2^N possible 
+versions of the code, and testing becomes impossible. Several compilation 
+options have been removed. If one of these options in necesary for your application,
+consider a pull request that implements the option in a run-time manner.
+
+Use of assertions
+
+Use of types that define the size and sign - this has not yet been tested 
+on 16 bit systems, be wary.
+
+
+Exceptions
+
+In violation of required MISRA Directive R15.2, backward gotos have been left 
+in inffast.c, rather than restructure the code.
+
+In violation of advisory MISRA Directive R15.1, gotos have been left 
+in the code, rather than restructure.
+
+
+
+--
+
 
 This version was created by pushing zlib 1.2.11 to the JPL internal github, via
 
