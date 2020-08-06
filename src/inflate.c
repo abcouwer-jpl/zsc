@@ -222,10 +222,11 @@ ZSC_PRIVATE I32 inflateStateCheck(z_stream * strm)
 ZSC_PRIVATE void * inflate_get_work_mem(z_stream * strm, U32 items, U32 size)
 {
     void * new_ptr = Z_NULL;
-    // FIXME assert stream not null
     U32 bytes = items * size;
-    // FIXME asset no overflow
+    // assert no overflow
+    ZSC_ASSERT3(items != 0 && bytes / items == size, bytes, items, size);
 
+    ZSC_ASSERT(strm != Z_NULL);
     if (strm->avail_work >= bytes) {
         new_ptr = strm->next_work;
         strm->next_work += bytes;
@@ -272,8 +273,13 @@ ZlibReturn inflateResetKeep(z_stream * strm)
 {
     inflate_state *state;
 
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateResetKeep(), bad inflate state.");
+        return Z_STREAM_ERROR;
+    }
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     strm->total_in = strm->total_out = state->total = 0;
     strm->msg = Z_NULL;
     if (state->wrap)        /* to support ill-conceived Java test suite */
@@ -295,8 +301,14 @@ ZlibReturn inflateReset(z_stream * strm)
 {
     inflate_state *state;
 
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateReset(), bad inflate state.");
+        return Z_STREAM_ERROR;
+    }
+
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     state->wsize = 0;
     state->whave = 0;
     state->wnext = 0;
@@ -310,6 +322,7 @@ ZlibReturn inflateReset2(z_stream * strm, I32 windowBits)
 
     /* get the state */
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateReset2(), bad inflate state.");
         return Z_STREAM_ERROR;
     }
     state = (inflate_state *)strm->state;
@@ -330,6 +343,8 @@ ZlibReturn inflateReset2(z_stream * strm, I32 windowBits)
     if (windowBits && (windowBits < 8 || windowBits > 15)) {
         return Z_STREAM_ERROR;
     }
+
+    ZSC_ASSERT(state != Z_NULL);
     if (state->window != Z_NULL && state->wbits != (U32)windowBits) {
         // Abcouwer ZSC - this case, required dynamic memory. Removed.
         return Z_STREAM_ERROR;
@@ -349,15 +364,21 @@ I32 inflateInit2_(z_stream * strm,
 
     if (version == Z_NULL || version[0] != ZLIB_VERSION[0] ||
         stream_size != (I32)(sizeof(z_stream))){
+        ZSC_WARN("In inflateInit2_(), bad version.");
         return Z_VERSION_ERROR;
     }
     if (strm == Z_NULL) {
+        ZSC_WARN("In inflateInit2_(), null stream.");
         return Z_STREAM_ERROR;
     }
     U32 work_size = U32_MAX;
     if(strm->next_work == Z_NULL
             || inflateWorkSize2(windowBits, &work_size) != Z_OK
             || strm->avail_work < work_size) {
+        ZSC_WARN3("In inflateInit2_(), bad stream: %d %d %d.",
+                strm->next_work == Z_NULL,
+                inflateWorkSize2(windowBits, &work_size) != Z_OK,
+                strm->avail_work < work_size);
         return Z_STREAM_ERROR;
     }
     strm->msg = Z_NULL;                 /* in case we return an error */
@@ -367,6 +388,7 @@ I32 inflateInit2_(z_stream * strm,
     state = (inflate_state *)
         inflate_get_work_mem(strm, 1, sizeof(inflate_state));
     if (state == Z_NULL) {
+        ZSC_WARN("In inflateInit2_(), could not get memory for state.");
         return Z_MEM_ERROR;
     }
     strm->state = (struct internal_state *)state;
@@ -390,15 +412,19 @@ ZlibReturn inflatePrime(z_stream * strm, I32 bits, I32 value)
     inflate_state *state;
 
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflatePrime(), bad stream.");
         return Z_STREAM_ERROR;
     }
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     if (bits < 0) {
         state->hold = 0;
         state->bits = 0;
         return Z_OK;
     }
     if (bits > 16 || state->bits + (U32)bits > 32) {
+        ZSC_WARN("In inflatePrime(), bits too large.");
         return Z_STREAM_ERROR;
     }
     value &= (1L << bits) - 1;
@@ -450,6 +476,7 @@ ZSC_PRIVATE I32 updatewindow(z_stream * strm, const U8 *end, U32 copy)
     U32 dist;
 
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
 
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {
@@ -681,12 +708,17 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
     static const U16 order[19] = /* permutation of code lengths */
         {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
-    if (inflateStateCheck(strm) || strm->next_out == Z_NULL ||
-        (strm->next_in == Z_NULL && strm->avail_in != 0))
+    if (inflateStateCheck(strm) || strm->next_out == Z_NULL
+            || (strm->next_in == Z_NULL && strm->avail_in != 0)) {
+        ZSC_WARN("In inflate(), bad stream or buffers.");
         return Z_STREAM_ERROR;
-
+    }
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
-    if (state->mode == TYPE) state->mode = TYPEDO;      /* skip check */
+    ZSC_ASSERT(state != Z_NULL);
+    if (state->mode == TYPE) {
+        state->mode = TYPEDO;      /* skip check */
+    }
     LOAD();
     in = have;
     out = left;
@@ -1293,6 +1325,7 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             (state->mode < CHECK || flush != Z_FINISH))) {
         if (updatewindow(strm, strm->next_out, out - strm->avail_out)) {
             state->mode = MEM;
+            ZSC_WARN("In inflate(), updatewindow() failed.");
             return Z_MEM_ERROR;
         }
     }
@@ -1317,11 +1350,13 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
 ZlibReturn inflateEnd(z_stream * strm)
 {
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateEnd(), bad state.");
         return Z_STREAM_ERROR;
     }
 
     // Abcouwer ZSC - no dynamic allocation, removed frees
 
+    ZSC_ASSERT(strm != Z_NULL);
     strm->state = Z_NULL;
     return Z_OK;
 }
@@ -1332,8 +1367,12 @@ ZlibReturn inflateGetDictionary(z_stream * strm,
     inflate_state *state;
 
     /* check state */
-    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateGetDictionary(), bad state.");
+        return Z_STREAM_ERROR;
+    }
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
 
     /* copy dictionary */
     if (state->whave && dictionary != Z_NULL) {
@@ -1342,8 +1381,9 @@ ZlibReturn inflateGetDictionary(z_stream * strm,
         zmemcpy(dictionary + state->whave - state->wnext,
                 state->window, state->wnext);
     }
-    if (dictLength != Z_NULL)
+    if (dictLength != Z_NULL) {
         *dictLength = state->whave;
+    }
     return Z_OK;
 }
 
@@ -1356,10 +1396,14 @@ ZlibReturn inflateSetDictionary(z_stream * strm,
 
     /* check state */
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateSetDictionary(), bad state.");
         return Z_STREAM_ERROR;
     }
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     if (state->wrap != 0 && state->mode != DICT) {
+        ZSC_WARN2("In inflateSetDictionary(), bad wrapper (%d) or mode (%d).",
+                state->wrap, state->mode);
         return Z_STREAM_ERROR;
     }
 
@@ -1368,6 +1412,7 @@ ZlibReturn inflateSetDictionary(z_stream * strm,
         dictid = adler32(0L, Z_NULL, 0);
         dictid = adler32(dictid, dictionary, dictLength);
         if (dictid != state->check) {
+            ZSC_WARN("In inflateSetDictionary(), bad dictionary id.");
             return Z_DATA_ERROR;
         }
     }
@@ -1377,6 +1422,7 @@ ZlibReturn inflateSetDictionary(z_stream * strm,
     ret = updatewindow(strm, dictionary + dictLength, dictLength);
     if (ret) {
         state->mode = MEM;
+        ZSC_WARN("In inflateSetDictionary(), updatewindow() failed.");
         return Z_MEM_ERROR;
     }
     state->havedict = 1;
@@ -1389,13 +1435,20 @@ ZlibReturn inflateGetHeader(z_stream * strm, gz_header * head)
 
     /* check state */
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateGetHeader(), bad state.");
         return Z_STREAM_ERROR;
     }
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
-    if ((state->wrap & 2) == 0) return Z_STREAM_ERROR;
+    ZSC_ASSERT(state != Z_NULL);
+    if ((state->wrap & 2) == 0) {
+        ZSC_WARN("In inflateGetHeader(), strm is not gzip.");
+        return Z_STREAM_ERROR;
+    }
 
     /* save header structure */
     state->head = head;
+    ZSC_ASSERT(head != Z_NULL);
     head->done = 0;
     return Z_OK;
 }
@@ -1444,10 +1497,14 @@ ZlibReturn inflateSync(z_stream * strm)
 
     /* check parameters */
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateSync(), bad state.");
         return Z_STREAM_ERROR;
     }
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     if (strm->avail_in == 0 && state->bits < 8) {
+        ZSC_WARN("In inflateSync(), not enough input.");
         return Z_BUF_ERROR;
     }
 
@@ -1474,11 +1531,13 @@ ZlibReturn inflateSync(z_stream * strm)
 
     /* return no joy or set up to restart inflate() on a new block */
     if (state->have != 4) {
+        ZSC_WARN("In inflateSync(), did not find 4 bytes.");
         return Z_DATA_ERROR;
     }
     in = strm->total_in;  out = strm->total_out;
     I32 ir_ret = inflateReset(strm);
     if (ir_ret != Z_OK) {
+        ZSC_WARN1("In inflateSync(), inflateReset() returned %d.", ir_ret);
         return ir_ret;
     }
     strm->total_in = in;  strm->total_out = out;
@@ -1499,9 +1558,13 @@ ZlibReturn inflateSyncPoint(z_stream * strm)
     inflate_state *state;
 
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateSyncPoint(), bad state.");
         return Z_STREAM_ERROR;
     }
+
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     return state->mode == STORED && state->bits == 0;
 }
 
@@ -1513,10 +1576,14 @@ ZlibReturn inflateUndermine(z_stream * strm, I32 subvert)
     inflate_state *state;
 
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateUndermine(), bad state.");
         return Z_STREAM_ERROR;
     }
+
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
     (void)subvert;
+    ZSC_ASSERT(state != Z_NULL);
     state->sane = 1;
     return Z_DATA_ERROR;
 }
@@ -1526,13 +1593,18 @@ ZlibReturn inflateValidate(z_stream * strm, I32 check)
     inflate_state *state;
 
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateValidate(), bad state.");
         return Z_STREAM_ERROR;
     }
+
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
-    if (check)
+    ZSC_ASSERT(state != Z_NULL);
+    if (check) {
         state->wrap |= 4;
-    else
+    } else {
         state->wrap &= ~4;
+    }
     return Z_OK;
 }
 
@@ -1541,9 +1613,13 @@ I32 inflateMark(z_stream * strm)
     inflate_state *state;
 
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateMark(), bad state.");
         return -(1L << 16);
     }
+
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     return (I32)(((U32)((I32)state->back)) << 16) +
         (state->mode == COPY ? state->length :
             (state->mode == MATCH ? state->was - state->length : 0));
@@ -1553,8 +1629,12 @@ U32 inflateCodesUsed(z_stream * strm)
 {
     inflate_state *state;
     if (inflateStateCheck(strm)) {
+        ZSC_WARN("In inflateCodesUsed(), bad state.");
         return U32_MAX;
     }
+
+    ZSC_ASSERT(strm != Z_NULL);
     state = (inflate_state *)strm->state;
+    ZSC_ASSERT(state != Z_NULL);
     return (U32)(state->next - state->codes);
 }

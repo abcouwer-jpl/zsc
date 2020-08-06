@@ -14,14 +14,15 @@
  * @file        zsc_compress.c
  * @date        2020-07-01
  * @author      Neil Abcouwer
- * @brief       Function definitions for safety-critical compressing.
+ * @brief       Function definitions for all-in-one compression.
+ *
+ * Functions do deflateInit(), loops of deflate(), using full flush
+ * to create independent blocks, and deflateEnd()
  */
 
 #include "zsc/zsc_pub.h"
 #include "zsc/zutil.h"
 #include "zsc/zsc_conf_private.h"
-
-#define GZIP_CODE (16)
 
 /* ===========================================================================
      Compresses the source buffer into the destination buffer,
@@ -70,11 +71,13 @@ ZlibReturn zsc_compress_gzip2(
     ZlibReturn err = zsc_compress_get_min_work_buf_size2(window_bits, mem_level,
             &min_work_buf_size);
     if (err != Z_OK) {
-        ZSC_WARN1("Could not get min work buf size, error %d.", err);
+        ZSC_WARN1("In zsc_compress_gzip2(), could not get min work buf size, "
+                 "error %d.", err);
         return err;
     }
     if (work_len < min_work_buf_size) {
-        ZSC_WARN2("Working memory (%u B) was smaller than required (%u B).",
+        ZSC_WARN2("In zsc_compress_gzip2(), working memory (%u B) "
+                "was smaller than required (%u B).",
                 work_len, min_work_buf_size);
         return Z_MEM_ERROR;
     }
@@ -83,7 +86,7 @@ ZlibReturn zsc_compress_gzip2(
     err = deflateInit2(&stream, level, Z_DEFLATED, window_bits, mem_level,
             strategy);
     if (err != Z_OK) {
-        ZSC_WARN1("Could not deflate init, error %d.", err);
+        ZSC_WARN1("In zsc_compress_gzip2, could not deflateInit, error %d.", err);
         return err;
     }
 
@@ -91,7 +94,8 @@ ZlibReturn zsc_compress_gzip2(
     if (gz_header != Z_NULL) {
         err = deflateSetHeader(&stream, gz_header);
         if (err != Z_OK) {
-            ZSC_WARN1("Could not set deflate header, error %d.", err);
+            ZSC_WARN1("In zsc_compress_gzip2(), could not set deflate header, "
+                    "error %d.", err);
             return err;
         }
     }
@@ -102,14 +106,12 @@ ZlibReturn zsc_compress_gzip2(
     err = zsc_compress_get_max_output_size_gzip2(source_len, max_block_len,
             level, window_bits, mem_level, gz_header, &bound2);
     if(err != Z_OK) {
-        ZSC_WARN1("Could not get deflate output bound, error %d.", err);
+        ZSC_WARN1("In, zsc_compress_gzip2(), could not get deflate output bound, "
+                "error %d.", err);
         return err;
     }
-    if((dest_len_in < bound1) || (dest_len_in < bound2)) {
-        ZSC_WARN3("Output buffer (%u bytes) was smaller than bounds (%u/%u bytes)."
-            "Output might not fit in the buffer.",
-            dest_len_in, bound1, bound2);
-    }
+    U32 small_output = (dest_len_in < bound1) || (dest_len_in < bound2);
+    // don't warn yet. If there is a failure, and the output was small, then inform
 
     U32 bytes_left_dest = dest_len_in;
 
@@ -133,14 +135,21 @@ ZlibReturn zsc_compress_gzip2(
     *dest_len = stream.total_out;
 
     if(err != Z_STREAM_END) {
-        ZSC_WARN1("Deflate loop ended with error code %d.", err);
+        ZSC_WARN1("In zsc_compress_gzip2(), deflate loop ended "
+                "with error code %d.", err);
+        if (small_output) {
+            ZSC_WARN3("In zsc_compress_gzip2(), output buffer (%u bytes) "
+                    "was smaller than bounds (%u/%u bytes). "
+                    "Output may not have fit in the buffer.",
+                    dest_len_in, bound1, bound2);
+        }
         (void)deflateEnd(&stream); // clean up
         return (err == Z_OK) ? Z_STREAM_ERROR : err;
     }
 
     err = deflateEnd(&stream);
     if (err != Z_OK) {
-        ZSC_WARN1("Deflate ended with error code %d.", err);
+        ZSC_WARN1("In zsc_compress_gzip2(), deflate ended with error code %d.", err);
     }
     return err;
 }
@@ -199,7 +208,8 @@ ZlibReturn zsc_compress_get_max_output_size_gzip2(
     ZlibReturn err = deflateBoundNoStream(source_len,
             level, window_bits, mem_level, gz_header, &intermediate_size);
     if (err != Z_OK) {
-        ZSC_WARN1("Could not get deflate output bound, error %d.", err);
+        ZSC_WARN1("In zsc_compress_get_max_output_size_gzip2(), "
+                "could not get deflate output bound, error %d.", err);
         return err;
     }
 
@@ -214,7 +224,8 @@ ZlibReturn zsc_compress_get_max_output_size_gzip2(
     err = deflateBoundNoStream(source_len + extra_bytes,
             level, window_bits, mem_level, gz_header, size_out);
     if (err != Z_OK) {
-        ZSC_WARN1("Could not recalculate deflate output bound, error %d.", err);
+        ZSC_WARN1("In zsc_compress_get_max_output_size_gzip2(), "
+                "could not recalculate deflate output bound, error %d.", err);
     }
     return err;
 }

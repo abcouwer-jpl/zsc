@@ -543,6 +543,7 @@ ZlibReturn deflateSetHeader(z_stream * strm, gz_header * head)
     if (deflateStateCheck(strm) || strm->state->wrap != 2) {
         return Z_STREAM_ERROR;
     }
+    ZSC_ASSERT(strm->state != NULL);
     strm->state->gzhead = head;
     return Z_OK;
 }
@@ -648,6 +649,7 @@ ZlibReturn deflateTune(z_stream * strm,
     }
     ZSC_ASSERT(strm != NULL);
     s = strm->state;
+    ZSC_ASSERT(s != NULL);
     s->good_match = (U32)good_length;
     s->max_lazy_match = (U32)max_lazy;
     s->nice_match = nice_length;
@@ -689,6 +691,7 @@ U32 deflateBound(z_stream * strm, U32 sourceLen)
 
     /* compute wrapper length */
     s = strm->state;
+    ZSC_ASSERT(s != NULL);
     switch (s->wrap) {
     case 0:                                 /* raw deflate */
         wraplen = 0;
@@ -861,7 +864,8 @@ ZlibReturn deflateWorkSize2(I32 window_bits, I32 mem_level, U32 *size_out)
 
     if (mem_level < 1 || mem_level > MAX_MEM_LEVEL ||
         window_bits < 8 || window_bits > 15) {
-        // FIXME warn
+        ZSC_WARN2("In deflateWorkSize2(), bad mem_level (%d) or window_bits (%d).",
+                window_bits, mem_level);
         return Z_STREAM_ERROR;
     }
 
@@ -950,17 +954,24 @@ ZlibReturn deflate (z_stream *strm, ZlibFlush flush)
     deflate_state *s;
 
     if (deflateStateCheck(strm) || flush > Z_BLOCK || flush < 0) {
+        ZSC_WARN1("In deflate(), bad stream or flush (%d).", flush);
         return Z_STREAM_ERROR;
     }
     ZSC_ASSERT(strm != Z_NULL);
     s = strm->state;
+    ZSC_ASSERT(s != Z_NULL);
 
-    if (strm->next_out == Z_NULL ||
-        (strm->avail_in != 0 && strm->next_in == Z_NULL) ||
-        (s->status == FINISH_STATE && flush != Z_FINISH)) {
+    if (strm->next_out == Z_NULL
+            || (strm->avail_in != 0 && strm->next_in == Z_NULL)
+            || (s->status == FINISH_STATE && flush != Z_FINISH)) {
+        ZSC_WARN3("In deflate(), bad stream values: %d %d %d.",
+                strm->next_out == Z_NULL,
+                (strm->avail_in != 0 && strm->next_in == Z_NULL),
+                (s->status == FINISH_STATE && flush != Z_FINISH));
         ERR_RETURN(strm, Z_STREAM_ERROR);
     }
     if (strm->avail_out == 0) {
+        ZSC_WARN("In deflate(), 0 avail_out.");
         ERR_RETURN(strm, Z_BUF_ERROR);
     }
 
@@ -987,6 +998,8 @@ ZlibReturn deflate (z_stream *strm, ZlibFlush flush)
      */
     } else if (strm->avail_in == 0 && RANK(flush) <= RANK(old_flush) &&
                flush != Z_FINISH) {
+        ZSC_WARN2("In deflate(), 0 avail_in, RANK(%d) <= RANK(%d), not FINISH.",
+                RANK(flush), RANK(old_flush));
         ERR_RETURN(strm, Z_BUF_ERROR);
     } else {
         // no issue so far
@@ -994,6 +1007,7 @@ ZlibReturn deflate (z_stream *strm, ZlibFlush flush)
 
     /* User must not provide more input after the first FINISH: */
     if (s->status == FINISH_STATE && strm->avail_in != 0) {
+        ZSC_WARN("In deflate(), more input after first finish.");
         ERR_RETURN(strm, Z_BUF_ERROR);
     }
 
@@ -1003,16 +1017,19 @@ ZlibReturn deflate (z_stream *strm, ZlibFlush flush)
         U32 header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
         U32 level_flags;
 
-        if (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2)
+        if (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2) {
             level_flags = 0;
-        else if (s->level < 6)
+        } else if (s->level < 6) {
             level_flags = 1;
-        else if (s->level == 6)
+        } else if (s->level == 6) {
             level_flags = 2;
-        else
+        } else {
             level_flags = 3;
+        }
         header |= (level_flags << 6);
-        if (s->strstart != 0) header |= PRESET_DICT;
+        if (s->strstart != 0) {
+            header |= PRESET_DICT;
+        }
         header += 31 - (header % 31);
 
         putShortMSB(s, header);
@@ -1076,9 +1093,9 @@ ZlibReturn deflate (z_stream *strm, ZlibFlush flush)
                 put_byte(s, s->gzhead->extra_len & 0xff);
                 put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
             }
-            if (s->gzhead->hcrc)
-                strm->adler = crc32(strm->adler, s->pending_buf,
-                                    s->pending);
+            if (s->gzhead->hcrc) {
+                strm->adler = crc32(strm->adler, s->pending_buf, s->pending);
+            }
             s->gzindex = 0;
             s->status = EXTRA_STATE;
         }
@@ -1269,9 +1286,11 @@ ZlibReturn deflateEnd (z_stream * strm)
     I32 status;
 
     if (deflateStateCheck(strm)) {
+        ZSC_WARN("In deflateEnd(), bad state.");
         return Z_STREAM_ERROR;
     }
     ZSC_ASSERT(strm != Z_NULL);
+    ZSC_ASSERT(strm->state != Z_NULL);
 
     status = strm->state->status;
 
@@ -1299,7 +1318,9 @@ ZSC_PRIVATE U32 read_buf(z_stream * strm, U8 *buf, U32 size)
 
     U32 len = strm->avail_in;
 
-    if (len > size) len = size;
+    if (len > size) {
+        len = size;
+    }
     if (len == 0) {
         return 0;
     }
@@ -1307,6 +1328,7 @@ ZSC_PRIVATE U32 read_buf(z_stream * strm, U8 *buf, U32 size)
     strm->avail_in  -= len;
 
     zmemcpy(buf, strm->next_in, len);
+    ZSC_ASSERT(strm->state != Z_NULL);
     if (strm->state->wrap == 1) {
         strm->adler = adler32(strm->adler, buf, len);
     }
@@ -1397,7 +1419,9 @@ ZSC_PRIVATE U32 longest_match( deflate_state *s, U32 cur_match)
     /* Do not look for matches beyond the end of the input. This is necessary
      * to make deflate deterministic.
      */
-    if ((U32)nice_match > s->lookahead) nice_match = (I32)s->lookahead;
+    if ((U32)nice_match > s->lookahead) {
+        nice_match = (I32)s->lookahead;
+    }
 
     // Assert: "need lookahead"
     ZSC_ASSERT3((U32)s->strstart <= s->window_size-MIN_LOOKAHEAD,
@@ -1561,8 +1585,9 @@ ZSC_PRIVATE void fill_window(deflate_state *s)
                 s->head[s->ins_h] = (Pos)str;
                 str++;
                 s->insert--;
-                if (s->lookahead + s->insert < MIN_MATCH)
+                if (s->lookahead + s->insert < MIN_MATCH) {
                     break;
+                }
             }
         }
         /* If the whole input has less than MIN_MATCH bytes, ins_h is garbage,
@@ -1663,7 +1688,11 @@ ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
      * possible. If flushing, copy the remaining available input to next_out as
      * stored blocks, if there is enough space.
      */
-    U32 len, left, have, last = 0;
+    U32 len = 0;
+    U32 left = 0;
+    U32 have = 0;
+    U32 last = 0;
+    ZSC_ASSERT(s->strm != Z_NULL);
     U32 used = s->strm->avail_in;
     do {
         /* Set len to the maximum size block that we can copy directly with the
@@ -1672,15 +1701,18 @@ ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
          */
         len = MAX_STORED;       /* maximum deflate stored block length */
         have = (s->bi_valid + 42) >> 3;         /* number of header bytes */
-        if (s->strm->avail_out < have)          /* need room for header */
+        if (s->strm->avail_out < have) {          /* need room for header */
             break;
+        }
             /* maximum stored block length that will fit in avail_out: */
         have = s->strm->avail_out - have;
         left = s->strstart - s->block_start;    /* bytes left in window */
-        if (len > (U32)left + s->strm->avail_in)
+        if (len > (U32)left + s->strm->avail_in) {
             len = left + s->strm->avail_in;     /* limit len to the input */
-        if (len > have)
+        }
+        if (len > have){
             len = have;                         /* limit len to the output */
+        }
 
         /* If the stored block would be less than min_block in length, or if
          * unable to copy all of the available input when flushing, then try
@@ -1689,8 +1721,9 @@ ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
          */
         if (len < min_block && ((len == 0 && flush != Z_FINISH) ||
                                 flush == Z_NO_FLUSH ||
-                                len != left + s->strm->avail_in))
+                                len != left + s->strm->avail_in)) {
             break;
+        }
 
         /* Make a dummy stored block in pending to get the header bytes,
          * including any pending bits. This also updates the debugging counts.
@@ -1763,17 +1796,20 @@ ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
         s->block_start = s->strstart;
         s->insert += ZMIN(used, s->w_size - s->insert);
     }
-    if (s->high_water < s->strstart)
+    if (s->high_water < s->strstart) {
         s->high_water = s->strstart;
+    }
 
     /* If the last block was written to next_out, then done. */
-    if (last)
+    if (last) {
         return finish_done;
+    }
 
     /* If flushing and all input has been consumed, then done. */
     if (flush != Z_NO_FLUSH && flush != Z_FINISH &&
-        s->strm->avail_in == 0 && (I32)s->strstart == s->block_start)
+        s->strm->avail_in == 0 && (I32)s->strstart == s->block_start) {
         return block_done;
+    }
 
     /* Fill the window with any remaining input. */
     have = s->window_size - s->strstart - 1;
@@ -1782,18 +1818,21 @@ ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
         s->block_start -= s->w_size;
         s->strstart -= s->w_size;
         zmemcpy(s->window, s->window + s->w_size, s->strstart);
-        if (s->matches < 2)
+        if (s->matches < 2) {
             s->matches++;           /* add a pending slide_hash() */
+        }
         have += s->w_size;          /* more space now */
     }
-    if (have > s->strm->avail_in)
+    if (have > s->strm->avail_in) {
         have = s->strm->avail_in;
+    }
     if (have) {
         (void)read_buf(s->strm, s->window + s->strstart, have);
         s->strstart += have;
     }
-    if (s->high_water < s->strstart)
+    if (s->high_water < s->strstart) {
         s->high_water = s->strstart;
+    }
 
     /* There was not enough avail_out to write a complete worthy or flushed
      * stored block to next_out. Write a stored block to pending instead, if we
@@ -1805,9 +1844,9 @@ ZSC_PRIVATE block_state deflate_stored(deflate_state *s, ZlibFlush flush)
     have = ZMIN(s->pending_buf_size - have, MAX_STORED);
     min_block = ZMIN(have, s->w_size);
     left = s->strstart - s->block_start;
-    if (left >= min_block ||
-        ((left || flush == Z_FINISH) && flush != Z_NO_FLUSH &&
-         s->strm->avail_in == 0 && left <= have)) {
+    if (left >= min_block
+            || ((left || flush == Z_FINISH) && flush != Z_NO_FLUSH
+                    && s->strm->avail_in == 0 && left <= have)) {
         len = ZMIN(left, have);
         last = flush == Z_FINISH && s->strm->avail_in == 0 &&
                len == left ? 1 : 0;
@@ -1845,7 +1884,9 @@ ZSC_PRIVATE block_state deflate_fast(deflate_state *s, ZlibFlush flush)
             if (s->lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH) {
                 return need_more;
             }
-            if (s->lookahead == 0) break; /* flush the current block */
+            if (s->lookahead == 0) {
+                break; /* flush the current block */
+            }
         }
 
         /* Insert the string window[strstart .. strstart+2] in the
@@ -1908,15 +1949,18 @@ ZSC_PRIVATE block_state deflate_fast(deflate_state *s, ZlibFlush flush)
             s->lookahead--;
             s->strstart++;
         }
-        if (bflush) FLUSH_BLOCK(s, 0);
+        if (bflush) {
+            FLUSH_BLOCK(s, 0);
+        }
     }
     s->insert = s->strstart < MIN_MATCH-1 ? s->strstart : MIN_MATCH-1;
     if (flush == Z_FINISH) {
         FLUSH_BLOCK(s, 1);
         return finish_done;
     }
-    if (s->last_lit)
+    if (s->last_lit) {
         FLUSH_BLOCK(s, 0);
+    }
     return block_done;
 }
 
@@ -1944,7 +1988,9 @@ ZSC_PRIVATE block_state deflate_slow(deflate_state *s, ZlibFlush flush)
             if (s->lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH) {
                 return need_more;
             }
-            if (s->lookahead == 0) break; /* flush the current block */
+            if (s->lookahead == 0) {
+                break; /* flush the current block */
+            }
         }
 
         /* Insert the string window[strstart .. strstart+2] in the
@@ -1970,12 +2016,12 @@ ZSC_PRIVATE block_state deflate_slow(deflate_state *s, ZlibFlush flush)
             s->match_length = longest_match (s, hash_head);
             /* longest_match() sets match_start */
 
-            if (s->match_length <= 5 && (s->strategy == Z_FILTERED
-#if TOO_FAR <= 32767
-                || (s->match_length == MIN_MATCH &&
-                    s->strstart - s->match_start > TOO_FAR)
-#endif
-                )) {
+            ZSC_COMPILE_ASSERT(TOO_FAR <= 32767, too_far_gt_32767);
+
+            if (s->match_length <= 5
+                    && (s->strategy == Z_FILTERED
+                            || (s->match_length == MIN_MATCH
+                                    && s->strstart - s->match_start > TOO_FAR))) {
 
                 /* If prev_match is also MIN_MATCH, match_start is garbage
                  * but we will ignore the current match anyway.
@@ -2014,7 +2060,9 @@ ZSC_PRIVATE block_state deflate_slow(deflate_state *s, ZlibFlush flush)
             s->match_length = MIN_MATCH-1;
             s->strstart++;
 
-            if (bflush) FLUSH_BLOCK(s, 0);
+            if (bflush) {
+                FLUSH_BLOCK(s, 0);
+            }
 
         } else if (s->match_available) {
             /* If there was no match at the previous position, output a
@@ -2027,7 +2075,9 @@ ZSC_PRIVATE block_state deflate_slow(deflate_state *s, ZlibFlush flush)
             }
             s->strstart++;
             s->lookahead--;
-            if (s->strm->avail_out == 0) return need_more;
+            if (s->strm->avail_out == 0) {
+                return need_more;
+            }
         } else {
             /* There is no previous match to compare with, wait for
              * the next step to decide.
@@ -2048,8 +2098,9 @@ ZSC_PRIVATE block_state deflate_slow(deflate_state *s, ZlibFlush flush)
         FLUSH_BLOCK(s, 1);
         return finish_done;
     }
-    if (s->last_lit)
+    if (s->last_lit) {
         FLUSH_BLOCK(s, 0);
+    }
     return block_done;
 }
 
@@ -2077,7 +2128,9 @@ ZSC_PRIVATE block_state deflate_rle(deflate_state *s, ZlibFlush flush)
                     && flush == Z_NO_FLUSH) {
                 return need_more;
             }
-            if (s->lookahead == 0) break; /* flush the current block */
+            if (s->lookahead == 0) {
+                break; /* flush the current block */
+            }
         }
 
         /* See how many times the previous byte repeats */
@@ -2093,8 +2146,9 @@ ZSC_PRIVATE block_state deflate_rle(deflate_state *s, ZlibFlush flush)
                     scan++;
                 } while (prev == *scan && scan < strend);
                 s->match_length = MAX_MATCH - (U32)(strend - scan);
-                if (s->match_length > s->lookahead)
+                if (s->match_length > s->lookahead) {
                     s->match_length = s->lookahead;
+                }
             }
             // Assert: "wild scan"
             ZSC_ASSERT3(scan <= s->window+(U32)(s->window_size-1),
@@ -2117,15 +2171,18 @@ ZSC_PRIVATE block_state deflate_rle(deflate_state *s, ZlibFlush flush)
             s->lookahead--;
             s->strstart++;
         }
-        if (bflush) FLUSH_BLOCK(s, 0);
+        if (bflush) {
+            FLUSH_BLOCK(s, 0);
+        }
     }
     s->insert = 0;
     if (flush == Z_FINISH) {
         FLUSH_BLOCK(s, 1);
         return finish_done;
     }
-    if (s->last_lit)
+    if (s->last_lit) {
         FLUSH_BLOCK(s, 0);
+    }
     return block_done;
 }
 
@@ -2155,14 +2212,17 @@ ZSC_PRIVATE block_state deflate_huff(deflate_state *s, ZlibFlush flush)
         _tr_tally_lit (s, s->window[s->strstart], bflush);
         s->lookahead--;
         s->strstart++;
-        if (bflush) FLUSH_BLOCK(s, 0);
+        if (bflush) {
+            FLUSH_BLOCK(s, 0);
+        }
     }
     s->insert = 0;
     if (flush == Z_FINISH) {
         FLUSH_BLOCK(s, 1);
         return finish_done;
     }
-    if (s->last_lit)
+    if (s->last_lit) {
         FLUSH_BLOCK(s, 0);
+    }
     return block_done;
 }

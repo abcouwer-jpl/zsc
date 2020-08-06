@@ -360,6 +360,7 @@ ZSC_PRIVATE void pqdownheap(deflate_state *s,
 {
     ZSC_ASSERT(s != Z_NULL);
     ZSC_ASSERT(tree != Z_NULL);
+    ZSC_ASSERT2(k >= 0 && k < 2*L_CODES+1, k, L_CODES);
 
     I32 v = s->heap[k];
     I32 j = k << 1;  /* left son of k */
@@ -435,7 +436,9 @@ ZSC_PRIVATE void gen_bitlen(deflate_state *s,
         s->opt_len += (U32)f * (U32)(bits + xbits);
         if (stree) s->static_len += (U32)f * (U32)(stree[n].Len + xbits);
     }
-    if (overflow == 0) return;
+    if (overflow == 0) {
+        return;
+    }
 
     /* This happens for example on obj2 and pic of the Calgary corpus */
 
@@ -506,7 +509,9 @@ ZSC_PRIVATE void gen_codes(ct_data *tree, /* the tree to decorate */
 
     for (n = 0;  n <= max_code; n++) {
         I32 len = tree[n].Len;
-        if (len == 0) continue;
+        if (len == 0) {
+            continue;
+        }
         /* Now reverse the bits */
         tree[n].Code = (U16)bi_reverse(next_code[len]++, len);
     }
@@ -523,8 +528,9 @@ ZSC_PRIVATE void gen_codes(ct_data *tree, /* the tree to decorate */
 ZSC_PRIVATE void build_tree(deflate_state *s,
     tree_desc *desc) /* the tree descriptor */
 {
-    ZSC_ASSERT(s != Z_NULL);
     ZSC_ASSERT(desc != Z_NULL);
+    ZSC_ASSERT(desc->stat_desc != Z_NULL);
+    ZSC_ASSERT(s != Z_NULL);
 
     ct_data *tree         = desc->dyn_tree;
     const ct_data *stree  = desc->stat_desc->static_tree;
@@ -557,7 +563,10 @@ ZSC_PRIVATE void build_tree(deflate_state *s,
         node = s->heap[++(s->heap_len)] = (max_code < 2 ? ++max_code : 0);
         tree[node].Freq = 1;
         s->depth[node] = 0;
-        s->opt_len--; if (stree) s->static_len -= stree[node].Len;
+        s->opt_len--;
+        if (stree) {
+            s->static_len -= stree[node].Len;
+        }
         /* node is 0 or 1 so it does not have extra bits */
     }
     desc->max_code = max_code;
@@ -733,7 +742,9 @@ ZSC_PRIVATE I32 build_bl_tree(deflate_state *s)
      * 3 but the actual value used is 4.)
      */
     for (max_blindex = BL_CODES-1; max_blindex >= 3; max_blindex--) {
-        if (s->bl_tree[bl_order[max_blindex]].Len != 0) break;
+        if (s->bl_tree[bl_order[max_blindex]].Len != 0) {
+            break;
+        }
     }
     /* Update opt_len to include the bit length tree and counts */
     s->opt_len += 3*((U32)max_blindex+1) + 5+5+4;
@@ -982,6 +993,7 @@ ZSC_PRIVATE I32 detect_data_type(deflate_state *s)
 ZSC_PRIVATE U32 bi_reverse(U32 code, /* the value to invert */
     I32 len)       /* its bit length */
 {
+    ZSC_ASSERT1(len > 0, len);
     register U32 res = 0;
     do {
         res |= code & 1;

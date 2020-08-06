@@ -14,14 +14,15 @@
  * @file        zsc_compress.c
  * @date        2020-07-01
  * @author      Neil Abcouwer
- * @brief       Function definitions for safety-critical decompressing.
+ * @brief       Function definitions for all-in-one decompressing.
+ *
+ * Functions do inflateInit(), loops of inflate(),
+ * attempting to find sync points if there are corruptions, and inflateEnd()
  */
 
 #include "zsc/zsc_pub.h"
 #include "zsc/zsc_conf_private.h"
 #include "zsc/zutil.h"
-
-#define GZIP_CODE (16)
 
 ZlibReturn zsc_uncompress_get_min_work_buf_size2(
         I32 window_bits, U32 *size_out)
@@ -65,13 +66,13 @@ ZlibReturn zsc_uncompress_safe_gzip2(
     ZlibReturn err = zsc_uncompress_get_min_work_buf_size2(
             window_bits, &min_work_buf_size);
     if (err != Z_OK) {
-        ZSC_WARN1("zsc_uncompress_get_min_work_buf_size2() failed with return %d.",
-                err);
+        ZSC_WARN1("In zsc_uncompress_safe_gzip2(), could not get work buffer size, "
+                "error %d.", err);
         return err;
     }
     if (work_len < min_work_buf_size) {
-        ZSC_WARN2("Work buffer (%u B) is smaller than required (%u B).",
-                work_len, min_work_buf_size);
+        ZSC_WARN2("In zsc_uncompress_safe_gzip2(), work buffer (%u B) "
+                "is smaller than required (%u B).", work_len, min_work_buf_size);
         return Z_MEM_ERROR;
     }
 
@@ -79,7 +80,8 @@ ZlibReturn zsc_uncompress_safe_gzip2(
     err = inflateInit2(&stream, window_bits);
     if (err != Z_OK) {
         // might be unreachable, as windowbits is checked above
-        ZSC_WARN1("inflateInit2() failed with return %d.", err);
+        ZSC_WARN1("In zsc_uncompress_safe_gzip2(), could not inflateInit, "
+                "error %d.", err);
         return err;
     }
 
@@ -87,7 +89,8 @@ ZlibReturn zsc_uncompress_safe_gzip2(
     if(gz_head != Z_NULL) {
         err = inflateGetHeader(&stream, gz_head);
         if (err != Z_OK) {
-            ZSC_WARN1("inflateGetHeader() failed with return %d.", err);
+            ZSC_WARN1("In zsc_uncompress_safe_gzip2(), could not get header, "
+                    "error %d.", err);
             return err;
         }
     }
@@ -104,12 +107,13 @@ ZlibReturn zsc_uncompress_safe_gzip2(
             // try to find a new flush point to recover some partial data
             err = inflateSync(&stream);
             if (err == Z_OK) {
-                ZSC_WARN1("Data error in inflate stream, instance %d, "
+                ZSC_WARN1("In zsc_uncompress_safe_gzip2(), data error "
+                        "in inflate stream, instance %d, "
                         "new flush point found, continuing inflation.",
                         data_errors);
             } else {
-                ZSC_WARN2("Data error in inflate stream, instance %d, "
-                        "inflateSync() returned %d, "
+                ZSC_WARN2("In zsc_uncompress_safe_gzip2(), data error "
+                        "in inflate stream, instance %d, inflateSync() returned %d, "
                         "could not find a new flush point.",
                         data_errors, err);
             }
@@ -121,7 +125,8 @@ ZlibReturn zsc_uncompress_safe_gzip2(
     *source_len = stream.total_in;
 
     if(err != Z_STREAM_END) {
-        ZSC_WARN1("inflate loop failed with return %d.", err);
+        ZSC_WARN1("In zsc_uncompress_safe_gzip2(), inflate loop failed "
+                "with error %d.", err);
 
         // when uncompressing with inflate(Z_FINISH),
         // Z_STREAM_END is expected, not Z_OK
@@ -132,7 +137,8 @@ ZlibReturn zsc_uncompress_safe_gzip2(
 
     err = inflateEnd(&stream);
     if (err != Z_OK) {
-        ZSC_WARN1("inflateEnd() returned error %d.", err);
+        ZSC_WARN1("In zsc_uncompress_safe_gzip2(), could not inflateEnd, "
+                "returned error %d.", err);
     }
 
     // if we got a data error, overwrite any inflateEnd success

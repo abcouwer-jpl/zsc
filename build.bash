@@ -34,10 +34,9 @@ else
     make test ARGS="-V"
   elif [[ "$1" = "cobra" ]] ; then
     echo "Running cobra tests (assumes cobra is configured)"
-    cobra -f basic -I$source_path -I$source_path/build $source_path/*.c
-    cobra -f misra2012 -I$source_path -I$source_path/build $source_path/*.c
-    cobra -f p10 -I$source_path -I$source_path/build $source_path/*.c
-    cobra -f jpl -I$source_path -I$source_path/build $source_path/*.c
+    cobra -f basic -I$source_path/include -I$source_path/build $source_path/src/*.c
+    cobra -f misra2012 -I$source_path/include -I$source_path/build $source_path/src/*.c
+    cobra -f p10 -I$source_path/include -I$source_path/build $source_path/src/*.c
   elif [[ "$1" = "clean" ]] ; then
     echo "Cleaning zlib build"
     cd "$source_path"

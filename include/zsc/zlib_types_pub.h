@@ -46,8 +46,6 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 
 // macros for users to define sizes of buffers at compile time
 
-
-
 /**
  * @brief conservative bound on the size of a compressed output
  *
@@ -88,7 +86,7 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 
 
 /// size of the private deflate state, with margin for pointer sizes changing
-#define Z_DEFLATE_STATE_SIZE 7000
+#define Z_DEFLATE_STATE_SIZE 6400
 
 /**
  * @brief Size of work buffer needed for compression
@@ -106,7 +104,7 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
             (1 << ((mem_level)+6)) * (sizeof(U16) +2) )
 
 /// size of the private inflate state, with margin for pointer sizes changing
-#define Z_INFLATE_STATE_SIZE 8000
+#define Z_INFLATE_STATE_SIZE 7600
 
 /**
  * @brief Size of work buffer needed for decompression
@@ -137,78 +135,96 @@ ZSC_COMPILE_ASSERT(sizeof(I32) == 4, I32BadSize);
 */
 enum {
     MAX_MEM_LEVEL = 9,  /// Maximum value for memLevel in deflateInit2
-    DEF_MEM_LEVEL = 8,    /// Default memory level
+    DEF_MEM_LEVEL = 8,  /// Default memory level
     /* Maximum value for windowBits in deflateInit2 and inflateInit2.
      * WARNING: reducing MAX_WBITS makes minigzip unable to extract .gz files
      * created by gzip. (Files created by minigzip can still be extracted by
      * gzip.) */
-    MAX_WBITS = 15, /// 32K LZ77 window
-    DEF_WBITS = MAX_WBITS, /// DEF_WBITS
+    MAX_WBITS = 15,             /// Maximum bits: 32K LZ77 window
+    DEF_WBITS = MAX_WBITS,      /// Default window bits
 };
 
 ZSC_COMPILE_ASSERT(DEF_MEM_LEVEL <= MAX_MEM_LEVEL, bad_def_mem_level);
 ZSC_COMPILE_ASSERT(DEF_WBITS <= DEF_WBITS, bad_def_wbits);
 
 
-/** Allowed flush values - see deflate() and inflate() below for details */
+enum {
+    GZIP_CODE = 0x10  /// adding GZIP_CODE to window bits signifies gzip
+};
+
+/** Allowed flush values - see deflate() and inflate() for details */
 typedef enum {
-    Z_NO_FLUSH = 0,
-    Z_PARTIAL_FLUSH = 1,
-    Z_SYNC_FLUSH = 2,
-    Z_FULL_FLUSH = 3,
-    Z_FINISH = 4,
-    Z_BLOCK = 5,
-    Z_TREES = 6,
+    Z_NO_FLUSH = 0,      /** Deflate/inflate: function decides how much data
+                               to accumulate before output */
+    Z_PARTIAL_FLUSH = 1, /** Deflate: all pending output flushed,
+                               not aligned to byte boundary.
+                             Inflate: flushes as much output as possible. */
+    Z_SYNC_FLUSH = 2,    /** Deflate: all pending output flushed,
+                               aligned to byte boundary.
+                             Inflate: flushes as much output as possible. */
+    Z_FULL_FLUSH = 3,    /** Deflate: all pending output flushed,
+                               aligned to byte boundary, deflate state reset
+                               so decompression can restart from this point */
+    Z_FINISH = 4,        /** Deflate/Inflate: process all pending input,
+                               process all pending output flushed,
+                               returns with Z_STREAM_END if there was enough
+                               output space, otherwise must be given more. */
+    Z_BLOCK = 5,         /** Deflate: all pending output flushed,
+                               not aligned to byte boundary. Up to seven bits
+                               are held to be written to next block.
+                             Inflate: requests inflate stop when it gets to
+                               next deflate block boundary. */
+    Z_TREES = 6,         /** Deflate: Not permitted.
+                             Inflate: Behaves as Z_BLOCK does, but also returns when
+                             the end of each deflate block header is reached. */
 } ZlibFlush;
 
 /** Return codes for the compression/decompression functions. Negative values
  * are errors, positive values are used for special but normal events. */
 typedef enum {
-    Z_OK = 0,
-    Z_STREAM_END = 1,
-    Z_NEED_DICT = 2,
+    Z_OK = 0,                   /// Some progress has been made.
+    Z_STREAM_END = 1,           /** All input consumed and all output produced,
+                                      when flush set to Z_FINISH. */
+    Z_NEED_DICT = 2,            /// A preset dictionary is needed.
     Z_ERRNO = -1,
-    Z_STREAM_ERROR= -2,
-    Z_DATA_ERROR = -3,
-    Z_MEM_ERROR = -4,
-    Z_BUF_ERROR = -5,
-    Z_VERSION_ERROR = -6,
+    Z_STREAM_ERROR = -2,        /// Stream data or parameter is inconsistent
+    Z_DATA_ERROR = -3,          /// Data in compressed buffer can't be handled.
+    Z_MEM_ERROR = -4,           /// Not enough memory
+    Z_BUF_ERROR = -5,           /// More input or output space needed.
+    Z_VERSION_ERROR = -6,       /** Zlib version in incompatible with
+                                      the version expected by the caller */
 } ZlibReturn;
 
 /** Specific compression levels. Additionally, any integer between
  *  best speed and best compression is an allowed compression level */
 enum {
-    Z_NO_COMPRESSION = 0,
-    Z_BEST_SPEED = 1,
-    Z_BEST_COMPRESSION = 9,
-    Z_DEFAULT_COMPRESSION = -1,
+    Z_NO_COMPRESSION = 0,       /// Copy data into ZLIB format
+    Z_BEST_SPEED = 1,           /// Compress data as quickly as possible
+    Z_BEST_COMPRESSION = 9,     /// Compress data as compactly as possible
+    Z_DEFAULT_COMPRESSION = -1, /// Compress data in default speed/compactness
 };
 
 /** Compression strategies. see deflateInit2() below for details */
 typedef enum {
-    Z_FILTERED = 1,
-    Z_HUFFMAN_ONLY = 2,
-    Z_RLE = 3,
-    Z_FIXED = 4,
-    Z_DEFAULT_STRATEGY = 0,
+    Z_FILTERED = 1,         /// Data produced by a filter or predictor
+    Z_HUFFMAN_ONLY = 2,     /// Force Huffman encoding only
+    Z_RLE = 3,              /// Limit match distances to one (run-length encoding)
+    Z_FIXED = 4,            /// Prevent dynamic Huffman codes
+    Z_DEFAULT_STRATEGY = 0, /// Normal data
 } ZlibStrategy;
 
 /** Possible values of the data_type field for deflate() */
 typedef enum {
-    Z_BINARY = 0,
-    Z_TEXT = 1,
-    Z_ASCII = Z_TEXT, /* for compatibility with 1.2.2 and earlier */
-    Z_UNKNOWN = 2,
+    Z_BINARY = 0, /// Not a text file
+    Z_TEXT = 1,   /// Text file
+    Z_ASCII = Z_TEXT, /// for compatibility with 1.2.2 and earlier */
+    Z_UNKNOWN = 2, /// Type unknown
 } ZlibDataType;
 
 /** The deflate compression method (the only one supported in this version) */
 typedef enum {
-    Z_DEFLATED = 8,
+    Z_DEFLATED = 8, /// Deflate is the only compression method.
 } ZlibMethod;
-
-// TODO Doxygen all types
-
-
 
 /*
 
