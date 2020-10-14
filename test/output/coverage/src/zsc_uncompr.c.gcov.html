@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info.cleaned - src/zsc_uncompr.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - zsc_uncompr.c<span style="font-size: 80%;"> (source / <a href="zsc_uncompr.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info.cleaned</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">63</td>
+            <td class="headerCovTableEntry">68</td>
+            <td class="headerCovTableEntryHi">92.6 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2020-10-14 09:41:46</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Copyright 2020, by the California Institute of Technology.
+<span class="lineNum">       3 </span>            :  * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+<span class="lineNum">       4 </span>            :  * Any commercial use must be negotiated with the Office of Technology
+<span class="lineNum">       5 </span>            :  * Transfer at the California Institute of Technology.
+<span class="lineNum">       6 </span>            :  *
+<span class="lineNum">       7 </span>            :  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<span class="lineNum">       8 </span>            :  * you may not use this file except in compliance with the License.
+<span class="lineNum">       9 </span>            :  * You may obtain a copy of the License at
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  *     http://www.apache.org/licenses/LICENSE-2.0
+<span class="lineNum">      12 </span>            :  *
+<span class="lineNum">      13 </span>            :  * Unless required by applicable law or agreed to in writing, software
+<span class="lineNum">      14 </span>            :  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<span class="lineNum">      15 </span>            :  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<span class="lineNum">      16 </span>            :  * See the License for the specific language governing permissions and
+<span class="lineNum">      17 </span>            :  * limitations under the License.
+<span class="lineNum">      18 </span>            :  *
+<span class="lineNum">      19 </span>            :  * @file        zsc_compress.c
+<span class="lineNum">      20 </span>            :  * @date        2020-07-01
+<span class="lineNum">      21 </span>            :  * @author      Neil Abcouwer
+<span class="lineNum">      22 </span>            :  * @brief       Function definitions for all-in-one decompressing.
+<span class="lineNum">      23 </span>            :  *
+<span class="lineNum">      24 </span>            :  * Functions do inflateInit(), loops of inflate(),
+<span class="lineNum">      25 </span>            :  * attempting to find sync points if there are corruptions, and inflateEnd()
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : #include &quot;zsc/zsc_pub.h&quot;
+<span class="lineNum">      29 </span>            : #include &quot;zsc/zsc_conf_private.h&quot;
+<a name="30"><span class="lineNum">      30 </span>            : #include &quot;zsc/zutil.h&quot;</a>
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span><span class="lineCov">        140 : ZlibReturn zsc_uncompress_get_min_work_buf_size2(</span>
+<span class="lineNum">      33 </span>            :         I32 window_bits, U32 *size_out)
+<span class="lineNum">      34 </span>            : {
+<span class="lineNum">      35 </span><span class="lineCov">        140 :     return inflateWorkSize2(window_bits, size_out);</span>
+<span class="lineNum">      36 </span>            : }
+<a name="37"><span class="lineNum">      37 </span>            : </a>
+<span class="lineNum">      38 </span>            : // get the bounded size of the work buffer
+<span class="lineNum">      39 </span><span class="lineCov">        227 : ZlibReturn zsc_uncompress_get_min_work_buf_size(U32 *size_out)</span>
+<span class="lineNum">      40 </span>            : {
+<span class="lineNum">      41 </span><span class="lineCov">        227 :     return inflateWorkSize(size_out);</span>
+<a name="42"><span class="lineNum">      42 </span>            : }</a>
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span><span class="lineCov">        133 : ZlibReturn zsc_uncompress_safe_gzip2(</span>
+<span class="lineNum">      45 </span>            :         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
+<span class="lineNum">      46 </span>            :         U8 *work, U32 work_len, I32 window_bits, gz_header * gz_head)
+<span class="lineNum">      47 </span>            : {
+<span class="lineNum">      48 </span><span class="lineCov">        133 :     ZSC_ASSERT(source != Z_NULL);</span>
+<span class="lineNum">      49 </span><span class="lineCov">        133 :     ZSC_ASSERT(source_len != Z_NULL);</span>
+<span class="lineNum">      50 </span><span class="lineCov">        133 :     ZSC_ASSERT(dest != Z_NULL);</span>
+<span class="lineNum">      51 </span><span class="lineCov">        133 :     ZSC_ASSERT(dest_len != Z_NULL);</span>
+<span class="lineNum">      52 </span><span class="lineCov">        133 :     ZSC_ASSERT(work != Z_NULL);</span>
+<span class="lineNum">      53 </span>            :     // gz_head can be null
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            :     z_stream stream;
+<span class="lineNum">      56 </span><span class="lineCov">        133 :     zmemzero((U8*)&amp;stream, sizeof(stream));</span>
+<span class="lineNum">      57 </span><span class="lineCov">        133 :     stream.next_work = work;</span>
+<span class="lineNum">      58 </span><span class="lineCov">        133 :     stream.avail_work = work_len;</span>
+<span class="lineNum">      59 </span><span class="lineCov">        133 :     stream.next_in = (const U8 *)source;</span>
+<span class="lineNum">      60 </span><span class="lineCov">        133 :     stream.avail_in = *source_len;</span>
+<span class="lineNum">      61 </span><span class="lineCov">        133 :     stream.next_out = dest;</span>
+<span class="lineNum">      62 </span><span class="lineCov">        133 :     stream.avail_out = *dest_len;</span>
+<span class="lineNum">      63 </span><span class="lineCov">        133 :     U32 dest_len_in = *dest_len;</span>
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :     // buffers not yet touched
+<span class="lineNum">      66 </span><span class="lineCov">        133 :     *dest_len = 0;</span>
+<span class="lineNum">      67 </span><span class="lineCov">        133 :     *source_len = 0;</span>
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            :     // check if workbuffer is large enough
+<span class="lineNum">      70 </span><span class="lineCov">        133 :     U32 min_work_buf_size = U32_MAX;</span>
+<span class="lineNum">      71 </span><span class="lineCov">        133 :     ZlibReturn err = zsc_uncompress_get_min_work_buf_size2(</span>
+<span class="lineNum">      72 </span>            :             window_bits, &amp;min_work_buf_size);
+<span class="lineNum">      73 </span><span class="lineCov">        133 :     if (err != Z_OK) {</span>
+<span class="lineNum">      74 </span><span class="lineCov">          1 :         ZSC_WARN1(&quot;In zsc_uncompress_safe_gzip2(), could not get work buffer size, &quot;</span>
+<span class="lineNum">      75 </span>            :                 &quot;error %d.&quot;, err);
+<span class="lineNum">      76 </span><span class="lineCov">          1 :         return err;</span>
+<span class="lineNum">      77 </span>            :     }
+<span class="lineNum">      78 </span><span class="lineCov">        132 :     if (work_len &lt; min_work_buf_size) {</span>
+<span class="lineNum">      79 </span><span class="lineCov">          1 :         ZSC_WARN2(&quot;In zsc_uncompress_safe_gzip2(), work buffer (%u B) &quot;</span>
+<span class="lineNum">      80 </span>            :                 &quot;is smaller than required (%u B).&quot;, work_len, min_work_buf_size);
+<span class="lineNum">      81 </span><span class="lineCov">          1 :         return Z_MEM_ERROR;</span>
+<span class="lineNum">      82 </span>            :     }
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            :     // init the stream
+<span class="lineNum">      85 </span><span class="lineCov">        131 :     err = inflateInit2(&amp;stream, window_bits);</span>
+<span class="lineNum">      86 </span><span class="lineCov">        131 :     if (err != Z_OK) {</span>
+<span class="lineNum">      87 </span>            :         // might be unreachable, as windowbits is checked above
+<span class="lineNum">      88 </span><span class="lineNoCov">          0 :         ZSC_WARN1(&quot;In zsc_uncompress_safe_gzip2(), could not inflateInit, &quot;</span>
+<span class="lineNum">      89 </span>            :                 &quot;error %d.&quot;, err);
+<span class="lineNum">      90 </span><span class="lineNoCov">          0 :         return err;</span>
+<span class="lineNum">      91 </span>            :     }
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            :     // pass pointer to output header
+<span class="lineNum">      94 </span><span class="lineCov">        131 :     if(gz_head != Z_NULL) {</span>
+<span class="lineNum">      95 </span><span class="lineCov">         24 :         err = inflateGetHeader(&amp;stream, gz_head);</span>
+<span class="lineNum">      96 </span><span class="lineCov">         24 :         if (err != Z_OK) {</span>
+<span class="lineNum">      97 </span><span class="lineCov">          1 :             ZSC_WARN1(&quot;In zsc_uncompress_safe_gzip2(), could not get header, &quot;</span>
+<span class="lineNum">      98 </span>            :                     &quot;error %d.&quot;, err);
+<span class="lineNum">      99 </span><span class="lineCov">          1 :             return err;</span>
+<span class="lineNum">     100 </span>            :         }
+<span class="lineNum">     101 </span>            :     }
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineCov">        130 :     I32 data_errors = 0;</span>
+<span class="lineNum">     104 </span><span class="lineCov">        130 :     U32 loop_limit = ZMAX(dest_len_in, 10);</span>
+<span class="lineNum">     105 </span><span class="lineCov">        130 :     U32 loops = 0;</span>
+<span class="lineNum">     106 </span><span class="lineCov">        390 :     while (err == Z_OK &amp;&amp; loops &lt; loop_limit) {</span>
+<span class="lineNum">     107 </span><span class="lineCov">        130 :         loops++;</span>
+<span class="lineNum">     108 </span><span class="lineCov">        130 :         err = inflate(&amp;stream, Z_FINISH);</span>
+<span class="lineNum">     109 </span><span class="lineCov">        130 :         if (err == Z_DATA_ERROR) {</span>
+<span class="lineNum">     110 </span>            :             // there was probably some corruption in the buffer
+<span class="lineNum">     111 </span><span class="lineCov">          8 :             data_errors++;</span>
+<span class="lineNum">     112 </span>            :             // try to find a new flush point to recover some partial data
+<span class="lineNum">     113 </span><span class="lineCov">          8 :             err = inflateSync(&amp;stream);</span>
+<span class="lineNum">     114 </span><span class="lineCov">          8 :             if (err == Z_OK) {</span>
+<span class="lineNum">     115 </span><span class="lineNoCov">          0 :                 ZSC_WARN1(&quot;In zsc_uncompress_safe_gzip2(), data error &quot;</span>
+<span class="lineNum">     116 </span>            :                         &quot;in inflate stream, instance %d, &quot;
+<span class="lineNum">     117 </span>            :                         &quot;new flush point found, continuing inflation.&quot;,
+<span class="lineNum">     118 </span>            :                         data_errors);
+<span class="lineNum">     119 </span>            :             } else {
+<span class="lineNum">     120 </span><span class="lineCov">          8 :                 ZSC_WARN2(&quot;In zsc_uncompress_safe_gzip2(), data error &quot;</span>
+<span class="lineNum">     121 </span>            :                         &quot;in inflate stream, instance %d, inflateSync() returned %d, &quot;
+<span class="lineNum">     122 </span>            :                         &quot;could not find a new flush point.&quot;,
+<span class="lineNum">     123 </span>            :                         data_errors, err);
+<span class="lineNum">     124 </span>            :             }
+<span class="lineNum">     125 </span>            :         }
+<span class="lineNum">     126 </span>            :     }
+<span class="lineNum">     127 </span><span class="lineCov">        130 :     ZSC_ASSERT2(loops &lt; loop_limit, loops, loop_limit);</span>
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span><span class="lineCov">        130 :     *dest_len = stream.total_out;</span>
+<span class="lineNum">     130 </span><span class="lineCov">        130 :     *source_len = stream.total_in;</span>
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span><span class="lineCov">        130 :     if(err != Z_STREAM_END) {</span>
+<span class="lineNum">     133 </span><span class="lineCov">          9 :         ZSC_WARN1(&quot;In zsc_uncompress_safe_gzip2(), inflate loop failed &quot;</span>
+<span class="lineNum">     134 </span>            :                 &quot;with error %d.&quot;, err);
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span>            :         // when uncompressing with inflate(Z_FINISH),
+<span class="lineNum">     137 </span>            :         // Z_STREAM_END is expected, not Z_OK
+<span class="lineNum">     138 </span>            :         // Z_OK may indicate there wasn't enough output space
+<span class="lineNum">     139 </span><span class="lineCov">          9 :         (void)inflateEnd(&amp;stream); // clean up</span>
+<span class="lineNum">     140 </span><span class="lineCov">          9 :         return (err == Z_OK) ? Z_STREAM_ERROR : err;</span>
+<span class="lineNum">     141 </span>            :     }
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span><span class="lineCov">        121 :     err = inflateEnd(&amp;stream);</span>
+<span class="lineNum">     144 </span><span class="lineCov">        121 :     if (err != Z_OK) {</span>
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :         ZSC_WARN1(&quot;In zsc_uncompress_safe_gzip2(), could not inflateEnd, &quot;</span>
+<span class="lineNum">     146 </span>            :                 &quot;returned error %d.&quot;, err);
+<span class="lineNum">     147 </span>            :     }
+<span class="lineNum">     148 </span>            : 
+<span class="lineNum">     149 </span>            :     // if we got a data error, overwrite any inflateEnd success
+<span class="lineNum">     150 </span><span class="lineCov">        121 :     if (err == Z_OK &amp;&amp; data_errors &gt; 0) {</span>
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :         err = Z_DATA_ERROR;</span>
+<span class="lineNum">     152 </span>            :     }
+<span class="lineNum">     153 </span><span class="lineCov">        121 :     return err;</span>
+<a name="154"><span class="lineNum">     154 </span>            : }</a>
+<span class="lineNum">     155 </span>            : 
+<span class="lineNum">     156 </span><span class="lineCov">        106 : ZlibReturn zsc_uncompress_safe2(</span>
+<span class="lineNum">     157 </span>            :         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
+<span class="lineNum">     158 </span>            :         U8 *work, U32 work_len, I32 window_bits)
+<span class="lineNum">     159 </span>            : {
+<span class="lineNum">     160 </span><span class="lineCov">        106 :     return zsc_uncompress_safe_gzip2(dest, dest_len, source, source_len,</span>
+<span class="lineNum">     161 </span>            :             work, work_len, window_bits, Z_NULL);
+<a name="162"><span class="lineNum">     162 </span>            : }</a>
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span><span class="lineCov">        100 : ZlibReturn zsc_uncompress(</span>
+<span class="lineNum">     165 </span>            :         U8 *dest, U32 *dest_len, const U8 *source,
+<span class="lineNum">     166 </span>            :         U32 *source_len, U8 *work, U32 work_len)
+<span class="lineNum">     167 </span>            : {
+<span class="lineNum">     168 </span><span class="lineCov">        100 :     return zsc_uncompress_safe2(dest, dest_len, source, source_len,</span>
+<span class="lineNum">     169 </span>            :             work, work_len, DEF_WBITS);
+<a name="170"><span class="lineNum">     170 </span>            : }</a>
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span><span class="lineCov">         26 : ZlibReturn zsc_uncompress_safe_gzip(</span>
+<span class="lineNum">     173 </span>            :         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
+<span class="lineNum">     174 </span>            :         U8 *work, U32 work_len, gz_header * gz_head)
+<span class="lineNum">     175 </span>            : {
+<span class="lineNum">     176 </span><span class="lineCov">         26 :     return zsc_uncompress_safe_gzip2(dest, dest_len, source, source_len,</span>
+<span class="lineNum">     177 </span>            :             work, work_len, DEF_WBITS + GZIP_CODE, gz_head);
+<span class="lineNum">     178 </span>            : }
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

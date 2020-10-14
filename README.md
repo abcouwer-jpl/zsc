@@ -2,7 +2,7 @@
 
 ZLIB DATA COMPRESSION LIBRARY - safety-critical version
 
-zlib 1.2.11.f-abcouwer-safety-critical-v0 is a strpped-down version of zlib intended 
+zlib 1.2.11.f-abcouwer-safety-critical-v0 is a stripped-down version of zlib intended 
 to be safe for flight software or other safety-critical applications.
 
 See https://www.zlib.net/ for information about zlib.
@@ -29,20 +29,20 @@ Changes have been noted in the Changelog and/or commented with the text
 "Abcouwer ZSC". Notable changes include:
 
 No dynamic memory allocation - Dynamic allocation after initialization is not safe.
-Dynamic memory functions have been removed. Users must provide work buffers to the
-compression and decompression functions. Functions declared in zsc_pub.h will assist 
-with this.
+Dynamic memory functions, and ways to use dynamic memory, have been removed. 
+Users must provide work buffers to the compression and decompression functions. 
+Functions declared in zsc_pub.h will assist with this.
 
 No conditional compilation - If code has N ifdefs, there are 2^N possible 
 versions of the code, and testing becomes impossible. Several compilation 
 options have been removed. If one of these options in necesary for your application,
 consider a pull request that implements the option in a run-time manner.
 
-Use of assertions
+Use of assertions - Assertion macros can be defined as whatever make sense 
+for your application.
 
 Use of types that define the size and sign - this has not yet been tested 
 on 16 bit systems, be wary.
-
 
 ### Exceptions
 
@@ -51,6 +51,21 @@ in inffast.c, rather than restructure the code.
 
 In violation of advisory MISRA Directive R15.1, gotos have been left 
 in the code, rather than restructure.
+
+### Using the code
+
+`include/zsc/zsc_pub.h` defines public functions for compression and decompression
+that handle the aforemention work buffers, and function that check buffer sizes.
+
+`include/zsc/zsc_pub_types.h` defines macros for buffer sizing at compile time
+and various public types.
+
+zsc expects a configuration dependent `include/zsc/zsc_conf_global_types`
+and `include/zsc/zsc_conf_private` that one must create for your 
+specific configuration. `zsc_conf_global_types` defines sized typees, and 
+`zsc_conf_global_types` defines macros and memory functions. 
+`test/zsc_test_global_types` and `test/zsc_test_private` are examples 
+that will be copied over to `include/zsc` for unit testing.
 
 ## Building
 
@@ -67,6 +82,11 @@ To build and run unit tests with coverage:
   
 Then open ./build/coverage/index.html to look at results.
 
+To save unit test output to the test folder (so it can be committed 
+for later delta comparison)
+
+`  ./build.bash save`
+
 To run unit tests with valgrind:
 
 `./build.bash valgrind`
@@ -78,7 +98,8 @@ To clean (remove the build directory):
 
 To use with your own framework, you will need to define your own versions of
 `zsc_conf_global_types.h` and `zsc_conf_private.h`, 
-to do appropriate declarations for your framework.
+to do appropriate declarations for your framework, and you may need to make 
+build changes so they aren't overwritten.
 
   
 ### TODO 

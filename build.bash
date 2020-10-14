@@ -22,6 +22,18 @@ else
     cmake -DCMAKE_BUILD_TYPE=Valgrind ..
     make
     valgrind --leak-check=full -v ./zlib_gtest
+  elif [[ "$1" = "save" ]] ; then
+    echo "Saving testing results"
+    if [[ -e ./coverage ]] ; then
+    	cp -r ./coverage ../test/output/
+    else
+    	echo "No coverage results found"
+    fi
+    if [[ -e ./Testing/Temporary/LastTest.log ]] ; then
+		cp ./Testing/Temporary/LastTest.log ../test/output/Test.log
+    else
+    	echo "No test results found"
+    fi
   elif [[ "$1" = "cfstest" ]] ; then
     echo "Configuring for cFS and running zlib tests"
     cmake -DCMAKE_BUILD_TYPE=CfsTest ..

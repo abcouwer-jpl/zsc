@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info.cleaned - src/zutil.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - zutil.c<span style="font-size: 80%;"> (source / <a href="zutil.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info.cleaned</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2020-10-14 09:41:46</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Copyright 2020, by the California Institute of Technology.
+<span class="lineNum">       3 </span>            :  * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+<span class="lineNum">       4 </span>            :  * Any commercial use must be negotiated with the Office of Technology
+<span class="lineNum">       5 </span>            :  * Transfer at the California Institute of Technology.
+<span class="lineNum">       6 </span>            :  *
+<span class="lineNum">       7 </span>            :  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<span class="lineNum">       8 </span>            :  * you may not use this file except in compliance with the License.
+<span class="lineNum">       9 </span>            :  * You may obtain a copy of the License at
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  *     http://www.apache.org/licenses/LICENSE-2.0
+<span class="lineNum">      12 </span>            :  *
+<span class="lineNum">      13 </span>            :  * Unless required by applicable law or agreed to in writing, software
+<span class="lineNum">      14 </span>            :  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<span class="lineNum">      15 </span>            :  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<span class="lineNum">      16 </span>            :  * See the License for the specific language governing permissions and
+<span class="lineNum">      17 </span>            :  * limitations under the License.
+<span class="lineNum">      18 </span>            :  *
+<span class="lineNum">      19 </span>            :  * @file        zutil.c
+<span class="lineNum">      20 </span>            :  * @date        2020-08-05
+<span class="lineNum">      21 </span>            :  * @author      Jean-loup Gailly, Neil Abcouwer
+<span class="lineNum">      22 </span>            :  * @brief       Utility functions
+<span class="lineNum">      23 </span>            :  *
+<span class="lineNum">      24 </span>            :  * Stripped-down version of zutil.c for safety-critical applications.
+<span class="lineNum">      25 </span>            :  * Original file header follows.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /* zutil.c -- target dependent utility functions for the compression library
+<span class="lineNum">      29 </span>            :  * Copyright (C) 1995-2017 Jean-loup Gailly
+<span class="lineNum">      30 </span>            :  * For conditions of distribution and use, see copyright notice in zlib.h
+<span class="lineNum">      31 </span>            :  */
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : /* @(#) $Id$ */
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : #include &quot;zsc/zutil.h&quot;
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : // Abcouwer ZSC - removed gz file incldes
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            : const U8 * const z_errmsg[10] = {
+<span class="lineNum">      41 </span>            :     (const U8 *)&quot;need dictionary&quot;,     /* Z_NEED_DICT       2  */
+<span class="lineNum">      42 </span>            :     (const U8 *)&quot;stream end&quot;,          /* Z_STREAM_END      1  */
+<span class="lineNum">      43 </span>            :     (const U8 *)&quot;&quot;,                    /* Z_OK              0  */
+<span class="lineNum">      44 </span>            :     (const U8 *)&quot;file error&quot;,          /* Z_ERRNO         (-1) */
+<span class="lineNum">      45 </span>            :     (const U8 *)&quot;stream error&quot;,        /* Z_STREAM_ERROR  (-2) */
+<span class="lineNum">      46 </span>            :     (const U8 *)&quot;data error&quot;,          /* Z_DATA_ERROR    (-3) */
+<span class="lineNum">      47 </span>            :     (const U8 *)&quot;insufficient memory&quot;, /* Z_MEM_ERROR     (-4) */
+<span class="lineNum">      48 </span>            :     (const U8 *)&quot;buffer error&quot;,        /* Z_BUF_ERROR     (-5) */
+<span class="lineNum">      49 </span>            :     (const U8 *)&quot;incompatible version&quot;,/* Z_VERSION_ERROR (-6) */
+<span class="lineNum">      50 </span>            :     (const U8 *)&quot;&quot;
+<span class="lineNum">      51 </span>            : };
+<a name="52"><span class="lineNum">      52 </span>            : </a>
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span><span class="lineCov">          3 : const U8 * zlibVersion()</span>
+<span class="lineNum">      55 </span>            : {
+<span class="lineNum">      56 </span><span class="lineCov">          3 :     return (U8*)ZLIB_VERSION;</span>
+<span class="lineNum">      57 </span>            : }
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            : /*
+<span class="lineNum">      60 </span>            : Abcouwer ZSC - As it is impossible to test the 2^N variations of zlib that
+<span class="lineNum">      61 </span>            : could exist with conditional compilation, most of these variations have been removed.
+<span class="lineNum">      62 </span>            : This function should return the same flags as a version of zlib compiled
+<span class="lineNum">      63 </span>            : with the same settings as ZSC has hardcoded. So users that check the value
+<span class="lineNum">      64 </span>            : of this function should be able to call and tell whether their application
+<span class="lineNum">      65 </span>            : is compatible with ZSC.
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : Unless noted elsewhere, the code has been changed to match the compilation
+<span class="lineNum">      68 </span>            : in the case where these flags are not defined.
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : If your favorite option has been removed, but the option is compatible with
+<span class="lineNum">      71 </span>            : the goals of ZSC, consider a pull request! But implement that option is such
+<span class="lineNum">      72 </span>            : a way that the source code compiles the same, the option is a run-time option.
+<a name="73"><span class="lineNum">      73 </span>            : That allows unit testing of all the options.</a>
+<span class="lineNum">      74 </span>            : */
+<span class="lineNum">      75 </span><span class="lineCov">          2 : U32 zlibCompileFlags()</span>
+<span class="lineNum">      76 </span>            : {
+<span class="lineNum">      77 </span>            :     U32 flags;
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span><span class="lineCov">          2 :     flags = 0;</span>
+<span class="lineNum">      80 </span>            :     // Abcouwer ZSC - uShrt and uInt replaced with U32, per MISRA.
+<span class="lineNum">      81 </span>            :     // So this returns size of U32 twice
+<span class="lineNum">      82 </span>            :     ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_1);
+<span class="lineNum">      83 </span>            :     switch ((I32)(sizeof(U32))) {
+<span class="lineNum">      84 </span>            :     case 2:     break;
+<span class="lineNum">      85 </span><span class="lineCov">          2 :     case 4:     flags += 1;     break;</span>
+<span class="lineNum">      86 </span>            :     case 8:     flags += 2;     break;
+<span class="lineNum">      87 </span>            :     default:    flags += 3;
+<span class="lineNum">      88 </span>            :     }
+<span class="lineNum">      89 </span>            :     ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_2);
+<span class="lineNum">      90 </span>            :     switch ((I32)(sizeof(U32))) {
+<span class="lineNum">      91 </span>            :     case 2:     break;
+<span class="lineNum">      92 </span><span class="lineCov">          2 :     case 4:     flags += 1 &lt;&lt; 2;        break;</span>
+<span class="lineNum">      93 </span>            :     case 8:     flags += 2 &lt;&lt; 2;        break;
+<span class="lineNum">      94 </span>            :     default:    flags += 3 &lt;&lt; 2;
+<span class="lineNum">      95 </span>            :     }
+<span class="lineNum">      96 </span>            :     switch ((I32)(sizeof(void*))) {
+<span class="lineNum">      97 </span>            :     case 2:     break;
+<span class="lineNum">      98 </span>            :     case 4:     flags += 1 &lt;&lt; 4;        break;
+<span class="lineNum">      99 </span><span class="lineCov">          2 :     case 8:     flags += 2 &lt;&lt; 4;        break;</span>
+<span class="lineNum">     100 </span>            :     default:    flags += 3 &lt;&lt; 4;
+<span class="lineNum">     101 </span>            :     }
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span>            :     // Abcouwer ZSC - crc combine functions were removed, no need for z_off_t type
+<span class="lineNum">     104 </span>            :     // z_off_t would be size that can represent largest offset in system
+<span class="lineNum">     105 </span>            :     // providing size of unsigned long
+<span class="lineNum">     106 </span>            :     switch ((I32)(sizeof(unsigned long))) {
+<span class="lineNum">     107 </span>            :     case 2:     break;
+<span class="lineNum">     108 </span>            :     case 4:     flags += 1 &lt;&lt; 6;        break;
+<span class="lineNum">     109 </span><span class="lineCov">          2 :     case 8:     flags += 2 &lt;&lt; 6;        break;</span>
+<span class="lineNum">     110 </span>            :     default:    flags += 3 &lt;&lt; 6;
+<span class="lineNum">     111 </span>            :     }
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            :     /* Abcouwer ZSC - removed conditional compilation flags:
+<span class="lineNum">     114 </span>            :      * ASMV/ASMINF, ZLIB_WINAPI, BUILDFIXED, DYNAMIC_CRC_TABLE, NO_GZCOMPRESS,
+<span class="lineNum">     115 </span>            :      * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST. ZLIB_DEBUG     */
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span>            :     /* Abcouwer ZSC - sprintf variants not checked, as used in gzprintf,
+<span class="lineNum">     118 </span>            :      * and gz code not included */
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span><span class="lineCov">          2 :     return flags;</span>
+<span class="lineNum">     121 </span>            : }
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            : /* exported to allow conversion of error code to string for compress() and
+<a name="124"><span class="lineNum">     124 </span>            :  * uncompress()</a>
+<span class="lineNum">     125 </span>            :  */
+<span class="lineNum">     126 </span><span class="lineCov">          8 : const U8 * zError(err)</span>
+<span class="lineNum">     127 </span>            :     ZlibReturn err;
+<span class="lineNum">     128 </span>            : {
+<span class="lineNum">     129 </span><span class="lineCov">          8 :     return ERR_MSG(err);</span>
+<span class="lineNum">     130 </span>            : }
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            : // Abcouwer ZSC - removed solo memcpy and related functions
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            : // Abcouwer ZSC - removed dynamic memory allocation functions
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

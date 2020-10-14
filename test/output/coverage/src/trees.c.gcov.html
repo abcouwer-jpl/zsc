@@ -1,0 +1,1145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info.cleaned - src/trees.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - trees.c<span style="font-size: 80%;"> (source / <a href="trees.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info.cleaned</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">322</td>
+            <td class="headerCovTableEntry">326</td>
+            <td class="headerCovTableEntryHi">98.8 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2020-10-14 09:41:46</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Copyright 2020, by the California Institute of Technology.
+<span class="lineNum">       3 </span>            :  * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+<span class="lineNum">       4 </span>            :  * Any commercial use must be negotiated with the Office of Technology
+<span class="lineNum">       5 </span>            :  * Transfer at the California Institute of Technology.
+<span class="lineNum">       6 </span>            :  *
+<span class="lineNum">       7 </span>            :  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<span class="lineNum">       8 </span>            :  * you may not use this file except in compliance with the License.
+<span class="lineNum">       9 </span>            :  * You may obtain a copy of the License at
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  *     http://www.apache.org/licenses/LICENSE-2.0
+<span class="lineNum">      12 </span>            :  *
+<span class="lineNum">      13 </span>            :  * Unless required by applicable law or agreed to in writing, software
+<span class="lineNum">      14 </span>            :  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<span class="lineNum">      15 </span>            :  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<span class="lineNum">      16 </span>            :  * See the License for the specific language governing permissions and
+<span class="lineNum">      17 </span>            :  * limitations under the License.
+<span class="lineNum">      18 </span>            :  *
+<span class="lineNum">      19 </span>            :  * @file        trees.c
+<span class="lineNum">      20 </span>            :  * @date        2020-10-12
+<span class="lineNum">      21 </span>            :  * @author      Jean-loup Gailly, Neil Abcouwer
+<span class="lineNum">      22 </span>            :  * @brief       Adler-32 checksums
+<span class="lineNum">      23 </span>            :  *
+<span class="lineNum">      24 </span>            :  * Modified version of trees.c for safety-critical applications.
+<span class="lineNum">      25 </span>            :  * Removed conditional compilation, used fixed-length types,
+<span class="lineNum">      26 </span>            :  * brought tables into the c file, remove debug-only code, other small changes.
+<span class="lineNum">      27 </span>            :  *
+<span class="lineNum">      28 </span>            :  * Original file header follows.
+<span class="lineNum">      29 </span>            :  */
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            : /* trees.c -- output deflated data using Huffman coding
+<span class="lineNum">      32 </span>            :  * Copyright (C) 1995-2017 Jean-loup Gailly
+<span class="lineNum">      33 </span>            :  * detect_data_type() function provided freely by Cosmin Truta, 2006
+<span class="lineNum">      34 </span>            :  * For conditions of distribution and use, see copyright notice in zlib.h
+<span class="lineNum">      35 </span>            :  */
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : /*
+<span class="lineNum">      38 </span>            :  *  ALGORITHM
+<span class="lineNum">      39 </span>            :  *
+<span class="lineNum">      40 </span>            :  *      The &quot;deflation&quot; process uses several Huffman trees. The more
+<span class="lineNum">      41 </span>            :  *      common source values are represented by shorter bit sequences.
+<span class="lineNum">      42 </span>            :  *
+<span class="lineNum">      43 </span>            :  *      Each code tree is stored in a compressed form which is itself
+<span class="lineNum">      44 </span>            :  * a Huffman encoding of the lengths of all the code strings (in
+<span class="lineNum">      45 </span>            :  * ascending order by source values).  The actual code strings are
+<span class="lineNum">      46 </span>            :  * reconstructed from the lengths in the inflate process, as described
+<span class="lineNum">      47 </span>            :  * in the deflate specification.
+<span class="lineNum">      48 </span>            :  *
+<span class="lineNum">      49 </span>            :  *  REFERENCES
+<span class="lineNum">      50 </span>            :  *
+<span class="lineNum">      51 </span>            :  *      Deutsch, L.P.,&quot;'Deflate' Compressed Data Format Specification&quot;.
+<span class="lineNum">      52 </span>            :  *      Available in ftp.uu.net:/pub/archiving/zip/doc/deflate-1.1.doc
+<span class="lineNum">      53 </span>            :  *
+<span class="lineNum">      54 </span>            :  *      Storer, James A.
+<span class="lineNum">      55 </span>            :  *          Data Compression:  Methods and Theory, pp. 49-50.
+<span class="lineNum">      56 </span>            :  *          Computer Science Press, 1988.  ISBN 0-7167-8156-5.
+<span class="lineNum">      57 </span>            :  *
+<span class="lineNum">      58 </span>            :  *      Sedgewick, R.
+<span class="lineNum">      59 </span>            :  *          Algorithms, p290.
+<span class="lineNum">      60 </span>            :  *          Addison-Wesley, 1983. ISBN 0-201-06672-6.
+<span class="lineNum">      61 </span>            :  */
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            : /* @(#) $Id$ */
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            : #include &quot;zsc/zsc_conf_private.h&quot;
+<span class="lineNum">      66 </span>            : #include &quot;zsc/deflate.h&quot;
+<span class="lineNum">      67 </span>            : 
+<span class="lineNum">      68 </span>            : /* ===========================================================================
+<span class="lineNum">      69 </span>            :  * Constants
+<span class="lineNum">      70 </span>            :  */
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            : #define MAX_BL_BITS 7
+<span class="lineNum">      73 </span>            : /* Bit length codes must not exceed MAX_BL_BITS bits */
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            : #define END_BLOCK 256
+<span class="lineNum">      76 </span>            : /* end of block literal code */
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            : #define REP_3_6      16
+<span class="lineNum">      79 </span>            : /* repeat previous bit length 3-6 times (2 bits of repeat count) */
+<span class="lineNum">      80 </span>            : 
+<span class="lineNum">      81 </span>            : #define REPZ_3_10    17
+<span class="lineNum">      82 </span>            : /* repeat a zero length 3-10 times  (3 bits of repeat count) */
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            : #define REPZ_11_138  18
+<span class="lineNum">      85 </span>            : /* repeat a zero length 11-138 times  (7 bits of repeat count) */
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            : ZSC_PRIVATE const I32 extra_lbits[LENGTH_CODES] /* extra bits for each length code */
+<span class="lineNum">      88 </span>            :    = {0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0};
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            : ZSC_PRIVATE const I32 extra_dbits[D_CODES] /* extra bits for each distance code */
+<span class="lineNum">      91 </span>            :    = {0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13};
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            : ZSC_PRIVATE const I32 extra_blbits[BL_CODES]/* extra bits for each bit length code */
+<span class="lineNum">      94 </span>            :    = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,3,7};
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span>            : ZSC_PRIVATE const U8 bl_order[BL_CODES]
+<span class="lineNum">      97 </span>            :    = {16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15};
+<span class="lineNum">      98 </span>            : /* The lengths of the bit length codes are sent in order of decreasing
+<span class="lineNum">      99 </span>            :  * probability, to avoid transmitting the lengths for unused bit length codes.
+<span class="lineNum">     100 </span>            :  */
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : /* ===========================================================================
+<span class="lineNum">     103 </span>            :  * Local data. These are initialized only once.
+<span class="lineNum">     104 </span>            :  */
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            : #define DIST_CODE_LEN  512 /* see definition of array dist_code below */
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : // Abcouwer ZSC - include tree buffers directly
+<span class="lineNum">     109 </span>            : 
+<span class="lineNum">     110 </span>            : ZSC_PRIVATE const ct_data static_ltree[L_CODES+2] = {
+<span class="lineNum">     111 </span>            : {{ 12},{  8}}, {{140},{  8}}, {{ 76},{  8}}, {{204},{  8}}, {{ 44},{  8}},
+<span class="lineNum">     112 </span>            : {{172},{  8}}, {{108},{  8}}, {{236},{  8}}, {{ 28},{  8}}, {{156},{  8}},
+<span class="lineNum">     113 </span>            : {{ 92},{  8}}, {{220},{  8}}, {{ 60},{  8}}, {{188},{  8}}, {{124},{  8}},
+<span class="lineNum">     114 </span>            : {{252},{  8}}, {{  2},{  8}}, {{130},{  8}}, {{ 66},{  8}}, {{194},{  8}},
+<span class="lineNum">     115 </span>            : {{ 34},{  8}}, {{162},{  8}}, {{ 98},{  8}}, {{226},{  8}}, {{ 18},{  8}},
+<span class="lineNum">     116 </span>            : {{146},{  8}}, {{ 82},{  8}}, {{210},{  8}}, {{ 50},{  8}}, {{178},{  8}},
+<span class="lineNum">     117 </span>            : {{114},{  8}}, {{242},{  8}}, {{ 10},{  8}}, {{138},{  8}}, {{ 74},{  8}},
+<span class="lineNum">     118 </span>            : {{202},{  8}}, {{ 42},{  8}}, {{170},{  8}}, {{106},{  8}}, {{234},{  8}},
+<span class="lineNum">     119 </span>            : {{ 26},{  8}}, {{154},{  8}}, {{ 90},{  8}}, {{218},{  8}}, {{ 58},{  8}},
+<span class="lineNum">     120 </span>            : {{186},{  8}}, {{122},{  8}}, {{250},{  8}}, {{  6},{  8}}, {{134},{  8}},
+<span class="lineNum">     121 </span>            : {{ 70},{  8}}, {{198},{  8}}, {{ 38},{  8}}, {{166},{  8}}, {{102},{  8}},
+<span class="lineNum">     122 </span>            : {{230},{  8}}, {{ 22},{  8}}, {{150},{  8}}, {{ 86},{  8}}, {{214},{  8}},
+<span class="lineNum">     123 </span>            : {{ 54},{  8}}, {{182},{  8}}, {{118},{  8}}, {{246},{  8}}, {{ 14},{  8}},
+<span class="lineNum">     124 </span>            : {{142},{  8}}, {{ 78},{  8}}, {{206},{  8}}, {{ 46},{  8}}, {{174},{  8}},
+<span class="lineNum">     125 </span>            : {{110},{  8}}, {{238},{  8}}, {{ 30},{  8}}, {{158},{  8}}, {{ 94},{  8}},
+<span class="lineNum">     126 </span>            : {{222},{  8}}, {{ 62},{  8}}, {{190},{  8}}, {{126},{  8}}, {{254},{  8}},
+<span class="lineNum">     127 </span>            : {{  1},{  8}}, {{129},{  8}}, {{ 65},{  8}}, {{193},{  8}}, {{ 33},{  8}},
+<span class="lineNum">     128 </span>            : {{161},{  8}}, {{ 97},{  8}}, {{225},{  8}}, {{ 17},{  8}}, {{145},{  8}},
+<span class="lineNum">     129 </span>            : {{ 81},{  8}}, {{209},{  8}}, {{ 49},{  8}}, {{177},{  8}}, {{113},{  8}},
+<span class="lineNum">     130 </span>            : {{241},{  8}}, {{  9},{  8}}, {{137},{  8}}, {{ 73},{  8}}, {{201},{  8}},
+<span class="lineNum">     131 </span>            : {{ 41},{  8}}, {{169},{  8}}, {{105},{  8}}, {{233},{  8}}, {{ 25},{  8}},
+<span class="lineNum">     132 </span>            : {{153},{  8}}, {{ 89},{  8}}, {{217},{  8}}, {{ 57},{  8}}, {{185},{  8}},
+<span class="lineNum">     133 </span>            : {{121},{  8}}, {{249},{  8}}, {{  5},{  8}}, {{133},{  8}}, {{ 69},{  8}},
+<span class="lineNum">     134 </span>            : {{197},{  8}}, {{ 37},{  8}}, {{165},{  8}}, {{101},{  8}}, {{229},{  8}},
+<span class="lineNum">     135 </span>            : {{ 21},{  8}}, {{149},{  8}}, {{ 85},{  8}}, {{213},{  8}}, {{ 53},{  8}},
+<span class="lineNum">     136 </span>            : {{181},{  8}}, {{117},{  8}}, {{245},{  8}}, {{ 13},{  8}}, {{141},{  8}},
+<span class="lineNum">     137 </span>            : {{ 77},{  8}}, {{205},{  8}}, {{ 45},{  8}}, {{173},{  8}}, {{109},{  8}},
+<span class="lineNum">     138 </span>            : {{237},{  8}}, {{ 29},{  8}}, {{157},{  8}}, {{ 93},{  8}}, {{221},{  8}},
+<span class="lineNum">     139 </span>            : {{ 61},{  8}}, {{189},{  8}}, {{125},{  8}}, {{253},{  8}}, {{ 19},{  9}},
+<span class="lineNum">     140 </span>            : {{275},{  9}}, {{147},{  9}}, {{403},{  9}}, {{ 83},{  9}}, {{339},{  9}},
+<span class="lineNum">     141 </span>            : {{211},{  9}}, {{467},{  9}}, {{ 51},{  9}}, {{307},{  9}}, {{179},{  9}},
+<span class="lineNum">     142 </span>            : {{435},{  9}}, {{115},{  9}}, {{371},{  9}}, {{243},{  9}}, {{499},{  9}},
+<span class="lineNum">     143 </span>            : {{ 11},{  9}}, {{267},{  9}}, {{139},{  9}}, {{395},{  9}}, {{ 75},{  9}},
+<span class="lineNum">     144 </span>            : {{331},{  9}}, {{203},{  9}}, {{459},{  9}}, {{ 43},{  9}}, {{299},{  9}},
+<span class="lineNum">     145 </span>            : {{171},{  9}}, {{427},{  9}}, {{107},{  9}}, {{363},{  9}}, {{235},{  9}},
+<span class="lineNum">     146 </span>            : {{491},{  9}}, {{ 27},{  9}}, {{283},{  9}}, {{155},{  9}}, {{411},{  9}},
+<span class="lineNum">     147 </span>            : {{ 91},{  9}}, {{347},{  9}}, {{219},{  9}}, {{475},{  9}}, {{ 59},{  9}},
+<span class="lineNum">     148 </span>            : {{315},{  9}}, {{187},{  9}}, {{443},{  9}}, {{123},{  9}}, {{379},{  9}},
+<span class="lineNum">     149 </span>            : {{251},{  9}}, {{507},{  9}}, {{  7},{  9}}, {{263},{  9}}, {{135},{  9}},
+<span class="lineNum">     150 </span>            : {{391},{  9}}, {{ 71},{  9}}, {{327},{  9}}, {{199},{  9}}, {{455},{  9}},
+<span class="lineNum">     151 </span>            : {{ 39},{  9}}, {{295},{  9}}, {{167},{  9}}, {{423},{  9}}, {{103},{  9}},
+<span class="lineNum">     152 </span>            : {{359},{  9}}, {{231},{  9}}, {{487},{  9}}, {{ 23},{  9}}, {{279},{  9}},
+<span class="lineNum">     153 </span>            : {{151},{  9}}, {{407},{  9}}, {{ 87},{  9}}, {{343},{  9}}, {{215},{  9}},
+<span class="lineNum">     154 </span>            : {{471},{  9}}, {{ 55},{  9}}, {{311},{  9}}, {{183},{  9}}, {{439},{  9}},
+<span class="lineNum">     155 </span>            : {{119},{  9}}, {{375},{  9}}, {{247},{  9}}, {{503},{  9}}, {{ 15},{  9}},
+<span class="lineNum">     156 </span>            : {{271},{  9}}, {{143},{  9}}, {{399},{  9}}, {{ 79},{  9}}, {{335},{  9}},
+<span class="lineNum">     157 </span>            : {{207},{  9}}, {{463},{  9}}, {{ 47},{  9}}, {{303},{  9}}, {{175},{  9}},
+<span class="lineNum">     158 </span>            : {{431},{  9}}, {{111},{  9}}, {{367},{  9}}, {{239},{  9}}, {{495},{  9}},
+<span class="lineNum">     159 </span>            : {{ 31},{  9}}, {{287},{  9}}, {{159},{  9}}, {{415},{  9}}, {{ 95},{  9}},
+<span class="lineNum">     160 </span>            : {{351},{  9}}, {{223},{  9}}, {{479},{  9}}, {{ 63},{  9}}, {{319},{  9}},
+<span class="lineNum">     161 </span>            : {{191},{  9}}, {{447},{  9}}, {{127},{  9}}, {{383},{  9}}, {{255},{  9}},
+<span class="lineNum">     162 </span>            : {{511},{  9}}, {{  0},{  7}}, {{ 64},{  7}}, {{ 32},{  7}}, {{ 96},{  7}},
+<span class="lineNum">     163 </span>            : {{ 16},{  7}}, {{ 80},{  7}}, {{ 48},{  7}}, {{112},{  7}}, {{  8},{  7}},
+<span class="lineNum">     164 </span>            : {{ 72},{  7}}, {{ 40},{  7}}, {{104},{  7}}, {{ 24},{  7}}, {{ 88},{  7}},
+<span class="lineNum">     165 </span>            : {{ 56},{  7}}, {{120},{  7}}, {{  4},{  7}}, {{ 68},{  7}}, {{ 36},{  7}},
+<span class="lineNum">     166 </span>            : {{100},{  7}}, {{ 20},{  7}}, {{ 84},{  7}}, {{ 52},{  7}}, {{116},{  7}},
+<span class="lineNum">     167 </span>            : {{  3},{  8}}, {{131},{  8}}, {{ 67},{  8}}, {{195},{  8}}, {{ 35},{  8}},
+<span class="lineNum">     168 </span>            : {{163},{  8}}, {{ 99},{  8}}, {{227},{  8}}
+<span class="lineNum">     169 </span>            : };
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            : ZSC_PRIVATE const ct_data static_dtree[D_CODES] = {
+<span class="lineNum">     172 </span>            : {{ 0},{ 5}}, {{16},{ 5}}, {{ 8},{ 5}}, {{24},{ 5}}, {{ 4},{ 5}},
+<span class="lineNum">     173 </span>            : {{20},{ 5}}, {{12},{ 5}}, {{28},{ 5}}, {{ 2},{ 5}}, {{18},{ 5}},
+<span class="lineNum">     174 </span>            : {{10},{ 5}}, {{26},{ 5}}, {{ 6},{ 5}}, {{22},{ 5}}, {{14},{ 5}},
+<span class="lineNum">     175 </span>            : {{30},{ 5}}, {{ 1},{ 5}}, {{17},{ 5}}, {{ 9},{ 5}}, {{25},{ 5}},
+<span class="lineNum">     176 </span>            : {{ 5},{ 5}}, {{21},{ 5}}, {{13},{ 5}}, {{29},{ 5}}, {{ 3},{ 5}},
+<span class="lineNum">     177 </span>            : {{19},{ 5}}, {{11},{ 5}}, {{27},{ 5}}, {{ 7},{ 5}}, {{23},{ 5}}
+<span class="lineNum">     178 </span>            : };
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span>            : const U8 _dist_code[DIST_CODE_LEN] = {
+<span class="lineNum">     181 </span>            :  0,  1,  2,  3,  4,  4,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,
+<span class="lineNum">     182 </span>            :  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  9,  9, 10, 10, 10, 10, 10, 10, 10, 10,
+<span class="lineNum">     183 </span>            : 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
+<span class="lineNum">     184 </span>            : 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+<span class="lineNum">     185 </span>            : 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13, 13,
+<span class="lineNum">     186 </span>            : 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+<span class="lineNum">     187 </span>            : 13, 13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+<span class="lineNum">     188 </span>            : 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+<span class="lineNum">     189 </span>            : 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+<span class="lineNum">     190 </span>            : 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15, 15,
+<span class="lineNum">     191 </span>            : 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+<span class="lineNum">     192 </span>            : 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+<span class="lineNum">     193 </span>            : 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,  0,  0, 16, 17,
+<span class="lineNum">     194 </span>            : 18, 18, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22,
+<span class="lineNum">     195 </span>            : 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+<span class="lineNum">     196 </span>            : 24, 24, 24, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+<span class="lineNum">     197 </span>            : 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
+<span class="lineNum">     198 </span>            : 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27,
+<span class="lineNum">     199 </span>            : 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+<span class="lineNum">     200 </span>            : 27, 27, 27, 27, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+<span class="lineNum">     201 </span>            : 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+<span class="lineNum">     202 </span>            : 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+<span class="lineNum">     203 </span>            : 28, 28, 28, 28, 28, 28, 28, 28, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+<span class="lineNum">     204 </span>            : 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+<span class="lineNum">     205 </span>            : 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
+<span class="lineNum">     206 </span>            : 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29
+<span class="lineNum">     207 </span>            : };
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span>            : const U8 _length_code[MAX_MATCH-MIN_MATCH+1]= {
+<span class="lineNum">     210 </span>            :  0,  1,  2,  3,  4,  5,  6,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 12, 12,
+<span class="lineNum">     211 </span>            : 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 16, 16, 16, 16,
+<span class="lineNum">     212 </span>            : 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19,
+<span class="lineNum">     213 </span>            : 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+<span class="lineNum">     214 </span>            : 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22,
+<span class="lineNum">     215 </span>            : 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23,
+<span class="lineNum">     216 </span>            : 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+<span class="lineNum">     217 </span>            : 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+<span class="lineNum">     218 </span>            : 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+<span class="lineNum">     219 </span>            : 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 26, 26, 26, 26, 26, 26, 26, 26,
+<span class="lineNum">     220 </span>            : 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
+<span class="lineNum">     221 </span>            : 26, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+<span class="lineNum">     222 </span>            : 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 28
+<span class="lineNum">     223 </span>            : };
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            : ZSC_PRIVATE const I32 base_length[LENGTH_CODES] = {
+<span class="lineNum">     226 </span>            : 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56,
+<span class="lineNum">     227 </span>            : 64, 80, 96, 112, 128, 160, 192, 224, 0
+<span class="lineNum">     228 </span>            : };
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span>            : ZSC_PRIVATE const I32 base_dist[D_CODES] = {
+<span class="lineNum">     231 </span>            :     0,     1,     2,     3,     4,     6,     8,    12,    16,    24,
+<span class="lineNum">     232 </span>            :    32,    48,    64,    96,   128,   192,   256,   384,   512,   768,
+<span class="lineNum">     233 </span>            :  1024,  1536,  2048,  3072,  4096,  6144,  8192, 12288, 16384, 24576
+<span class="lineNum">     234 </span>            : };
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            : struct static_tree_desc_s {
+<span class="lineNum">     238 </span>            :     const ct_data *static_tree;  /* static tree or NULL */
+<span class="lineNum">     239 </span>            :     const I32 *extra_bits;      /* extra bits for each code or NULL */
+<span class="lineNum">     240 </span>            :     I32     extra_base;          /* base index for extra_bits */
+<span class="lineNum">     241 </span>            :     I32     elems;               /* max number of elements in the tree */
+<span class="lineNum">     242 </span>            :     I32     max_length;          /* max bit length for the codes */
+<span class="lineNum">     243 </span>            : };
+<span class="lineNum">     244 </span>            : 
+<span class="lineNum">     245 </span>            : ZSC_PRIVATE const static_tree_desc  static_l_desc =
+<span class="lineNum">     246 </span>            : {static_ltree, extra_lbits, LITERALS+1, L_CODES, MAX_BITS};
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span>            : ZSC_PRIVATE const static_tree_desc  static_d_desc =
+<span class="lineNum">     249 </span>            : {static_dtree, extra_dbits, 0,          D_CODES, MAX_BITS};
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span>            : ZSC_PRIVATE const static_tree_desc  static_bl_desc =
+<span class="lineNum">     252 </span>            : {(const ct_data *)0, extra_blbits, 0,   BL_CODES, MAX_BL_BITS};
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span>            : /* ===========================================================================
+<span class="lineNum">     255 </span>            :  * Local (static) routines in this file.
+<span class="lineNum">     256 </span>            :  */
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span>            : ZSC_PRIVATE void init_block     (deflate_state *s);
+<span class="lineNum">     259 </span>            : ZSC_PRIVATE void pqdownheap     (deflate_state *s, ct_data *tree, I32 k);
+<span class="lineNum">     260 </span>            : ZSC_PRIVATE void gen_bitlen     (deflate_state *s, tree_desc *desc);
+<span class="lineNum">     261 </span>            : ZSC_PRIVATE void gen_codes      (ct_data *tree, I32 max_code, U16 *bl_count);
+<span class="lineNum">     262 </span>            : ZSC_PRIVATE void build_tree     (deflate_state *s, tree_desc *desc);
+<span class="lineNum">     263 </span>            : ZSC_PRIVATE void scan_tree      (deflate_state *s, ct_data *tree, I32 max_code);
+<span class="lineNum">     264 </span>            : ZSC_PRIVATE void send_tree      (deflate_state *s, ct_data *tree, I32 max_code);
+<span class="lineNum">     265 </span>            : ZSC_PRIVATE I32  build_bl_tree  (deflate_state *s);
+<span class="lineNum">     266 </span>            : ZSC_PRIVATE void send_all_trees (deflate_state *s, I32 lcodes, I32 dcodes,
+<span class="lineNum">     267 </span>            :                                 I32 blcodes);
+<span class="lineNum">     268 </span>            : ZSC_PRIVATE void compress_block (deflate_state *s, const ct_data *ltree,
+<span class="lineNum">     269 </span>            :                               const ct_data *dtree);
+<span class="lineNum">     270 </span>            : ZSC_PRIVATE I32  detect_data_type (deflate_state *s);
+<span class="lineNum">     271 </span>            : ZSC_PRIVATE U32  bi_reverse (U32 value, I32 length);
+<span class="lineNum">     272 </span>            : ZSC_PRIVATE void bi_windup      (deflate_state *s);
+<span class="lineNum">     273 </span>            : ZSC_PRIVATE void bi_flush       (deflate_state *s);
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span>            : #  define send_code(s, c, tree) send_bits((s), (tree)[(c)].Code, (tree)[(c)].Len)
+<span class="lineNum">     277 </span>            :    /* Send a code of the given tree. c and tree must not have side effects */
+<span class="lineNum">     278 </span>            : 
+<span class="lineNum">     279 </span>            : /* ===========================================================================
+<span class="lineNum">     280 </span>            :  * Output a short LSB first on the stream.
+<span class="lineNum">     281 </span>            :  * IN assertion: there is enough room in pendingBuf.
+<span class="lineNum">     282 </span>            :  */
+<span class="lineNum">     283 </span>            : #define put_short(s, w) { \
+<span class="lineNum">     284 </span>            :     put_byte((s), (U8)((w) &amp; 0xff)); \
+<span class="lineNum">     285 </span>            :     put_byte((s), (U8)((U16)(w) &gt;&gt; 8)); \
+<span class="lineNum">     286 </span>            : }
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            : /* ===========================================================================
+<span class="lineNum">     289 </span>            :  * Send a value on a given number of bits.
+<span class="lineNum">     290 </span>            :  * IN assertion: length &lt;= 16 and value fits in length bits.
+<span class="lineNum">     291 </span>            :  */
+<span class="lineNum">     292 </span>            : #define send_bits(s, value, length) \
+<span class="lineNum">     293 </span>            : { I32 len = (length);\
+<span class="lineNum">     294 </span>            :   if ((s)-&gt;bi_valid &gt; (I32)Buf_size - len) {\
+<span class="lineNum">     295 </span>            :     I32 val = (I32)(value);\
+<span class="lineNum">     296 </span>            :     (s)-&gt;bi_buf |= (U16)val &lt;&lt; (s)-&gt;bi_valid;\
+<span class="lineNum">     297 </span>            :     put_short((s), (s)-&gt;bi_buf);\
+<span class="lineNum">     298 </span>            :     (s)-&gt;bi_buf = (U16)val &gt;&gt; (Buf_size - (s)-&gt;bi_valid);\
+<span class="lineNum">     299 </span>            :     (s)-&gt;bi_valid += len - Buf_size;\
+<span class="lineNum">     300 </span>            :   } else {\
+<span class="lineNum">     301 </span>            :     (s)-&gt;bi_buf |= (U16)(value) &lt;&lt; (s)-&gt;bi_valid;\
+<span class="lineNum">     302 </span>            :     (s)-&gt;bi_valid += len;\
+<span class="lineNum">     303 </span>            :   }\
+<span class="lineNum">     304 </span>            : }
+<span class="lineNum">     305 </span>            : 
+<span class="lineNum">     306 </span>            : /* the arguments must not have side effects */
+<span class="lineNum">     307 </span>            : 
+<span class="lineNum">     308 </span>            : /* ===========================================================================
+<a name="309"><span class="lineNum">     309 </span>            :  * Initialize the tree data structures for a new zlib stream.</a>
+<span class="lineNum">     310 </span>            :  */
+<span class="lineNum">     311 </span><span class="lineCov">        234 : void _tr_init(deflate_state *s)</span>
+<span class="lineNum">     312 </span>            : {
+<span class="lineNum">     313 </span><span class="lineCov">        234 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     314 </span>            : 
+<span class="lineNum">     315 </span>            :     // Abcouwer ZSC - no static init needed, tables hardcoded
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span><span class="lineCov">        234 :     s-&gt;l_desc.dyn_tree = s-&gt;dyn_ltree;</span>
+<span class="lineNum">     318 </span><span class="lineCov">        234 :     s-&gt;l_desc.stat_desc = &amp;static_l_desc;</span>
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span><span class="lineCov">        234 :     s-&gt;d_desc.dyn_tree = s-&gt;dyn_dtree;</span>
+<span class="lineNum">     321 </span><span class="lineCov">        234 :     s-&gt;d_desc.stat_desc = &amp;static_d_desc;</span>
+<span class="lineNum">     322 </span>            : 
+<span class="lineNum">     323 </span><span class="lineCov">        234 :     s-&gt;bl_desc.dyn_tree = s-&gt;bl_tree;</span>
+<span class="lineNum">     324 </span><span class="lineCov">        234 :     s-&gt;bl_desc.stat_desc = &amp;static_bl_desc;</span>
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span><span class="lineCov">        234 :     s-&gt;bi_buf = 0;</span>
+<span class="lineNum">     327 </span><span class="lineCov">        234 :     s-&gt;bi_valid = 0;</span>
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            :     /* Initialize the first block of the first file: */
+<span class="lineNum">     330 </span><span class="lineCov">        234 :     init_block(s);</span>
+<span class="lineNum">     331 </span><span class="lineCov">        234 : }</span>
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            : /* ===========================================================================
+<a name="334"><span class="lineNum">     334 </span>            :  * Initialize a new block.</a>
+<span class="lineNum">     335 </span>            :  */
+<span class="lineNum">     336 </span><span class="lineCov">       9557 : ZSC_PRIVATE void init_block(deflate_state *s)</span>
+<span class="lineNum">     337 </span>            : {
+<span class="lineNum">     338 </span><span class="lineCov">       9557 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     339 </span>            : 
+<span class="lineNum">     340 </span>            :     I32 n; /* iterates over tree elements */
+<span class="lineNum">     341 </span>            : 
+<span class="lineNum">     342 </span>            :     /* Initialize the trees. */
+<span class="lineNum">     343 </span><span class="lineCov">    2742859 :     for (n = 0; n &lt; L_CODES;  n++) {</span>
+<span class="lineNum">     344 </span><span class="lineCov">    2733302 :         s-&gt;dyn_ltree[n].Freq = 0;</span>
+<span class="lineNum">     345 </span>            :     }
+<span class="lineNum">     346 </span><span class="lineCov">     296267 :     for (n = 0; n &lt; D_CODES;  n++) {</span>
+<span class="lineNum">     347 </span><span class="lineCov">     286710 :         s-&gt;dyn_dtree[n].Freq = 0;</span>
+<span class="lineNum">     348 </span>            :     }
+<span class="lineNum">     349 </span><span class="lineCov">     191140 :     for (n = 0; n &lt; BL_CODES; n++) {</span>
+<span class="lineNum">     350 </span><span class="lineCov">     181583 :         s-&gt;bl_tree[n].Freq = 0;</span>
+<span class="lineNum">     351 </span>            :     }
+<span class="lineNum">     352 </span>            : 
+<span class="lineNum">     353 </span><span class="lineCov">       9557 :     s-&gt;dyn_ltree[END_BLOCK].Freq = 1;</span>
+<span class="lineNum">     354 </span><span class="lineCov">       9557 :     s-&gt;opt_len = s-&gt;static_len = 0L;</span>
+<span class="lineNum">     355 </span><span class="lineCov">       9557 :     s-&gt;last_lit = s-&gt;matches = 0;</span>
+<span class="lineNum">     356 </span><span class="lineCov">       9557 : }</span>
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span>            : #define SMALLEST 1
+<span class="lineNum">     359 </span>            : /* Index within the heap array of least frequent node in the Huffman tree */
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span>            : /* ===========================================================================
+<span class="lineNum">     363 </span>            :  * Remove the smallest element from the heap and recreate the heap with
+<span class="lineNum">     364 </span>            :  * one less element. Updates heap and heap_len.
+<span class="lineNum">     365 </span>            :  */
+<span class="lineNum">     366 </span>            : #define pqremove(s, tree, top) \
+<span class="lineNum">     367 </span>            : {\
+<span class="lineNum">     368 </span>            :     (top) = (s)-&gt;heap[SMALLEST]; \
+<span class="lineNum">     369 </span>            :     (s)-&gt;heap[SMALLEST] = (s)-&gt;heap[(s)-&gt;heap_len--]; \
+<span class="lineNum">     370 </span>            :     pqdownheap((s), (tree), SMALLEST); \
+<span class="lineNum">     371 </span>            : }
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span>            : /* ===========================================================================
+<span class="lineNum">     374 </span>            :  * Compares to subtrees, using the tree depth as tie breaker when
+<span class="lineNum">     375 </span>            :  * the subtrees have equal frequency. This minimizes the worst case length.
+<span class="lineNum">     376 </span>            :  */
+<span class="lineNum">     377 </span>            : #define smaller(tree, n, m, depth) \
+<span class="lineNum">     378 </span>            :    ((tree)[(n)].Freq &lt; (tree)[(m)].Freq || \
+<span class="lineNum">     379 </span>            :    ((tree)[(n)].Freq == (tree)[(m)].Freq &amp;&amp; (depth)[(n)] &lt;= (depth)[(m)]))
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span>            : /* ===========================================================================
+<span class="lineNum">     382 </span>            :  * Restore the heap property by moving down the tree starting at node k,
+<span class="lineNum">     383 </span>            :  * exchanging a node with the smallest of its two sons if necessary, stopping
+<span class="lineNum">     384 </span>            :  * when the heap property is re-established (each father smaller than its
+<a name="385"><span class="lineNum">     385 </span>            :  * two sons).</a>
+<span class="lineNum">     386 </span>            :  */
+<span class="lineNum">     387 </span><span class="lineCov">    1793022 : ZSC_PRIVATE void pqdownheap(deflate_state *s,</span>
+<span class="lineNum">     388 </span>            :         ct_data *tree, /* the tree to restore */
+<span class="lineNum">     389 </span>            :         I32 k) /* node to move down */
+<span class="lineNum">     390 </span>            : {
+<span class="lineNum">     391 </span><span class="lineCov">    1793022 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     392 </span><span class="lineCov">    1793022 :     ZSC_ASSERT(tree != Z_NULL);</span>
+<span class="lineNum">     393 </span><span class="lineCov">    1793022 :     ZSC_ASSERT2(k &gt;= 0 &amp;&amp; k &lt; 2*L_CODES+1, k, L_CODES);</span>
+<span class="lineNum">     394 </span>            : 
+<span class="lineNum">     395 </span><span class="lineCov">    1793022 :     I32 v = s-&gt;heap[k];</span>
+<span class="lineNum">     396 </span><span class="lineCov">    1793022 :     I32 j = k &lt;&lt; 1;  /* left son of k */</span>
+<span class="lineNum">     397 </span><span class="lineCov">    8069933 :     while (j &lt;= s-&gt;heap_len) {</span>
+<span class="lineNum">     398 </span>            :         /* Set j to the smallest of the two sons: */
+<span class="lineNum">     399 </span><span class="lineCov">    9901479 :         if (j &lt; s-&gt;heap_len &amp;&amp;</span>
+<span class="lineNum">     400 </span><span class="lineCov">    8363625 :             smaller(tree, s-&gt;heap[j+1], s-&gt;heap[j], s-&gt;depth)) {</span>
+<span class="lineNum">     401 </span><span class="lineCov">    2257720 :             j++;</span>
+<span class="lineNum">     402 </span>            :         }
+<span class="lineNum">     403 </span>            :         /* Exit if v is smaller than both sons */
+<span class="lineNum">     404 </span><span class="lineCov">    5061768 :         if (smaller(tree, v, s-&gt;heap[j], s-&gt;depth)) break;</span>
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span>            :         /* Exchange v with the smallest son */
+<span class="lineNum">     407 </span><span class="lineCov">    4483889 :         s-&gt;heap[k] = s-&gt;heap[j];  k = j;</span>
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            :         /* And continue down the tree, setting j to the left son of k */
+<span class="lineNum">     410 </span><span class="lineCov">    4483889 :         j &lt;&lt;= 1;</span>
+<span class="lineNum">     411 </span>            :     }
+<span class="lineNum">     412 </span><span class="lineCov">    1793022 :     s-&gt;heap[k] = v;</span>
+<span class="lineNum">     413 </span><span class="lineCov">    1793022 : }</span>
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span>            : /* ===========================================================================
+<span class="lineNum">     416 </span>            :  * Compute the optimal bit lengths for a tree and update the total bit length
+<span class="lineNum">     417 </span>            :  * for the current block.
+<span class="lineNum">     418 </span>            :  * IN assertion: the fields freq and dad are set, heap[heap_max] and
+<span class="lineNum">     419 </span>            :  *    above are the tree nodes sorted by increasing frequency.
+<span class="lineNum">     420 </span>            :  * OUT assertions: the field len is set to the optimal bit length, the
+<span class="lineNum">     421 </span>            :  *     array bl_count contains the frequencies for each bit length.
+<span class="lineNum">     422 </span>            :  *     The length opt_len is updated; static_len is also updated if stree is
+<a name="423"><span class="lineNum">     423 </span>            :  *     not null.</a>
+<span class="lineNum">     424 </span>            :  */
+<span class="lineNum">     425 </span><span class="lineCov">      27969 : ZSC_PRIVATE void gen_bitlen(deflate_state *s,</span>
+<span class="lineNum">     426 </span>            :         tree_desc *desc)    /* the tree descriptor */
+<span class="lineNum">     427 </span>            : {
+<span class="lineNum">     428 </span><span class="lineCov">      27969 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     429 </span><span class="lineCov">      27969 :     ZSC_ASSERT(desc != Z_NULL);</span>
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span><span class="lineCov">      27969 :     ct_data *tree        = desc-&gt;dyn_tree;</span>
+<span class="lineNum">     432 </span><span class="lineCov">      27969 :     I32 max_code         = desc-&gt;max_code;</span>
+<span class="lineNum">     433 </span><span class="lineCov">      27969 :     const ct_data *stree = desc-&gt;stat_desc-&gt;static_tree;</span>
+<span class="lineNum">     434 </span><span class="lineCov">      27969 :     const I32 *extra    = desc-&gt;stat_desc-&gt;extra_bits;</span>
+<span class="lineNum">     435 </span><span class="lineCov">      27969 :     I32 base             = desc-&gt;stat_desc-&gt;extra_base;</span>
+<span class="lineNum">     436 </span><span class="lineCov">      27969 :     I32 max_length       = desc-&gt;stat_desc-&gt;max_length;</span>
+<span class="lineNum">     437 </span>            :     I32 h;              /* heap index */
+<span class="lineNum">     438 </span>            :     I32 n, m;           /* iterate over the tree elements */
+<span class="lineNum">     439 </span>            :     I32 bits;           /* bit length */
+<span class="lineNum">     440 </span>            :     I32 xbits;          /* extra bits */
+<span class="lineNum">     441 </span>            :     U16 f;              /* frequency */
+<span class="lineNum">     442 </span><span class="lineCov">      27969 :     I32 overflow = 0;   /* number of elements with bit length too large */</span>
+<span class="lineNum">     443 </span>            : 
+<span class="lineNum">     444 </span><span class="lineCov">     475473 :     for (bits = 0; bits &lt;= MAX_BITS; bits++) {</span>
+<span class="lineNum">     445 </span><span class="lineCov">     447504 :         s-&gt;bl_count[bits] = 0;</span>
+<span class="lineNum">     446 </span>            :     }
+<span class="lineNum">     447 </span>            : 
+<span class="lineNum">     448 </span>            :     /* In a first pass, compute the optimal bit lengths (which may
+<span class="lineNum">     449 </span>            :      * overflow in the case of the bit length tree).
+<span class="lineNum">     450 </span>            :      */
+<span class="lineNum">     451 </span><span class="lineCov">      27969 :     tree[s-&gt;heap[s-&gt;heap_max]].Len = 0; /* root of the heap */</span>
+<span class="lineNum">     452 </span>            : 
+<span class="lineNum">     453 </span><span class="lineCov">    1457187 :     for (h = s-&gt;heap_max+1; h &lt; HEAP_SIZE; h++) {</span>
+<span class="lineNum">     454 </span><span class="lineCov">    1429218 :         n = s-&gt;heap[h];</span>
+<span class="lineNum">     455 </span><span class="lineCov">    1429218 :         bits = tree[tree[n].Dad].Len + 1;</span>
+<span class="lineNum">     456 </span><span class="lineCov">    1429218 :         if (bits &gt; max_length) bits = max_length, overflow++;</span>
+<span class="lineNum">     457 </span><span class="lineCov">    1429218 :         tree[n].Len = (U16)bits;</span>
+<span class="lineNum">     458 </span>            :         /* We overwrite tree[n].Dad which is no longer needed */
+<span class="lineNum">     459 </span>            : 
+<span class="lineNum">     460 </span><span class="lineCov">    1429218 :         if (n &gt; max_code) continue; /* not a leaf node */</span>
+<span class="lineNum">     461 </span>            : 
+<span class="lineNum">     462 </span><span class="lineCov">     742578 :         s-&gt;bl_count[bits]++;</span>
+<span class="lineNum">     463 </span><span class="lineCov">     742578 :         xbits = 0;</span>
+<span class="lineNum">     464 </span><span class="lineCov">     742578 :         if (n &gt;= base) xbits = extra[n-base];</span>
+<span class="lineNum">     465 </span><span class="lineCov">     742578 :         f = tree[n].Freq;</span>
+<span class="lineNum">     466 </span><span class="lineCov">     742578 :         s-&gt;opt_len += (U32)f * (U32)(bits + xbits);</span>
+<span class="lineNum">     467 </span><span class="lineCov">     742578 :         if (stree) s-&gt;static_len += (U32)f * (U32)(stree[n].Len + xbits);</span>
+<span class="lineNum">     468 </span>            :     }
+<span class="lineNum">     469 </span><span class="lineCov">      27969 :     if (overflow == 0) {</span>
+<span class="lineNum">     470 </span><span class="lineCov">      27920 :         return;</span>
+<span class="lineNum">     471 </span>            :     }
+<span class="lineNum">     472 </span>            : 
+<span class="lineNum">     473 </span>            :     /* This happens for example on obj2 and pic of the Calgary corpus */
+<span class="lineNum">     474 </span>            : 
+<span class="lineNum">     475 </span>            :     /* Find the first bit length which could increase: */
+<span class="lineNum">     476 </span>            :     do {
+<span class="lineNum">     477 </span><span class="lineCov">         49 :         bits = max_length-1;</span>
+<span class="lineNum">     478 </span><span class="lineCov">         99 :         while (s-&gt;bl_count[bits] == 0) {</span>
+<span class="lineNum">     479 </span><span class="lineCov">          1 :             bits--;</span>
+<span class="lineNum">     480 </span>            :         }
+<span class="lineNum">     481 </span><span class="lineCov">         49 :         s-&gt;bl_count[bits]--;      /* move one leaf down the tree */</span>
+<span class="lineNum">     482 </span><span class="lineCov">         49 :         s-&gt;bl_count[bits+1] += 2; /* move one overflow item as its brother */</span>
+<span class="lineNum">     483 </span><span class="lineCov">         49 :         s-&gt;bl_count[max_length]--;</span>
+<span class="lineNum">     484 </span>            :         /* The brother of the overflow item also moves one step up,
+<span class="lineNum">     485 </span>            :          * but this does not affect bl_count[max_length]
+<span class="lineNum">     486 </span>            :          */
+<span class="lineNum">     487 </span><span class="lineCov">         49 :         overflow -= 2;</span>
+<span class="lineNum">     488 </span><span class="lineCov">         49 :     } while (overflow &gt; 0);</span>
+<span class="lineNum">     489 </span>            : 
+<span class="lineNum">     490 </span>            :     /* Now recompute all bit lengths, scanning in increasing frequency.
+<span class="lineNum">     491 </span>            :      * h is still equal to HEAP_SIZE. (It is simpler to reconstruct all
+<span class="lineNum">     492 </span>            :      * lengths instead of fixing only the wrong ones. This idea is taken
+<span class="lineNum">     493 </span>            :      * from 'ar' written by Haruhiko Okumura.)
+<span class="lineNum">     494 </span>            :      */
+<span class="lineNum">     495 </span><span class="lineCov">        392 :     for (bits = max_length; bits != 0; bits--) {</span>
+<span class="lineNum">     496 </span><span class="lineCov">        343 :         n = s-&gt;bl_count[bits];</span>
+<span class="lineNum">     497 </span><span class="lineCov">       1735 :         while (n != 0) {</span>
+<span class="lineNum">     498 </span><span class="lineCov">       1049 :             m = s-&gt;heap[--h];</span>
+<span class="lineNum">     499 </span><span class="lineCov">       1049 :             if (m &gt; max_code) continue;</span>
+<span class="lineNum">     500 </span><span class="lineCov">        700 :             if ((U32) tree[m].Len != (U32) bits) {</span>
+<span class="lineNum">     501 </span><span class="lineCov">         50 :                 s-&gt;opt_len += ((U32)bits - tree[m].Len) * tree[m].Freq;</span>
+<span class="lineNum">     502 </span><span class="lineCov">         50 :                 tree[m].Len = (U16)bits;</span>
+<span class="lineNum">     503 </span>            :             }
+<span class="lineNum">     504 </span><span class="lineCov">        700 :             n--;</span>
+<span class="lineNum">     505 </span>            :         }
+<span class="lineNum">     506 </span>            :     }
+<span class="lineNum">     507 </span>            : }
+<span class="lineNum">     508 </span>            : 
+<span class="lineNum">     509 </span>            : /* ===========================================================================
+<span class="lineNum">     510 </span>            :  * Generate the codes for a given tree and bit counts (which need not be
+<span class="lineNum">     511 </span>            :  * optimal).
+<span class="lineNum">     512 </span>            :  * IN assertion: the array bl_count contains the bit length statistics for
+<span class="lineNum">     513 </span>            :  * the given tree and the field len is set for all tree elements.
+<span class="lineNum">     514 </span>            :  * OUT assertion: the field code is set for all tree elements of non
+<a name="515"><span class="lineNum">     515 </span>            :  *     zero code length.</a>
+<span class="lineNum">     516 </span>            :  */
+<span class="lineNum">     517 </span><span class="lineCov">      27969 : ZSC_PRIVATE void gen_codes(ct_data *tree, /* the tree to decorate */</span>
+<span class="lineNum">     518 </span>            :     I32 max_code,              /* largest code with non zero frequency */
+<span class="lineNum">     519 </span>            :     U16 *bl_count)            /* number of codes at each bit length */
+<span class="lineNum">     520 </span>            : {
+<span class="lineNum">     521 </span>            :     U16 next_code[MAX_BITS+1]; /* next code value for each bit length */
+<span class="lineNum">     522 </span><span class="lineCov">      27969 :     U32 code = 0;         /* running code value */</span>
+<span class="lineNum">     523 </span>            :     I32 bits;                  /* bit index */
+<span class="lineNum">     524 </span>            :     I32 n;                     /* code index */
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span>            :     /* The distribution counts are first used to generate the code values
+<span class="lineNum">     527 </span>            :      * without bit reversal.
+<span class="lineNum">     528 </span>            :      */
+<span class="lineNum">     529 </span><span class="lineCov">     447504 :     for (bits = 1; bits &lt;= MAX_BITS; bits++) {</span>
+<span class="lineNum">     530 </span><span class="lineCov">     419535 :         code = (code + bl_count[bits-1]) &lt;&lt; 1;</span>
+<span class="lineNum">     531 </span><span class="lineCov">     419535 :         next_code[bits] = (U16)code;</span>
+<span class="lineNum">     532 </span>            :     }
+<span class="lineNum">     533 </span>            :     /* Check that the bit counts in bl_count are consistent. The last code
+<span class="lineNum">     534 </span>            :      * must be all ones.
+<span class="lineNum">     535 </span>            :      */
+<span class="lineNum">     536 </span>            :     // Assert: &quot;inconsistent bit counts&quot;
+<span class="lineNum">     537 </span><span class="lineCov">      27969 :     ZSC_ASSERT3(code + bl_count[MAX_BITS]-1 == (1&lt;&lt;MAX_BITS)-1,</span>
+<span class="lineNum">     538 </span>            :             code, bl_count[MAX_BITS], MAX_BITS);
+<span class="lineNum">     539 </span>            : 
+<span class="lineNum">     540 </span><span class="lineCov">    2917514 :     for (n = 0;  n &lt;= max_code; n++) {</span>
+<span class="lineNum">     541 </span><span class="lineCov">    2889545 :         I32 len = tree[n].Len;</span>
+<span class="lineNum">     542 </span><span class="lineCov">    2889545 :         if (len == 0) {</span>
+<span class="lineNum">     543 </span><span class="lineCov">    2146967 :             continue;</span>
+<span class="lineNum">     544 </span>            :         }
+<span class="lineNum">     545 </span>            :         /* Now reverse the bits */
+<span class="lineNum">     546 </span><span class="lineCov">     742578 :         tree[n].Code = (U16)bi_reverse(next_code[len]++, len);</span>
+<span class="lineNum">     547 </span>            :     }
+<span class="lineNum">     548 </span><span class="lineCov">      27969 : }</span>
+<span class="lineNum">     549 </span>            : 
+<span class="lineNum">     550 </span>            : /* ===========================================================================
+<span class="lineNum">     551 </span>            :  * Construct one Huffman tree and assigns the code bit strings and lengths.
+<span class="lineNum">     552 </span>            :  * Update the total bit length for the current block.
+<span class="lineNum">     553 </span>            :  * IN assertion: the field freq is set for all tree elements.
+<span class="lineNum">     554 </span>            :  * OUT assertions: the fields len and code are set to the optimal bit length
+<span class="lineNum">     555 </span>            :  *     and corresponding code. The length opt_len is updated; static_len is
+<a name="556"><span class="lineNum">     556 </span>            :  *     also updated if stree is not null. The field max_code is set.</a>
+<span class="lineNum">     557 </span>            :  */
+<span class="lineNum">     558 </span><span class="lineCov">      27969 : ZSC_PRIVATE void build_tree(deflate_state *s,</span>
+<span class="lineNum">     559 </span>            :     tree_desc *desc) /* the tree descriptor */
+<span class="lineNum">     560 </span>            : {
+<span class="lineNum">     561 </span><span class="lineCov">      27969 :     ZSC_ASSERT(desc != Z_NULL);</span>
+<span class="lineNum">     562 </span><span class="lineCov">      27969 :     ZSC_ASSERT(desc-&gt;stat_desc != Z_NULL);</span>
+<span class="lineNum">     563 </span><span class="lineCov">      27969 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span><span class="lineCov">      27969 :     ct_data *tree         = desc-&gt;dyn_tree;</span>
+<span class="lineNum">     566 </span><span class="lineCov">      27969 :     const ct_data *stree  = desc-&gt;stat_desc-&gt;static_tree;</span>
+<span class="lineNum">     567 </span><span class="lineCov">      27969 :     I32 elems             = desc-&gt;stat_desc-&gt;elems;</span>
+<span class="lineNum">     568 </span>            :     I32 n, m;          /* iterate over heap elements */
+<span class="lineNum">     569 </span><span class="lineCov">      27969 :     I32 max_code = -1; /* largest code with non zero frequency */</span>
+<span class="lineNum">     570 </span>            :     I32 node;          /* new node being created */
+<span class="lineNum">     571 </span>            : 
+<span class="lineNum">     572 </span>            :     /* Construct the initial heap, with least frequent element in
+<span class="lineNum">     573 </span>            :      * heap[SMALLEST]. The sons of heap[n] are heap[2*n] and heap[2*n+1].
+<span class="lineNum">     574 </span>            :      * heap[0] is not used.
+<span class="lineNum">     575 </span>            :      */
+<span class="lineNum">     576 </span><span class="lineCov">      27969 :     s-&gt;heap_len = 0, s-&gt;heap_max = HEAP_SIZE;</span>
+<span class="lineNum">     577 </span>            : 
+<span class="lineNum">     578 </span><span class="lineCov">    3151174 :     for (n = 0; n &lt; elems; n++) {</span>
+<span class="lineNum">     579 </span><span class="lineCov">    3123205 :         if (tree[n].Freq != 0) {</span>
+<span class="lineNum">     580 </span><span class="lineCov">     742312 :             s-&gt;heap[++(s-&gt;heap_len)] = max_code = n;</span>
+<span class="lineNum">     581 </span><span class="lineCov">     742312 :             s-&gt;depth[n] = 0;</span>
+<span class="lineNum">     582 </span>            :         } else {
+<span class="lineNum">     583 </span><span class="lineCov">    2380893 :             tree[n].Len = 0;</span>
+<span class="lineNum">     584 </span>            :         }
+<span class="lineNum">     585 </span>            :     }
+<span class="lineNum">     586 </span>            : 
+<span class="lineNum">     587 </span>            :     /* The pkzip format requires that at least one distance code exists,
+<span class="lineNum">     588 </span>            :      * and that at least one bit should be sent even if there is only one
+<span class="lineNum">     589 </span>            :      * possible code. So to avoid special checks later on we force at least
+<span class="lineNum">     590 </span>            :      * two codes of non zero frequency.
+<span class="lineNum">     591 </span>            :      */
+<span class="lineNum">     592 </span><span class="lineCov">      56204 :     while (s-&gt;heap_len &lt; 2) {</span>
+<span class="lineNum">     593 </span><span class="lineCov">        266 :         node = s-&gt;heap[++(s-&gt;heap_len)] = (max_code &lt; 2 ? ++max_code : 0);</span>
+<span class="lineNum">     594 </span><span class="lineCov">        266 :         tree[node].Freq = 1;</span>
+<span class="lineNum">     595 </span><span class="lineCov">        266 :         s-&gt;depth[node] = 0;</span>
+<span class="lineNum">     596 </span><span class="lineCov">        266 :         s-&gt;opt_len--;</span>
+<span class="lineNum">     597 </span><span class="lineCov">        266 :         if (stree) {</span>
+<span class="lineNum">     598 </span><span class="lineCov">        266 :             s-&gt;static_len -= stree[node].Len;</span>
+<span class="lineNum">     599 </span>            :         }
+<span class="lineNum">     600 </span>            :         /* node is 0 or 1 so it does not have extra bits */
+<span class="lineNum">     601 </span>            :     }
+<span class="lineNum">     602 </span><span class="lineCov">      27969 :     desc-&gt;max_code = max_code;</span>
+<span class="lineNum">     603 </span>            : 
+<span class="lineNum">     604 </span>            :     /* The elements heap[heap_len/2+1 .. heap_len] are leaves of the tree,
+<span class="lineNum">     605 </span>            :      * establish sub-heaps of increasing lengths:
+<span class="lineNum">     606 </span>            :      */
+<span class="lineNum">     607 </span><span class="lineCov">     391773 :     for (n = s-&gt;heap_len/2; n &gt;= 1; n--) {</span>
+<span class="lineNum">     608 </span><span class="lineCov">     363804 :         pqdownheap(s, tree, n);</span>
+<span class="lineNum">     609 </span>            :     }
+<span class="lineNum">     610 </span>            : 
+<span class="lineNum">     611 </span>            :     /* Construct the Huffman tree by repeatedly combining the least two
+<span class="lineNum">     612 </span>            :      * frequent nodes.
+<span class="lineNum">     613 </span>            :      */
+<span class="lineNum">     614 </span><span class="lineCov">      27969 :     node = elems;              /* next internal node of the tree */</span>
+<span class="lineNum">     615 </span>            :     do {
+<span class="lineNum">     616 </span><span class="lineCov">     714609 :         pqremove(s, tree, n);  /* n = node of least frequency */</span>
+<span class="lineNum">     617 </span><span class="lineCov">     714609 :         m = s-&gt;heap[SMALLEST]; /* m = node of next least frequency */</span>
+<span class="lineNum">     618 </span>            : 
+<span class="lineNum">     619 </span><span class="lineCov">     714609 :         s-&gt;heap[--(s-&gt;heap_max)] = n; /* keep the nodes sorted by frequency */</span>
+<span class="lineNum">     620 </span><span class="lineCov">     714609 :         s-&gt;heap[--(s-&gt;heap_max)] = m;</span>
+<span class="lineNum">     621 </span>            : 
+<span class="lineNum">     622 </span>            :         /* Create a new node father of n and m */
+<span class="lineNum">     623 </span><span class="lineCov">     714609 :         tree[node].Freq = tree[n].Freq + tree[m].Freq;</span>
+<span class="lineNum">     624 </span><span class="lineCov">    1429218 :         s-&gt;depth[node] = (U8)((s-&gt;depth[n] &gt;= s-&gt;depth[m] ?</span>
+<span class="lineNum">     625 </span><span class="lineCov">     714609 :                                 s-&gt;depth[n] : s-&gt;depth[m]) + 1);</span>
+<span class="lineNum">     626 </span><span class="lineCov">     714609 :         tree[n].Dad = tree[m].Dad = (U16)node;</span>
+<span class="lineNum">     627 </span>            :         /* and insert the new node in the heap */
+<span class="lineNum">     628 </span><span class="lineCov">     714609 :         s-&gt;heap[SMALLEST] = node++;</span>
+<span class="lineNum">     629 </span><span class="lineCov">     714609 :         pqdownheap(s, tree, SMALLEST);</span>
+<span class="lineNum">     630 </span>            : 
+<span class="lineNum">     631 </span><span class="lineCov">     714609 :     } while (s-&gt;heap_len &gt;= 2);</span>
+<span class="lineNum">     632 </span>            : 
+<span class="lineNum">     633 </span><span class="lineCov">      27969 :     s-&gt;heap[--(s-&gt;heap_max)] = s-&gt;heap[SMALLEST];</span>
+<span class="lineNum">     634 </span>            : 
+<span class="lineNum">     635 </span>            :     /* At this point, the fields freq and dad are set. We can now
+<span class="lineNum">     636 </span>            :      * generate the bit lengths.
+<span class="lineNum">     637 </span>            :      */
+<span class="lineNum">     638 </span><span class="lineCov">      27969 :     gen_bitlen(s, (tree_desc *)desc);</span>
+<span class="lineNum">     639 </span>            : 
+<span class="lineNum">     640 </span>            :     /* The field len is now set, we can generate the bit codes */
+<span class="lineNum">     641 </span><span class="lineCov">      27969 :     gen_codes ((ct_data *)tree, max_code, s-&gt;bl_count);</span>
+<span class="lineNum">     642 </span><span class="lineCov">      27969 : }</span>
+<span class="lineNum">     643 </span>            : 
+<span class="lineNum">     644 </span>            : /* ===========================================================================
+<span class="lineNum">     645 </span>            :  * Scan a literal or distance tree to determine the frequencies of the codes
+<a name="646"><span class="lineNum">     646 </span>            :  * in the bit length tree.</a>
+<span class="lineNum">     647 </span>            :  */
+<span class="lineNum">     648 </span><span class="lineCov">      18646 : ZSC_PRIVATE void scan_tree (deflate_state *s,</span>
+<span class="lineNum">     649 </span>            :     ct_data *tree,   /* the tree to be scanned */
+<span class="lineNum">     650 </span>            :     I32 max_code)    /* and its largest code of non zero frequency */
+<span class="lineNum">     651 </span>            : {
+<span class="lineNum">     652 </span><span class="lineCov">      18646 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     653 </span><span class="lineCov">      18646 :     ZSC_ASSERT(tree != Z_NULL);</span>
+<span class="lineNum">     654 </span>            : 
+<span class="lineNum">     655 </span>            :     I32 n;                     /* iterates over all tree elements */
+<span class="lineNum">     656 </span><span class="lineCov">      18646 :     I32 prevlen = -1;          /* last emitted length */</span>
+<span class="lineNum">     657 </span>            :     I32 curlen;                /* length of current code */
+<span class="lineNum">     658 </span><span class="lineCov">      18646 :     I32 nextlen = tree[0].Len; /* length of next code */</span>
+<span class="lineNum">     659 </span><span class="lineCov">      18646 :     I32 count = 0;             /* repeat count of the current code */</span>
+<span class="lineNum">     660 </span><span class="lineCov">      18646 :     I32 max_count = 7;         /* max repeat count */</span>
+<span class="lineNum">     661 </span><span class="lineCov">      18646 :     I32 min_count = 4;         /* min repeat count */</span>
+<span class="lineNum">     662 </span>            : 
+<span class="lineNum">     663 </span><span class="lineCov">      18646 :     if (nextlen == 0) max_count = 138, min_count = 3;</span>
+<span class="lineNum">     664 </span><span class="lineCov">      18646 :     tree[max_code+1].Len = (U16)0xffff; /* guard */</span>
+<span class="lineNum">     665 </span>            : 
+<span class="lineNum">     666 </span><span class="lineCov">    2731198 :     for (n = 0; n &lt;= max_code; n++) {</span>
+<span class="lineNum">     667 </span><span class="lineCov">    2712552 :         curlen = nextlen; nextlen = tree[n+1].Len;</span>
+<span class="lineNum">     668 </span><span class="lineCov">    2712552 :         count++;</span>
+<span class="lineNum">     669 </span><span class="lineCov">    2712552 :         if (count &lt; max_count &amp;&amp; curlen == nextlen) {</span>
+<span class="lineNum">     670 </span><span class="lineCov">    2091442 :             continue;</span>
+<span class="lineNum">     671 </span><span class="lineCov">     621110 :         } else if (count &lt; min_count) {</span>
+<span class="lineNum">     672 </span><span class="lineCov">     523481 :             s-&gt;bl_tree[curlen].Freq += count;</span>
+<span class="lineNum">     673 </span><span class="lineCov">      97629 :         } else if (curlen != 0) {</span>
+<span class="lineNum">     674 </span><span class="lineCov">      17084 :             if (curlen != prevlen) s-&gt;bl_tree[curlen].Freq++;</span>
+<span class="lineNum">     675 </span><span class="lineCov">      17084 :             s-&gt;bl_tree[REP_3_6].Freq++;</span>
+<span class="lineNum">     676 </span><span class="lineCov">      80545 :         } else if (count &lt;= 10) {</span>
+<span class="lineNum">     677 </span><span class="lineCov">      47675 :             s-&gt;bl_tree[REPZ_3_10].Freq++;</span>
+<span class="lineNum">     678 </span>            :         } else {
+<span class="lineNum">     679 </span><span class="lineCov">      32870 :             s-&gt;bl_tree[REPZ_11_138].Freq++;</span>
+<span class="lineNum">     680 </span>            :         }
+<span class="lineNum">     681 </span><span class="lineCov">     621110 :         count = 0; prevlen = curlen;</span>
+<span class="lineNum">     682 </span><span class="lineCov">     621110 :         if (nextlen == 0) {</span>
+<span class="lineNum">     683 </span><span class="lineCov">     137136 :             max_count = 138, min_count = 3;</span>
+<span class="lineNum">     684 </span><span class="lineCov">     483974 :         } else if (curlen == nextlen) {</span>
+<span class="lineNum">     685 </span><span class="lineCov">       3472 :             max_count = 6, min_count = 3;</span>
+<span class="lineNum">     686 </span>            :         } else {
+<span class="lineNum">     687 </span><span class="lineCov">     480502 :             max_count = 7, min_count = 4;</span>
+<span class="lineNum">     688 </span>            :         }
+<span class="lineNum">     689 </span>            :     }
+<span class="lineNum">     690 </span><span class="lineCov">      18646 : }</span>
+<span class="lineNum">     691 </span>            : 
+<span class="lineNum">     692 </span>            : /* ===========================================================================
+<span class="lineNum">     693 </span>            :  * Send a literal or distance tree in compressed form, using the codes in
+<a name="694"><span class="lineNum">     694 </span>            :  * bl_tree.</a>
+<span class="lineNum">     695 </span>            :  */
+<span class="lineNum">     696 </span><span class="lineCov">      18606 : ZSC_PRIVATE void send_tree (deflate_state *s,</span>
+<span class="lineNum">     697 </span>            :     ct_data *tree, /* the tree to be scanned */
+<span class="lineNum">     698 </span>            :     I32 max_code)      /* and its largest code of non zero frequency */
+<span class="lineNum">     699 </span>            : {
+<span class="lineNum">     700 </span><span class="lineCov">      18606 :     ZSC_ASSERT(s != Z_NULL);</span>
+<span class="lineNum">     701 </span><span class="lineCov">      18606 :     ZSC_ASSERT(tree != Z_NULL);</span>
+<span class="lineNum">     702 </span>            : 
+<span class="lineNum">     703 </span>            :     I32 n;                     /* iterates over all tree elements */
+<span class="lineNum">     704 </span><span class="lineCov">      18606 :     I32 prevlen = -1;          /* last emitted length */</span>
+<span class="lineNum">     705 </span>            :     I32 curlen;                /* length of current code */
+<span class="lineNum">     706 </span><span class="lineCov">      18606 :     I32 nextlen = tree[0].Len; /* length of next code */</span>
+<span class="lineNum">     707 </span><span class="lineCov">      18606 :     I32 count = 0;             /* repeat count of the current code */</span>
+<span class="lineNum">     708 </span><span class="lineCov">      18606 :     I32 max_count = 7;         /* max repeat count */</span>
+<span class="lineNum">     709 </span><span class="lineCov">      18606 :     I32 min_count = 4;         /* min repeat count */</span>
+<span class="lineNum">     710 </span>            : 
+<span class="lineNum">     711 </span><span class="lineCov">      18606 :     if (nextlen == 0) {</span>
+<span class="lineNum">     712 </span><span class="lineCov">      16384 :         max_count = 138;</span>
+<span class="lineNum">     713 </span><span class="lineCov">      16384 :         min_count = 3;</span>
+<span class="lineNum">     714 </span>            :     }
+<span class="lineNum">     715 </span>            : 
+<span class="lineNum">     716 </span><span class="lineCov">    2725605 :     for (n = 0; n &lt;= max_code; n++) {</span>
+<span class="lineNum">     717 </span><span class="lineCov">    2706999 :         curlen = nextlen; nextlen = tree[n+1].Len;</span>
+<span class="lineNum">     718 </span><span class="lineCov">    2706999 :         count++;</span>
+<span class="lineNum">     719 </span><span class="lineCov">    2706999 :         if (count &lt; max_count &amp;&amp; curlen == nextlen) {</span>
+<span class="lineNum">     720 </span><span class="lineCov">    2086595 :             continue;</span>
+<span class="lineNum">     721 </span><span class="lineCov">     620404 :         } else if (count &lt; min_count) {</span>
+<span class="lineNum">     722 </span>            :             do {
+<span class="lineNum">     723 </span><span class="lineCov">     648155 :                 send_code(s, curlen, s-&gt;bl_tree);</span>
+<span class="lineNum">     724 </span><span class="lineCov">     648155 :                 count--;</span>
+<span class="lineNum">     725 </span><span class="lineCov">     648155 :             } while (count != 0);</span>
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span><span class="lineCov">      97469 :         } else if (curlen != 0) {</span>
+<span class="lineNum">     728 </span><span class="lineCov">      17073 :             if (curlen != prevlen) {</span>
+<span class="lineNum">     729 </span><span class="lineCov">      14541 :                 send_code(s, curlen, s-&gt;bl_tree); count--;</span>
+<span class="lineNum">     730 </span>            :             }
+<span class="lineNum">     731 </span>            :             // Assert: &quot; 3_6?&quot;
+<span class="lineNum">     732 </span><span class="lineCov">      17073 :             ZSC_ASSERT1(count &gt;= 3 &amp;&amp; count &lt;= 6, count);</span>
+<span class="lineNum">     733 </span><span class="lineCov">      17073 :             send_code(s, REP_3_6, s-&gt;bl_tree); send_bits(s, count-3, 2);</span>
+<span class="lineNum">     734 </span>            : 
+<span class="lineNum">     735 </span><span class="lineCov">      80396 :         } else if (count &lt;= 10) {</span>
+<span class="lineNum">     736 </span><span class="lineCov">      47603 :             send_code(s, REPZ_3_10, s-&gt;bl_tree); send_bits(s, count-3, 3);</span>
+<span class="lineNum">     737 </span>            : 
+<span class="lineNum">     738 </span>            :         } else {
+<span class="lineNum">     739 </span><span class="lineCov">      32793 :             send_code(s, REPZ_11_138, s-&gt;bl_tree); send_bits(s, count-11, 7);</span>
+<span class="lineNum">     740 </span>            :         }
+<span class="lineNum">     741 </span><span class="lineCov">     620404 :         count = 0; prevlen = curlen;</span>
+<span class="lineNum">     742 </span><span class="lineCov">     620404 :         if (nextlen == 0) {</span>
+<span class="lineNum">     743 </span><span class="lineCov">     136937 :             max_count = 138, min_count = 3;</span>
+<span class="lineNum">     744 </span><span class="lineCov">     483467 :         } else if (curlen == nextlen) {</span>
+<span class="lineNum">     745 </span><span class="lineCov">       3471 :             max_count = 6, min_count = 3;</span>
+<span class="lineNum">     746 </span>            :         } else {
+<span class="lineNum">     747 </span><span class="lineCov">     479996 :             max_count = 7, min_count = 4;</span>
+<span class="lineNum">     748 </span>            :         }
+<span class="lineNum">     749 </span>            :     }
+<span class="lineNum">     750 </span><span class="lineCov">      18606 : }</span>
+<span class="lineNum">     751 </span>            : 
+<span class="lineNum">     752 </span>            : /* ===========================================================================
+<span class="lineNum">     753 </span>            :  * Construct the Huffman tree for the bit lengths and return the index in
+<a name="754"><span class="lineNum">     754 </span>            :  * bl_order of the last bit length code to send.</a>
+<span class="lineNum">     755 </span>            :  */
+<span class="lineNum">     756 </span><span class="lineCov">       9323 : ZSC_PRIVATE I32 build_bl_tree(deflate_state *s)</span>
+<span class="lineNum">     757 </span>            : {
+<span class="lineNum">     758 </span>            :     I32 max_blindex;  /* index of last bit length code of non zero freq */
+<span class="lineNum">     759 </span>            : 
+<span class="lineNum">     760 </span>            :     /* Determine the bit length frequencies for literal and distance trees */
+<span class="lineNum">     761 </span><span class="lineCov">       9323 :     scan_tree(s, (ct_data *)s-&gt;dyn_ltree, s-&gt;l_desc.max_code);</span>
+<span class="lineNum">     762 </span><span class="lineCov">       9323 :     scan_tree(s, (ct_data *)s-&gt;dyn_dtree, s-&gt;d_desc.max_code);</span>
+<span class="lineNum">     763 </span>            : 
+<span class="lineNum">     764 </span>            :     /* Build the bit length tree: */
+<span class="lineNum">     765 </span><span class="lineCov">       9323 :     build_tree(s, (tree_desc *)(&amp;(s-&gt;bl_desc)));</span>
+<span class="lineNum">     766 </span>            :     /* opt_len now includes the length of the tree representations, except
+<span class="lineNum">     767 </span>            :      * the lengths of the bit lengths codes and the 5+5+4 bits for the counts.
+<span class="lineNum">     768 </span>            :      */
+<span class="lineNum">     769 </span>            : 
+<span class="lineNum">     770 </span>            :     /* Determine the number of bit length codes to send. The pkzip format
+<span class="lineNum">     771 </span>            :      * requires that at least 4 bit length codes be sent. (appnote.txt says
+<span class="lineNum">     772 </span>            :      * 3 but the actual value used is 4.)
+<span class="lineNum">     773 </span>            :      */
+<span class="lineNum">     774 </span><span class="lineCov">      38689 :     for (max_blindex = BL_CODES-1; max_blindex &gt;= 3; max_blindex--) {</span>
+<span class="lineNum">     775 </span><span class="lineCov">      38689 :         if (s-&gt;bl_tree[bl_order[max_blindex]].Len != 0) {</span>
+<span class="lineNum">     776 </span><span class="lineCov">       9323 :             break;</span>
+<span class="lineNum">     777 </span>            :         }
+<span class="lineNum">     778 </span>            :     }
+<span class="lineNum">     779 </span>            :     /* Update opt_len to include the bit length tree and counts */
+<span class="lineNum">     780 </span><span class="lineCov">       9323 :     s-&gt;opt_len += 3*((U32)max_blindex+1) + 5+5+4;</span>
+<span class="lineNum">     781 </span>            : 
+<span class="lineNum">     782 </span><span class="lineCov">       9323 :     return max_blindex;</span>
+<span class="lineNum">     783 </span>            : }
+<span class="lineNum">     784 </span>            : 
+<span class="lineNum">     785 </span>            : /* ===========================================================================
+<span class="lineNum">     786 </span>            :  * Send the header for a block using dynamic Huffman trees: the counts, the
+<span class="lineNum">     787 </span>            :  * lengths of the bit length codes, the literal tree and the distance tree.
+<a name="788"><span class="lineNum">     788 </span>            :  * IN assertion: lcodes &gt;= 257, dcodes &gt;= 1, blcodes &gt;= 4.</a>
+<span class="lineNum">     789 </span>            :  */
+<span class="lineNum">     790 </span><span class="lineCov">       9303 : ZSC_PRIVATE void send_all_trees(deflate_state *s,</span>
+<span class="lineNum">     791 </span>            :     I32 lcodes, I32 dcodes, I32 blcodes) /* number of codes for each tree */
+<span class="lineNum">     792 </span>            : {
+<span class="lineNum">     793 </span>            :     I32 rank;                    /* index in bl_order */
+<span class="lineNum">     794 </span>            : 
+<span class="lineNum">     795 </span>            :     // Assert: &quot;not enough codes&quot;
+<span class="lineNum">     796 </span><span class="lineCov">       9303 :     ZSC_ASSERT3(lcodes &gt;= 257 &amp;&amp; dcodes &gt;= 1 &amp;&amp; blcodes &gt;= 4,</span>
+<span class="lineNum">     797 </span>            :             lcodes, dcodes, blcodes);
+<span class="lineNum">     798 </span>            :     // Assert: &quot;too many codes&quot;
+<span class="lineNum">     799 </span><span class="lineCov">       9303 :     ZSC_ASSERT3(lcodes &lt;= L_CODES &amp;&amp; dcodes &lt;= D_CODES &amp;&amp; blcodes &lt;= BL_CODES,</span>
+<span class="lineNum">     800 </span>            :             lcodes, dcodes, blcodes);
+<span class="lineNum">     801 </span>            : 
+<span class="lineNum">     802 </span><span class="lineCov">       9303 :     send_bits(s, lcodes-257, 5); /* not +255 as stated in appnote.txt */</span>
+<span class="lineNum">     803 </span><span class="lineCov">       9303 :     send_bits(s, dcodes-1,   5);</span>
+<span class="lineNum">     804 </span><span class="lineCov">       9303 :     send_bits(s, blcodes-4,  4); /* not -3 as stated in appnote.txt */</span>
+<span class="lineNum">     805 </span><span class="lineCov">     156728 :     for (rank = 0; rank &lt; blcodes; rank++) {</span>
+<span class="lineNum">     806 </span><span class="lineCov">     147425 :         send_bits(s, s-&gt;bl_tree[bl_order[rank]].Len, 3);</span>
+<span class="lineNum">     807 </span>            :     }
+<span class="lineNum">     808 </span><span class="lineCov">       9303 :     send_tree(s, (ct_data *)s-&gt;dyn_ltree, lcodes-1); /* literal tree */</span>
+<span class="lineNum">     809 </span><span class="lineCov">       9303 :     send_tree(s, (ct_data *)s-&gt;dyn_dtree, dcodes-1); /* distance tree */</span>
+<span class="lineNum">     810 </span><span class="lineCov">       9303 : }</span>
+<span class="lineNum">     811 </span>            : 
+<span class="lineNum">     812 </span>            : /* ===========================================================================
+<a name="813"><span class="lineNum">     813 </span>            :  * Send a stored block</a>
+<span class="lineNum">     814 </span>            :  */
+<span class="lineNum">     815 </span><span class="lineCov">       3560 : void _tr_stored_block(deflate_state *s,</span>
+<span class="lineNum">     816 </span>            :     U8 *buf,       /* input block */
+<span class="lineNum">     817 </span>            :     U32 stored_len,   /* length of input block */
+<span class="lineNum">     818 </span>            :     I32 last)         /* one if this is the last block for a file */
+<span class="lineNum">     819 </span>            : {
+<span class="lineNum">     820 </span><span class="lineCov">       3560 :     send_bits(s, (STORED_BLOCK&lt;&lt;1)+last, 3);    /* send block type */</span>
+<span class="lineNum">     821 </span><span class="lineCov">       3560 :     bi_windup(s);        /* align on byte boundary */</span>
+<span class="lineNum">     822 </span><span class="lineCov">       3560 :     put_short(s, (U16)stored_len);</span>
+<span class="lineNum">     823 </span><span class="lineCov">       3560 :     put_short(s, (U16)~stored_len);</span>
+<span class="lineNum">     824 </span><span class="lineCov">       3560 :     zmemcpy(s-&gt;pending_buf + s-&gt;pending, (U8 *)buf, stored_len);</span>
+<span class="lineNum">     825 </span><span class="lineCov">       3560 :     s-&gt;pending += stored_len;</span>
+<span class="lineNum">     826 </span><span class="lineCov">       3560 : }</span>
+<span class="lineNum">     827 </span>            : 
+<span class="lineNum">     828 </span>            : /* ===========================================================================
+<a name="829"><span class="lineNum">     829 </span>            :  * Flush the bits in the bit buffer to pending output (leaves at most 7 bits)</a>
+<span class="lineNum">     830 </span>            :  */
+<span class="lineNum">     831 </span><span class="lineCov">     168581 : void _tr_flush_bits(deflate_state *s)</span>
+<span class="lineNum">     832 </span>            : {
+<span class="lineNum">     833 </span><span class="lineCov">     168581 :     bi_flush(s);</span>
+<span class="lineNum">     834 </span><span class="lineCov">     168581 : }</span>
+<span class="lineNum">     835 </span>            : 
+<span class="lineNum">     836 </span>            : /* ===========================================================================
+<span class="lineNum">     837 </span>            :  * Send one empty static block to give enough lookahead for inflate.
+<a name="838"><span class="lineNum">     838 </span>            :  * This takes 10 bits, of which 7 may remain in the bit buffer.</a>
+<span class="lineNum">     839 </span>            :  */
+<span class="lineNum">     840 </span><span class="lineCov">       1095 : void _tr_align(deflate_state *s)</span>
+<span class="lineNum">     841 </span>            : {
+<span class="lineNum">     842 </span><span class="lineCov">       1095 :     send_bits(s, STATIC_TREES&lt;&lt;1, 3);</span>
+<span class="lineNum">     843 </span><span class="lineCov">       1095 :     send_code(s, END_BLOCK, static_ltree);</span>
+<span class="lineNum">     844 </span><span class="lineCov">       1095 :     bi_flush(s);</span>
+<span class="lineNum">     845 </span><span class="lineCov">       1095 : }</span>
+<span class="lineNum">     846 </span>            : 
+<span class="lineNum">     847 </span>            : /* ===========================================================================
+<span class="lineNum">     848 </span>            :  * Determine the best encoding for the current block: dynamic trees, static
+<a name="849"><span class="lineNum">     849 </span>            :  * trees or store, and write out the encoded block.</a>
+<span class="lineNum">     850 </span>            :  */
+<span class="lineNum">     851 </span><span class="lineCov">       9323 : void _tr_flush_block(deflate_state *s,</span>
+<span class="lineNum">     852 </span>            :     U8 *buf,       /* input block, or NULL if too old */
+<span class="lineNum">     853 </span>            :     U32 stored_len,   /* length of input block */
+<span class="lineNum">     854 </span>            :     I32 last)         /* one if this is the last block for a file */
+<span class="lineNum">     855 </span>            : {
+<span class="lineNum">     856 </span>            :     U32 opt_lenb, static_lenb; /* opt_len and static_len in bytes */
+<span class="lineNum">     857 </span><span class="lineCov">       9323 :     I32 max_blindex = 0;  /* index of last bit length code of non zero freq */</span>
+<span class="lineNum">     858 </span>            : 
+<span class="lineNum">     859 </span>            :     /* Build the Huffman trees unless a stored block is forced */
+<span class="lineNum">     860 </span><span class="lineCov">       9323 :     if (s-&gt;level &gt; 0) {</span>
+<span class="lineNum">     861 </span>            : 
+<span class="lineNum">     862 </span>            :         /* Check if the file is binary or text */
+<span class="lineNum">     863 </span><span class="lineCov">       9323 :         if (s-&gt;strm-&gt;data_type == Z_UNKNOWN)</span>
+<span class="lineNum">     864 </span><span class="lineCov">        182 :             s-&gt;strm-&gt;data_type = detect_data_type(s);</span>
+<span class="lineNum">     865 </span>            : 
+<span class="lineNum">     866 </span>            :         /* Construct the literal and distance trees */
+<span class="lineNum">     867 </span><span class="lineCov">       9323 :         build_tree(s, (tree_desc *)(&amp;(s-&gt;l_desc)));</span>
+<span class="lineNum">     868 </span><span class="lineCov">       9323 :         build_tree(s, (tree_desc *)(&amp;(s-&gt;d_desc)));</span>
+<span class="lineNum">     869 </span>            : 
+<span class="lineNum">     870 </span>            :         /* At this point, opt_len and static_len are the total bit lengths of
+<span class="lineNum">     871 </span>            :          * the compressed block data, excluding the tree representations.
+<span class="lineNum">     872 </span>            :          */
+<span class="lineNum">     873 </span>            : 
+<span class="lineNum">     874 </span>            :         /* Build the bit length tree for the above two trees, and get the index
+<span class="lineNum">     875 </span>            :          * in bl_order of the last bit length code to send.
+<span class="lineNum">     876 </span>            :          */
+<span class="lineNum">     877 </span><span class="lineCov">       9323 :         max_blindex = build_bl_tree(s);</span>
+<span class="lineNum">     878 </span>            : 
+<span class="lineNum">     879 </span>            :         /* Determine the best encoding. Compute the block lengths in bytes. */
+<span class="lineNum">     880 </span><span class="lineCov">       9323 :         opt_lenb = (s-&gt;opt_len+3+7)&gt;&gt;3;</span>
+<span class="lineNum">     881 </span><span class="lineCov">       9323 :         static_lenb = (s-&gt;static_len+3+7)&gt;&gt;3;</span>
+<span class="lineNum">     882 </span>            : 
+<span class="lineNum">     883 </span><span class="lineCov">       9323 :         if (static_lenb &lt;= opt_lenb) opt_lenb = static_lenb;</span>
+<span class="lineNum">     884 </span>            : 
+<span class="lineNum">     885 </span>            :     } else {
+<span class="lineNum">     886 </span>            :         // Assert: &quot;lost buf&quot;
+<span class="lineNum">     887 </span><span class="lineNoCov">          0 :         ZSC_ASSERT(buf != (U8*)0);</span>
+<span class="lineNum">     888 </span><span class="lineNoCov">          0 :         opt_lenb = static_lenb = stored_len + 5; /* force a stored block */</span>
+<span class="lineNum">     889 </span>            :     }
+<span class="lineNum">     890 </span>            : 
+<span class="lineNum">     891 </span><span class="lineCov">       9323 :     if (stored_len+4 &lt;= opt_lenb &amp;&amp; buf != (U8*)0) {</span>
+<span class="lineNum">     892 </span>            :                        /* 4: two words for the lengths */
+<span class="lineNum">     893 </span>            :         /* The test buf != NULL is only necessary if LIT_BUFSIZE &gt; WSIZE.
+<span class="lineNum">     894 </span>            :          * Otherwise we can't have processed more than WSIZE input bytes since
+<span class="lineNum">     895 </span>            :          * the last block flush, because compression would have been
+<span class="lineNum">     896 </span>            :          * successful. If LIT_BUFSIZE &lt;= WSIZE, it is never too late to
+<span class="lineNum">     897 </span>            :          * transform a block into a stored block.
+<span class="lineNum">     898 </span>            :          */
+<span class="lineNum">     899 </span><span class="lineNoCov">          0 :         _tr_stored_block(s, buf, stored_len, last);</span>
+<span class="lineNum">     900 </span>            : 
+<span class="lineNum">     901 </span><span class="lineCov">       9323 :     } else if (s-&gt;strategy == Z_FIXED || static_lenb == opt_lenb) {</span>
+<span class="lineNum">     902 </span><span class="lineCov">         20 :         send_bits(s, (STATIC_TREES&lt;&lt;1)+last, 3);</span>
+<span class="lineNum">     903 </span><span class="lineCov">         20 :         compress_block(s, (const ct_data *)static_ltree,</span>
+<span class="lineNum">     904 </span>            :                        (const ct_data *)static_dtree);
+<span class="lineNum">     905 </span>            :     } else {
+<span class="lineNum">     906 </span><span class="lineCov">       9303 :         send_bits(s, (DYN_TREES&lt;&lt;1)+last, 3);</span>
+<span class="lineNum">     907 </span><span class="lineCov">       9303 :         send_all_trees(s, s-&gt;l_desc.max_code+1, s-&gt;d_desc.max_code+1,</span>
+<span class="lineNum">     908 </span>            :                        max_blindex+1);
+<span class="lineNum">     909 </span><span class="lineCov">       9303 :         compress_block(s, (const ct_data *)s-&gt;dyn_ltree,</span>
+<span class="lineNum">     910 </span><span class="lineCov">       9303 :                        (const ct_data *)s-&gt;dyn_dtree);</span>
+<span class="lineNum">     911 </span>            :     }
+<span class="lineNum">     912 </span>            : 
+<span class="lineNum">     913 </span><span class="lineCov">       9323 :     init_block(s);</span>
+<span class="lineNum">     914 </span>            : 
+<span class="lineNum">     915 </span><span class="lineCov">       9323 :     if (last) {</span>
+<span class="lineNum">     916 </span><span class="lineCov">        181 :         bi_windup(s);</span>
+<span class="lineNum">     917 </span>            :     }
+<span class="lineNum">     918 </span><span class="lineCov">       9323 : }</span>
+<span class="lineNum">     919 </span>            : 
+<span class="lineNum">     920 </span>            : // Abcouwer ZSC - remove debug-only code including _tr_tally
+<span class="lineNum">     921 </span>            : 
+<span class="lineNum">     922 </span>            : /* ===========================================================================
+<a name="923"><span class="lineNum">     923 </span>            :  * Send the block data compressed using the given Huffman trees</a>
+<span class="lineNum">     924 </span>            :  */
+<span class="lineNum">     925 </span><span class="lineCov">       9323 : ZSC_PRIVATE void compress_block(deflate_state *s,</span>
+<span class="lineNum">     926 </span>            :     const ct_data *ltree, /* literal tree */
+<span class="lineNum">     927 </span>            :     const ct_data *dtree) /* distance tree */
+<span class="lineNum">     928 </span>            : {
+<span class="lineNum">     929 </span>            :     U32 dist;      /* distance of matched string */
+<span class="lineNum">     930 </span>            :     I32 lc;             /* match length or unmatched char (if dist == 0) */
+<span class="lineNum">     931 </span><span class="lineCov">       9323 :     U32 lx = 0;    /* running index in l_buf */</span>
+<span class="lineNum">     932 </span>            :     U32 code;      /* the code to send */
+<span class="lineNum">     933 </span>            :     I32 extra;          /* number of extra bits to send */
+<span class="lineNum">     934 </span>            : 
+<span class="lineNum">     935 </span><span class="lineCov">       9323 :     if (s-&gt;last_lit != 0) do {</span>
+<span class="lineNum">     936 </span><span class="lineCov">   19162465 :         dist = s-&gt;d_buf[lx];</span>
+<span class="lineNum">     937 </span><span class="lineCov">   19162465 :         lc = s-&gt;l_buf[lx++];</span>
+<span class="lineNum">     938 </span><span class="lineCov">   19162465 :         if (dist == 0) {</span>
+<span class="lineNum">     939 </span><span class="lineCov">    7919125 :             send_code(s, lc, ltree); /* send a literal byte */</span>
+<span class="lineNum">     940 </span>            :         } else {
+<span class="lineNum">     941 </span>            :             /* Here, lc is the match length - MIN_MATCH */
+<span class="lineNum">     942 </span><span class="lineCov">   11243340 :             code = _length_code[lc];</span>
+<span class="lineNum">     943 </span><span class="lineCov">   11243340 :             send_code(s, code+LITERALS+1, ltree); /* send the length code */</span>
+<span class="lineNum">     944 </span><span class="lineCov">   11243340 :             extra = extra_lbits[code];</span>
+<span class="lineNum">     945 </span><span class="lineCov">   11243340 :             if (extra != 0) {</span>
+<span class="lineNum">     946 </span><span class="lineCov">    1656687 :                 lc -= base_length[code];</span>
+<span class="lineNum">     947 </span><span class="lineCov">    1656687 :                 send_bits(s, lc, extra);       /* send the extra length bits */</span>
+<span class="lineNum">     948 </span>            :             }
+<span class="lineNum">     949 </span><span class="lineCov">   11243340 :             dist--; /* dist is now the match distance - 1 */</span>
+<span class="lineNum">     950 </span><span class="lineCov">   11243340 :             code = d_code(dist);</span>
+<span class="lineNum">     951 </span>            :             // Assert: &quot;bad d_code&quot;
+<span class="lineNum">     952 </span><span class="lineCov">   11243340 :             ZSC_ASSERT2(code &lt; D_CODES, code, D_CODES);</span>
+<span class="lineNum">     953 </span>            : 
+<span class="lineNum">     954 </span><span class="lineCov">   11243340 :             send_code(s, code, dtree);       /* send the distance code */</span>
+<span class="lineNum">     955 </span><span class="lineCov">   11243340 :             extra = extra_dbits[code];</span>
+<span class="lineNum">     956 </span><span class="lineCov">   11243340 :             if (extra != 0) {</span>
+<span class="lineNum">     957 </span><span class="lineCov">   11223680 :                 dist -= (U32)base_dist[code];</span>
+<span class="lineNum">     958 </span><span class="lineCov">   11223680 :                 send_bits(s, dist, extra);   /* send the extra distance bits */</span>
+<span class="lineNum">     959 </span>            :             }
+<span class="lineNum">     960 </span>            :         } /* literal or match pair ? */
+<span class="lineNum">     961 </span>            : 
+<span class="lineNum">     962 </span>            :         /* Check that the overlay between pending_buf and d_buf+l_buf is ok: */
+<span class="lineNum">     963 </span>            :         // Assert: &quot;pendingBuf overflow&quot;
+<span class="lineNum">     964 </span><span class="lineCov">   19162465 :         ZSC_ASSERT3(s-&gt;pending &lt; s-&gt;lit_bufsize + 2*lx,</span>
+<span class="lineNum">     965 </span>            :                 s-&gt;pending, s-&gt;lit_bufsize, lx);
+<span class="lineNum">     966 </span>            : 
+<span class="lineNum">     967 </span><span class="lineCov">   19162465 :     } while (lx &lt; s-&gt;last_lit);</span>
+<span class="lineNum">     968 </span>            : 
+<span class="lineNum">     969 </span><span class="lineCov">       9323 :     send_code(s, END_BLOCK, ltree);</span>
+<span class="lineNum">     970 </span><span class="lineCov">       9323 : }</span>
+<span class="lineNum">     971 </span>            : 
+<span class="lineNum">     972 </span>            : /* ===========================================================================
+<span class="lineNum">     973 </span>            :  * Check if the data type is TEXT or BINARY, using the following algorithm:
+<span class="lineNum">     974 </span>            :  * - TEXT if the two conditions below are satisfied:
+<span class="lineNum">     975 </span>            :  *    a) There are no non-portable control characters belonging to the
+<span class="lineNum">     976 </span>            :  *       &quot;black list&quot; (0..6, 14..25, 28..31).
+<span class="lineNum">     977 </span>            :  *    b) There is at least one printable character belonging to the
+<span class="lineNum">     978 </span>            :  *       &quot;white list&quot; (9 {TAB}, 10 {LF}, 13 {CR}, 32..255).
+<span class="lineNum">     979 </span>            :  * - BINARY otherwise.
+<span class="lineNum">     980 </span>            :  * - The following partially-portable control characters form a
+<span class="lineNum">     981 </span>            :  *   &quot;gray list&quot; that is ignored in this detection algorithm:
+<span class="lineNum">     982 </span>            :  *   (7 {BEL}, 8 {BS}, 11 {VT}, 12 {FF}, 26 {SUB}, 27 {ESC}).
+<a name="983"><span class="lineNum">     983 </span>            :  * IN assertion: the fields Freq of dyn_ltree are set.</a>
+<span class="lineNum">     984 </span>            :  */
+<span class="lineNum">     985 </span><span class="lineCov">        182 : ZSC_PRIVATE I32 detect_data_type(deflate_state *s)</span>
+<span class="lineNum">     986 </span>            : {
+<span class="lineNum">     987 </span>            :     /* black_mask is the bit mask of black-listed bytes
+<span class="lineNum">     988 </span>            :      * set bits 0..6, 14..25, and 28..31
+<span class="lineNum">     989 </span>            :      * 0xf3ffc07f = binary 11110011111111111100000001111111
+<span class="lineNum">     990 </span>            :      */
+<span class="lineNum">     991 </span><span class="lineCov">        182 :     U32 black_mask = 0xf3ffc07f;</span>
+<span class="lineNum">     992 </span>            :     I32 n;
+<span class="lineNum">     993 </span>            : 
+<span class="lineNum">     994 </span>            :     /* Check for non-textual (&quot;black-listed&quot;) bytes. */
+<span class="lineNum">     995 </span><span class="lineCov">       5046 :     for (n = 0; n &lt;= 31; n++, black_mask &gt;&gt;= 1) {</span>
+<span class="lineNum">     996 </span><span class="lineCov">       4894 :         if ((black_mask &amp; 1) &amp;&amp; (s-&gt;dyn_ltree[n].Freq != 0)) {</span>
+<span class="lineNum">     997 </span><span class="lineCov">         30 :             return Z_BINARY;</span>
+<span class="lineNum">     998 </span>            :         }
+<span class="lineNum">     999 </span>            :     }
+<span class="lineNum">    1000 </span>            : 
+<span class="lineNum">    1001 </span>            :     /* Check for textual (&quot;white-listed&quot;) bytes. */
+<span class="lineNum">    1002 </span><span class="lineCov">        152 :     if (s-&gt;dyn_ltree[9].Freq != 0 || s-&gt;dyn_ltree[10].Freq != 0</span>
+<span class="lineNum">    1003 </span><span class="lineCov">         30 :             || s-&gt;dyn_ltree[13].Freq != 0) {</span>
+<span class="lineNum">    1004 </span><span class="lineCov">        122 :         return Z_TEXT;</span>
+<span class="lineNum">    1005 </span>            :     }
+<span class="lineNum">    1006 </span><span class="lineCov">       1590 :     for (n = 32; n &lt; LITERALS; n++) {</span>
+<span class="lineNum">    1007 </span><span class="lineCov">       1590 :         if (s-&gt;dyn_ltree[n].Freq != 0) {</span>
+<span class="lineNum">    1008 </span><span class="lineCov">         30 :             return Z_TEXT;</span>
+<span class="lineNum">    1009 </span>            :         }
+<span class="lineNum">    1010 </span>            :     }
+<span class="lineNum">    1011 </span>            : 
+<span class="lineNum">    1012 </span>            :     /* There are no &quot;black-listed&quot; or &quot;white-listed&quot; bytes:
+<span class="lineNum">    1013 </span>            :      * this stream either is empty or has tolerated (&quot;gray-listed&quot;) bytes only.
+<span class="lineNum">    1014 </span>            :      */
+<span class="lineNum">    1015 </span><span class="lineNoCov">          0 :     return Z_BINARY;</span>
+<span class="lineNum">    1016 </span>            : }
+<span class="lineNum">    1017 </span>            : 
+<span class="lineNum">    1018 </span>            : /* ===========================================================================
+<span class="lineNum">    1019 </span>            :  * Reverse the first len bits of a code, using straightforward code (a faster
+<span class="lineNum">    1020 </span>            :  * method would use a table)
+<a name="1021"><span class="lineNum">    1021 </span>            :  * IN assertion: 1 &lt;= len &lt;= 15</a>
+<span class="lineNum">    1022 </span>            :  */
+<span class="lineNum">    1023 </span><span class="lineCov">     742578 : ZSC_PRIVATE U32 bi_reverse(U32 code, /* the value to invert */</span>
+<span class="lineNum">    1024 </span>            :     I32 len)       /* its bit length */
+<span class="lineNum">    1025 </span>            : {
+<span class="lineNum">    1026 </span><span class="lineCov">     742578 :     ZSC_ASSERT1(len &gt; 0, len);</span>
+<span class="lineNum">    1027 </span><span class="lineCov">     742578 :     register U32 res = 0;</span>
+<span class="lineNum">    1028 </span>            :     do {
+<span class="lineNum">    1029 </span><span class="lineCov">    4698276 :         res |= code &amp; 1;</span>
+<span class="lineNum">    1030 </span><span class="lineCov">    4698276 :         code &gt;&gt;= 1;</span>
+<span class="lineNum">    1031 </span><span class="lineCov">    4698276 :         res &lt;&lt;= 1;</span>
+<span class="lineNum">    1032 </span><span class="lineCov">    4698276 :         len--;</span>
+<span class="lineNum">    1033 </span><span class="lineCov">    4698276 :     } while (len &gt; 0);</span>
+<span class="lineNum">    1034 </span><span class="lineCov">     742578 :     return res &gt;&gt; 1;</span>
+<span class="lineNum">    1035 </span>            : }
+<span class="lineNum">    1036 </span>            : 
+<span class="lineNum">    1037 </span>            : /* ===========================================================================
+<a name="1038"><span class="lineNum">    1038 </span>            :  * Flush the bit buffer, keeping at most 7 bits in it.</a>
+<span class="lineNum">    1039 </span>            :  */
+<span class="lineNum">    1040 </span><span class="lineCov">     169676 : ZSC_PRIVATE void bi_flush(deflate_state *s)</span>
+<span class="lineNum">    1041 </span>            : {
+<span class="lineNum">    1042 </span><span class="lineCov">     169676 :     if (s-&gt;bi_valid == 16) {</span>
+<span class="lineNum">    1043 </span><span class="lineCov">        695 :         put_short(s, s-&gt;bi_buf);</span>
+<span class="lineNum">    1044 </span><span class="lineCov">        695 :         s-&gt;bi_buf = 0;</span>
+<span class="lineNum">    1045 </span><span class="lineCov">        695 :         s-&gt;bi_valid = 0;</span>
+<span class="lineNum">    1046 </span><span class="lineCov">     168981 :     } else if (s-&gt;bi_valid &gt;= 8) {</span>
+<span class="lineNum">    1047 </span><span class="lineCov">       5283 :         put_byte(s, (U8)s-&gt;bi_buf);</span>
+<span class="lineNum">    1048 </span><span class="lineCov">       5283 :         s-&gt;bi_buf &gt;&gt;= 8;</span>
+<span class="lineNum">    1049 </span><span class="lineCov">       5283 :         s-&gt;bi_valid -= 8;</span>
+<span class="lineNum">    1050 </span>            :     } else {
+<span class="lineNum">    1051 </span>            :         // keep remaining bits, do nothing
+<span class="lineNum">    1052 </span>            :     }
+<span class="lineNum">    1053 </span><span class="lineCov">     169676 : }</span>
+<span class="lineNum">    1054 </span>            : 
+<span class="lineNum">    1055 </span>            : /* ===========================================================================
+<a name="1056"><span class="lineNum">    1056 </span>            :  * Flush the bit buffer and align the output on a byte boundary</a>
+<span class="lineNum">    1057 </span>            :  */
+<span class="lineNum">    1058 </span><span class="lineCov">       3741 : ZSC_PRIVATE void bi_windup(deflate_state *s)</span>
+<span class="lineNum">    1059 </span>            : {
+<span class="lineNum">    1060 </span><span class="lineCov">       3741 :     if (s-&gt;bi_valid &gt; 8) {</span>
+<span class="lineNum">    1061 </span><span class="lineCov">        487 :         put_short(s, s-&gt;bi_buf);</span>
+<span class="lineNum">    1062 </span><span class="lineCov">       3254 :     } else if (s-&gt;bi_valid &gt; 0) {</span>
+<span class="lineNum">    1063 </span><span class="lineCov">       3254 :         put_byte(s, (U8)s-&gt;bi_buf);</span>
+<span class="lineNum">    1064 </span>            :     } else {
+<span class="lineNum">    1065 </span>            :         // no bytes to put, do nothing
+<span class="lineNum">    1066 </span>            :     }
+<span class="lineNum">    1067 </span><span class="lineCov">       3741 :     s-&gt;bi_buf = 0;</span>
+<span class="lineNum">    1068 </span><span class="lineCov">       3741 :     s-&gt;bi_valid = 0;</span>
+<span class="lineNum">    1069 </span><span class="lineCov">       3741 : }</span>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
