@@ -1,9 +1,3 @@
-/* example.c -- usage example of the zlib compression library
- * Copyright (C) 1995-2006, 2011, 2016 Jean-loup Gailly
- * For conditions of distribution and use, see copyright notice in zlib.h
- */
-
-/* @(#) $Id$ */
 
 #include "zsc/zutil.h"
 #include "zsc/zlib.h"
@@ -282,11 +276,15 @@ void zlib_test(
             head_in.extra_len = len;
         }
     }
-    head_out.name = (U8 *)malloc(80);
+    U8 name_buf[80];
+    U8 comment_buf[80];
+    U8 extra_buf[80];
+
+    head_out.name = name_buf; // (U8 *)malloc(80);
     head_out.name_max = 80;
-    head_out.comment = (U8 *)malloc(80);
+    head_out.comment = comment_buf; // (U8 *)malloc(80);
     head_out.comm_max = 80;
-    head_out.extra = (U8 *)malloc(80);
+    head_out.extra = extra_buf; // (U8 *)malloc(80);
     head_out.extra_max = 80;
 
     const U8 * dictionary = alice_dictionary;
@@ -473,7 +471,7 @@ void zlib_test(
                 err = deflateSetHeader(&stream, Z_NULL);
                 break;
             case WRAP_GZIP_BASIC:
-                case WRAP_GZIP_BUFFERS:
+            case WRAP_GZIP_BUFFERS:
                 err = deflateSetHeader(&stream, &head_in);
                 break;
             default:
@@ -1008,13 +1006,18 @@ void zlib_test(
     free(compressed_buf);
     free(uncompressed_buf);
 
-
-    free(head_in.name);
-    free(head_in.comment);
-    free(head_in.extra);
-    free(head_out.name);
-    free(head_out.comment);
-    free(head_out.extra);
+    if (head_in.name) {
+        free(head_in.name);
+    }
+    if (head_in.comment) {
+        free(head_in.comment);
+    }
+    if (head_in.extra) {
+        free(head_in.extra);
+    }
+//    free(head_out.name);
+//    free(head_out.comment);
+//    free(head_out.extra);
 
 }
 
@@ -1565,6 +1568,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     EXPECT_EQ(err, Z_OK);
 
     free(work_buf);
+    free(source_buf);
 
     U32 uncompressed_buf_len = source_buf_len;
     U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
@@ -1613,6 +1617,10 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
                             work_buf, work_buf_len, DEF_WBITS, &header);
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
+
+    free(compressed_buf);
+    free(uncompressed_buf);
+    free(work_buf);
 
 }
 

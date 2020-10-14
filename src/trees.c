@@ -1,3 +1,33 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @file        trees.c
+ * @date        2020-10-12
+ * @author      Jean-loup Gailly, Neil Abcouwer
+ * @brief       Adler-32 checksums
+ *
+ * Modified version of trees.c for safety-critical applications.
+ * Removed conditional compilation, used fixed-length types,
+ * brought tables into the c file, remove debug-only code, other small changes.
+ *
+ * Original file header follows.
+ */
+
 /* trees.c -- output deflated data using Huffman coding
  * Copyright (C) 1995-2017 Jean-loup Gailly
  * detect_data_type() function provided freely by Cosmin Truta, 2006

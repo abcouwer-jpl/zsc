@@ -4,12 +4,17 @@
  * Any commercial use must be negotiated with the Office of Technology
  * Transfer at the California Institute of Technology.
  *
- * This software may be subject to U.S. export control laws.
- * By accepting this software, the user agrees to comply with
- * all applicable U.S. export laws and regulations. User has the
- * responsibility to obtain export licenses, or other export authority
- * as may be required before exporting such information to foreign
- * countries or providing access to foreign persons.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file        inflate.c
  * @date        2020-08-05
@@ -784,19 +789,23 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 state->mode = BAD;
                 break;
             }
-            if (state->head != Z_NULL)
+            if (state->head != Z_NULL) {
                 state->head->text = (I32)((hold >> 8) & 1);
-            if ((state->flags & 0x0200) && (state->wrap & 4))
+            }
+            if ((state->flags & 0x0200) && (state->wrap & 4)) {
                 CRC2(state->check, hold);
+            }
             INITBITS();
             state->mode = TIME;
             break;
         case TIME:
             NEEDBITS(32);
-            if (state->head != Z_NULL)
+            if (state->head != Z_NULL) {
                 state->head->time = hold;
-            if ((state->flags & 0x0200) && (state->wrap & 4))
+            }
+            if ((state->flags & 0x0200) && (state->wrap & 4)) {
                 CRC4(state->check, hold);
+            }
             INITBITS();
             state->mode = OS;
             break;
@@ -806,8 +815,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 state->head->xflags = (I32)(hold & 0xff);
                 state->head->os = (I32)(hold >> 8);
             }
-            if ((state->flags & 0x0200) && (state->wrap & 4))
+            if ((state->flags & 0x0200) && (state->wrap & 4)) {
                 CRC2(state->check, hold);
+            }
             INITBITS();
             state->mode = EXLEN;
             break;
@@ -815,10 +825,12 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             if (state->flags & 0x0400) {
                 NEEDBITS(16);
                 state->length = (U32)(hold);
-                if (state->head != Z_NULL)
+                if (state->head != Z_NULL) {
                     state->head->extra_len = (U32)hold;
-                if ((state->flags & 0x0200) && (state->wrap & 4))
+                }
+                if ((state->flags & 0x0200) && (state->wrap & 4)) {
                     CRC2(state->check, hold);
+                }
                 INITBITS();
             } else if (state->head != Z_NULL) {
                 state->head->extra = Z_NULL;
@@ -830,7 +842,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
         case EXTRA:
             if (state->flags & 0x0400) {
                 copy = state->length;
-                if (copy > have) copy = have;
+                if (copy > have) {
+                    copy = have;
+                }
                 if (copy) {
                     if (state->head != Z_NULL &&
                         state->head->extra != Z_NULL) {
@@ -839,33 +853,42 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                                 len + copy > state->head->extra_max ?
                                 state->head->extra_max - len : copy);
                     }
-                    if ((state->flags & 0x0200) && (state->wrap & 4))
+                    if ((state->flags & 0x0200) && (state->wrap & 4)) {
                         state->check = crc32(state->check, next, copy);
+                    }
                     have -= copy;
                     next += copy;
                     state->length -= copy;
                 }
-                if (state->length) goto inf_leave;
+                if (state->length) {
+                    goto inf_leave;
+                }
             }
             state->length = 0;
             state->mode = NAME;
             break;
         case NAME:
             if (state->flags & 0x0800) {
-                if (have == 0) goto inf_leave;
+                if (have == 0) {
+                    goto inf_leave;
+                }
                 copy = 0;
                 do {
                     len = (U32)(next[copy++]);
                     if (state->head != Z_NULL &&
                             state->head->name != Z_NULL &&
-                            state->length < state->head->name_max)
+                            state->length < state->head->name_max) {
                         state->head->name[state->length++] = (U8)len;
+                    }
                 } while (len && copy < have);
-                if ((state->flags & 0x0200) && (state->wrap & 4))
+                if ((state->flags & 0x0200) && (state->wrap & 4)) {
                     state->check = crc32(state->check, next, copy);
+                }
                 have -= copy;
                 next += copy;
-                if (len) goto inf_leave;
+                if (len) {
+                    goto inf_leave;
+                }
             } else if (state->head != Z_NULL) {
                 state->head->name = Z_NULL;
             } else {
@@ -876,20 +899,26 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             break;
         case COMMENT:
             if (state->flags & 0x1000) {
-                if (have == 0) goto inf_leave;
+                if (have == 0) {
+                    goto inf_leave;
+                }
                 copy = 0;
                 do {
                     len = (U32)(next[copy++]);
                     if (state->head != Z_NULL &&
                             state->head->comment != Z_NULL &&
-                            state->length < state->head->comm_max)
+                            state->length < state->head->comm_max) {
                         state->head->comment[state->length++] = (U8)len;
+                    }
                 } while (len && copy < have);
-                if ((state->flags & 0x0200) && (state->wrap & 4))
+                if ((state->flags & 0x0200) && (state->wrap & 4)) {
                     state->check = crc32(state->check, next, copy);
+                }
                 have -= copy;
                 next += copy;
-                if (len) goto inf_leave;
+                if (len) {
+                    goto inf_leave;
+                }
             } else if (state->head != Z_NULL) {
                 state->head->comment = Z_NULL;
             } else {
@@ -929,7 +958,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             state->mode = TYPE;
             break;
         case TYPE:
-            if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
+            if (flush == Z_BLOCK || flush == Z_TREES) {
+                goto inf_leave;
+            }
             state->mode = TYPEDO;
             break;
         case TYPEDO:
@@ -988,9 +1019,15 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
         case COPY:
             copy = state->length;
             if (copy) {
-                if (copy > have) copy = have;
-                if (copy > left) copy = left;
-                if (copy == 0) goto inf_leave;
+                if (copy > have) {
+                    copy = have;
+                }
+                if (copy > left) {
+                    copy = left;
+                }
+                if (copy == 0) {
+                    goto inf_leave;
+                }
                 zmemcpy(put, next, copy);
                 have -= copy;
                 next += copy;
@@ -1023,8 +1060,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 state->lens[order[state->have++]] = (U16)BITS(3);
                 DROPBITS(3);
             }
-            while (state->have < 19)
+            while (state->have < 19) {
                 state->lens[order[state->have++]] = 0;
+            }
             state->next = state->codes;
             state->lencode = (const code *)(state->next);
             state->lenbits = 7;
@@ -1042,7 +1080,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             while (state->have < state->nlen + state->ndist) {
                 for (;;) {
                     here = state->lencode[BITS(state->lenbits)];
-                    if ((U32)(here.bits) <= bits) break;
+                    if ((U32)(here.bits) <= bits) {
+                        break;
+                    }
                     PULLBYTE();
                 }
                 if (here.val < 16) {
@@ -1089,7 +1129,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             }
 
             /* handle error breaks in while */
-            if (state->mode == BAD) break;
+            if (state->mode == BAD) {
+                break;
+            }
 
             /* check for end-of-block code (better have one) */
             if (state->lens[256] == 0) {
@@ -1121,7 +1163,9 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 break;
             }
             state->mode = LEN_;
-            if (flush == Z_TREES) goto inf_leave;
+            if (flush == Z_TREES) {
+                goto inf_leave;
+            }
             break;
         case LEN_:
             state->mode = LEN;
@@ -1131,14 +1175,17 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 RESTORE();
                 inflate_fast(strm, out);
                 LOAD();
-                if (state->mode == TYPE)
+                if (state->mode == TYPE) {
                     state->back = -1;
+                }
                 break;
             }
             state->back = 0;
             for (;;) {
                 here = state->lencode[BITS(state->lenbits)];
-                if ((U32)(here.bits) <= bits) break;
+                if ((U32)(here.bits) <= bits) {
+                    break;
+                }
                 PULLBYTE();
             }
             if (here.op && (here.op & 0xf0) == 0) {

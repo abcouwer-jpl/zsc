@@ -1,3 +1,5 @@
+# zsc
+
 ZLIB DATA COMPRESSION LIBRARY - safety-critical version
 
 zlib 1.2.11.f-abcouwer-safety-critical-v0 is a strpped-down version of zlib intended 
@@ -6,12 +8,13 @@ to be safe for flight software or other safety-critical applications.
 See https://www.zlib.net/ for information about zlib.
 
 This zlib version's repo is at https://github.jpl.nasa.gov/abcouwer/zlib-safe.
-Owned/developed/maintained by Neil Abcouwer, neil.abcouwer@jpl.nasa.gov.
+Owned/developed/maintained by Neil Abcouwer, 
+neil.abcouwer [at] jpl.nasa.gov.
 
 If you fork from this repo for more than just playing around, 
 Neil would appreciate learning what it's being used for.
 
---
+## version info
 
 This version of zlib is targeted toward safety-critical applications, 
 such as spaceflight. Changes were made to follow the MISRA C 2012 guidelines: 
@@ -41,7 +44,7 @@ Use of types that define the size and sign - this has not yet been tested
 on 16 bit systems, be wary.
 
 
-Exceptions
+### Exceptions
 
 In violation of required MISRA Directive R15.2, backward gotos have been left 
 in inffast.c, rather than restructure the code.
@@ -49,30 +52,41 @@ in inffast.c, rather than restructure the code.
 In violation of advisory MISRA Directive R15.1, gotos have been left 
 in the code, rather than restructure.
 
---
+## Building
 
-  
-To build and run gtest test
+This code does not by itself compile into an executable of library. 
+This code is intended to be compiled along with the code that uses it.
 
-  ./build.bash test
-  
-To build and run gtest test with coverage
+To run unit tests (including pulling google test framework and corpus data): 
 
-  ./build.bash coverage
+`  ./build.bash test`
   
-Then open ./build/coverage/index.html
+To build and run unit tests with coverage:
+
+`  ./build.bash coverage`
+  
+Then open ./build/coverage/index.html to look at results.
+
+To run unit tests with valgrind:
+
+`./build.bash valgrind`
+
+To clean (remove the build directory):
+
+`./build.bash clean`
+
 
 To use with your own framework, you will need to define your own versions of
-zsc_conf_global_types.h and zsc_conf_private.h, 
+`zsc_conf_global_types.h` and `zsc_conf_private.h`, 
 to do appropriate declarations for your framework.
 
   
-TODO 
+### TODO 
 - run more static analyzers, like semmle
 - get close to 100% coverage in testing (currently at 91%)
 
 
---
+## Git
 
 This version was created by pushing zlib 1.2.11 to the JPL internal github, via
 
@@ -86,8 +100,9 @@ To pull any future changes from public zlib, one should be able to do
   git pull public master # Creates a merge commit
   git push origin master
   
---
-
+But no guarantees on how well this work, given the significant changes.
+  
+## Original Zlib README
 
 1.2.11.f-abcouwer-safety-v0 specific info ends here.
 The information below this line is all from zlib 1.2.11's README.
