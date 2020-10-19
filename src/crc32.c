@@ -495,7 +495,7 @@ ZSC_PRIVATE const z_crc_t crc_table[TBLS][256] =
 
 
 /* ========================================================================= */
-#define DO1 crc = crc_table[0][((U32)crc ^ (*buf++)) & 0xff] ^ (crc >> 8)
+#define DO1 crc = crc_table[0][((U32)crc ^ (*buf)) & 0xff] ^ (crc >> 8); buf++
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
 /* ========================================================================= */
@@ -567,7 +567,8 @@ ZSC_PRIVATE U32 crc32_little(crc, buf, len)
     c = (z_crc_t)crc;
     c = ~c;
     while (len && ((ptrdiff_t)buf & 3)) {
-        c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
+        c = crc_table[0][(c ^ *buf) & 0xff] ^ (c >> 8);
+        buf++;
         len--;
     }
 
@@ -583,8 +584,9 @@ ZSC_PRIVATE U32 crc32_little(crc, buf, len)
     buf = (const U8 *)buf4;
 
     if (len) do {
-        c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
-        --len;
+        c = crc_table[0][(c ^ *buf) & 0xff] ^ (c >> 8);
+        buf++;
+        len--;
     } while (len);
     c = ~c;
     return (U32)c;

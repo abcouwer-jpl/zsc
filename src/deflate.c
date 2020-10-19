@@ -548,7 +548,9 @@ ZlibReturn deflateSetHeader(z_stream * strm, gz_header * head)
     if (deflateStateCheck(strm) || strm->state->wrap != 2) {
         return Z_STREAM_ERROR;
     }
+    ZSC_ASSERT(strm != NULL);
     ZSC_ASSERT(strm->state != NULL);
+    // NULL head is ok
     strm->state->gzhead = head;
     return Z_OK;
 }
@@ -655,6 +657,9 @@ ZlibReturn deflateTune(z_stream * strm,
     ZSC_ASSERT(strm != NULL);
     s = strm->state;
     ZSC_ASSERT(s != NULL);
+    ZSC_ASSERT1(good_length >= 0, good_length);
+    ZSC_ASSERT1(max_lazy >= 0, max_lazy);
+    ZSC_ASSERT1(max_chain >= 0, max_chain);
     s->good_match = (U32)good_length;
     s->max_lazy_match = (U32)max_lazy;
     s->nice_match = nice_length;
@@ -682,7 +687,11 @@ ZlibReturn deflateTune(z_stream * strm,
 U32 deflateBound(z_stream * strm, U32 sourceLen)
 {
     deflate_state *s;
-    U32 complen, wraplen;
+    U32 complen;
+    U32 wraplen;
+
+    // Abcouwer ZSC - assert won't get complen rolling over
+    ZSC_ASSERT1(sourceLen < U32_MAX/2, sourceLen);
 
     /* conservative upper bound for compressed data */
     complen = sourceLen +
@@ -1432,7 +1441,6 @@ ZSC_PRIVATE U32 longest_match( deflate_state *s, U32 cur_match)
     ZSC_ASSERT3((U32)s->strstart <= s->window_size-MIN_LOOKAHEAD,
             (U32)s->strstart, s->window_size, MIN_LOOKAHEAD);
 
-
     do {
         // Assert: cur_match < s->strstart, "no future"
         ZSC_ASSERT2(cur_match < s->strstart, cur_match, s->strstart);
@@ -1452,9 +1460,11 @@ ZSC_PRIVATE U32 longest_match( deflate_state *s, U32 cur_match)
         // match no longer modified as side effect in right hand operand of ||
 
         if (match[best_len]   != scan_end  ||
-            match[best_len-1] != scan_end1 ||
-            *match            != *scan     ||
-            match[1]          != scan[1]) {
+                match[best_len-1] != scan_end1 ||
+                *match            != *scan     ||
+                match[1]          != scan[1]) {
+            // Abcouwer ZSC - update match here instead of in conditional
+            cur_match = prev[cur_match & wmask];
             continue;
         }
 
@@ -1464,7 +1474,8 @@ ZSC_PRIVATE U32 longest_match( deflate_state *s, U32 cur_match)
          * are always equal when the other bytes match, given that
          * the hash keys are equal and that HASH_BITS >= 8.
          */
-        scan += 2; match += 2;
+        scan += 2;
+        match += 2;
         // Assert: "match[2]?"
         ZSC_ASSERT2(*scan == *match, *scan, *match);
 
@@ -1496,8 +1507,9 @@ ZSC_PRIVATE U32 longest_match( deflate_state *s, U32 cur_match)
         // assert no underflow
         ZSC_ASSERT(chain_length>0);
         chain_length--;
-    } while ((cur_match = prev[cur_match & wmask]) > limit
-             && chain_length != 0);
+        // Abcouwer ZSC - update match here instead of in conditional
+        cur_match = prev[cur_match & wmask];
+    } while (cur_match > limit && chain_length != 0);
 
     if ((U32)best_len <= s->lookahead) {
         return (U32)best_len;

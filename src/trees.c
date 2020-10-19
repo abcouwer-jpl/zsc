@@ -404,7 +404,8 @@ ZSC_PRIVATE void pqdownheap(deflate_state *s,
         if (smaller(tree, v, s->heap[j], s->depth)) break;
 
         /* Exchange v with the smallest son */
-        s->heap[k] = s->heap[j];  k = j;
+        s->heap[k] = s->heap[j];
+        k = j;
 
         /* And continue down the tree, setting j to the left son of k */
         j <<= 1;
@@ -573,11 +574,13 @@ ZSC_PRIVATE void build_tree(deflate_state *s,
      * heap[SMALLEST]. The sons of heap[n] are heap[2*n] and heap[2*n+1].
      * heap[0] is not used.
      */
-    s->heap_len = 0, s->heap_max = HEAP_SIZE;
+    s->heap_len = 0;
+    s->heap_max = HEAP_SIZE;
 
     for (n = 0; n < elems; n++) {
         if (tree[n].Freq != 0) {
-            s->heap[++(s->heap_len)] = max_code = n;
+            s->heap_len++;
+            s->heap[s->heap_len] = max_code = n;
             s->depth[n] = 0;
         } else {
             tree[n].Len = 0;
@@ -590,11 +593,17 @@ ZSC_PRIVATE void build_tree(deflate_state *s,
      * two codes of non zero frequency.
      */
     while (s->heap_len < 2) {
-        node = s->heap[++(s->heap_len)] = (max_code < 2 ? ++max_code : 0);
+        s->heap_len++;
+        if(max_code < 2) {
+            max_code++;
+            node = s->heap[s->heap_len] = max_code;
+        } else {
+            node = s->heap[s->heap_len] = 0;
+        }
         tree[node].Freq = 1;
         s->depth[node] = 0;
         s->opt_len--;
-        if (stree) {
+        if (stree != Z_NULL) {
             s->static_len -= stree[node].Len;
         }
         /* node is 0 or 1 so it does not have extra bits */
@@ -630,7 +639,8 @@ ZSC_PRIVATE void build_tree(deflate_state *s,
 
     } while (s->heap_len >= 2);
 
-    s->heap[--(s->heap_max)] = s->heap[SMALLEST];
+    s->heap_max--;
+    s->heap[s->heap_max] = s->heap[SMALLEST];
 
     /* At this point, the fields freq and dad are set. We can now
      * generate the bit lengths.
@@ -664,27 +674,34 @@ ZSC_PRIVATE void scan_tree (deflate_state *s,
     tree[max_code+1].Len = (U16)0xffff; /* guard */
 
     for (n = 0; n <= max_code; n++) {
-        curlen = nextlen; nextlen = tree[n+1].Len;
+        curlen = nextlen;
+        nextlen = tree[n+1].Len;
         count++;
         if (count < max_count && curlen == nextlen) {
             continue;
         } else if (count < min_count) {
             s->bl_tree[curlen].Freq += count;
         } else if (curlen != 0) {
-            if (curlen != prevlen) s->bl_tree[curlen].Freq++;
+            if (curlen != prevlen) {
+                s->bl_tree[curlen].Freq++;
+            }
             s->bl_tree[REP_3_6].Freq++;
         } else if (count <= 10) {
             s->bl_tree[REPZ_3_10].Freq++;
         } else {
             s->bl_tree[REPZ_11_138].Freq++;
         }
-        count = 0; prevlen = curlen;
+        count = 0;
+        prevlen = curlen;
         if (nextlen == 0) {
-            max_count = 138, min_count = 3;
+            max_count = 138;
+            min_count = 3;
         } else if (curlen == nextlen) {
-            max_count = 6, min_count = 3;
+            max_count = 6;
+            min_count = 3;
         } else {
-            max_count = 7, min_count = 4;
+            max_count = 7;
+            min_count = 4;
         }
     }
 }
@@ -714,7 +731,8 @@ ZSC_PRIVATE void send_tree (deflate_state *s,
     }
 
     for (n = 0; n <= max_code; n++) {
-        curlen = nextlen; nextlen = tree[n+1].Len;
+        curlen = nextlen;
+        nextlen = tree[n+1].Len;
         count++;
         if (count < max_count && curlen == nextlen) {
             continue;
@@ -726,19 +744,24 @@ ZSC_PRIVATE void send_tree (deflate_state *s,
 
         } else if (curlen != 0) {
             if (curlen != prevlen) {
-                send_code(s, curlen, s->bl_tree); count--;
+                send_code(s, curlen, s->bl_tree);
+                count--;
             }
             // Assert: " 3_6?"
             ZSC_ASSERT1(count >= 3 && count <= 6, count);
-            send_code(s, REP_3_6, s->bl_tree); send_bits(s, count-3, 2);
+            send_code(s, REP_3_6, s->bl_tree);
+            send_bits(s, count-3, 2);
 
         } else if (count <= 10) {
-            send_code(s, REPZ_3_10, s->bl_tree); send_bits(s, count-3, 3);
+            send_code(s, REPZ_3_10, s->bl_tree);
+            send_bits(s, count-3, 3);
 
         } else {
-            send_code(s, REPZ_11_138, s->bl_tree); send_bits(s, count-11, 7);
+            send_code(s, REPZ_11_138, s->bl_tree);
+            send_bits(s, count-11, 7);
         }
-        count = 0; prevlen = curlen;
+        count = 0;
+        prevlen = curlen;
         if (nextlen == 0) {
             max_count = 138, min_count = 3;
         } else if (curlen == nextlen) {

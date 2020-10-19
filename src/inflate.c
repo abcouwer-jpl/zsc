@@ -215,23 +215,29 @@ ZSC_PRIVATE U32 syncsearch (U32 *have, const U8 *buf, U32 len);
 ZSC_PRIVATE I32 inflateStateCheck(z_stream * strm)
 {
     inflate_state *state;
-    if (strm == Z_NULL)
+    if (strm == Z_NULL) {
         return 1;
+    }
     state = (inflate_state *)strm->state;
     if (state == Z_NULL || state->strm != strm ||
-        state->mode < HEAD || state->mode > SYNC)
+        state->mode < HEAD || state->mode > SYNC) {
         return 1;
+    }
     return 0;
 }
 
 ZSC_PRIVATE void * inflate_get_work_mem(z_stream * strm, U32 items, U32 size)
 {
-    void * new_ptr = Z_NULL;
-    U32 bytes = items * size;
-    // assert no overflow
-    ZSC_ASSERT3(items != 0 && bytes / items == size, bytes, items, size);
-
     ZSC_ASSERT(strm != Z_NULL);
+
+    void * new_ptr = Z_NULL;
+    // assert won't overflow
+    ZSC_ASSERT1(items > 0, items);
+    ZSC_ASSERT1(size > 0, size);
+    ZSC_ASSERT2(U32_MAX / items >= size, items, size);
+    ZSC_ASSERT2(U32_MAX / size >= items, size, items);
+
+    U32 bytes = items * size;
     if (strm->avail_work >= bytes) {
         new_ptr = strm->next_work;
         strm->next_work += bytes;
@@ -428,7 +434,7 @@ ZlibReturn inflatePrime(z_stream * strm, I32 bits, I32 value)
         state->bits = 0;
         return Z_OK;
     }
-    if (bits > 16 || state->bits + (U32)bits > 32) {
+    if (bits > 16 || (state->bits + (U32)bits) > 32) {
         ZSC_WARN("In inflatePrime(), bits too large.");
         return Z_STREAM_ERROR;
     }
@@ -581,7 +587,8 @@ ZSC_PRIVATE I32 updatewindow(z_stream * strm, const U8 *end, U32 copy)
     do { \
         if (have == 0) goto inf_leave; \
         have--; \
-        hold += (U32)(*next++) << bits; \
+        hold += (U32)(*next) << bits; \
+        next++; \
         bits += 8; \
     } while (0)
 
@@ -773,7 +780,7 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
             }
             state->dmax = 1U << len;
             strm->adler = state->check = adler32(0L, Z_NULL, 0);
-            state->mode = hold & 0x200 ? DICTID : TYPE;
+            state->mode = (hold & 0x200) ? DICTID : TYPE;
             INITBITS();
             break;
         case FLAGS:
@@ -874,7 +881,8 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 }
                 copy = 0;
                 do {
-                    len = (U32)(next[copy++]);
+                    len = (U32)(next[copy]);
+                    copy++;
                     if (state->head != Z_NULL &&
                             state->head->name != Z_NULL &&
                             state->length < state->head->name_max) {
@@ -904,7 +912,8 @@ ZlibReturn inflate(z_stream * strm, ZlibFlush flush)
                 }
                 copy = 0;
                 do {
-                    len = (U32)(next[copy++]);
+                    len = (U32)(next[copy]);
+                    copy++;
                     if (state->head != Z_NULL &&
                             state->head->comment != Z_NULL &&
                             state->length < state->head->comm_max) {
@@ -1494,8 +1503,8 @@ ZlibReturn inflateGetHeader(z_stream * strm, gz_header * head)
     }
 
     /* save header structure */
-    state->head = head;
     ZSC_ASSERT(head != Z_NULL);
+    state->head = head;
     head->done = 0;
     return Z_OK;
 }
@@ -1581,13 +1590,15 @@ ZlibReturn inflateSync(z_stream * strm)
         ZSC_WARN("In inflateSync(), did not find 4 bytes.");
         return Z_DATA_ERROR;
     }
-    in = strm->total_in;  out = strm->total_out;
+    in = strm->total_in;
+    out = strm->total_out;
     I32 ir_ret = inflateReset(strm);
     if (ir_ret != Z_OK) {
         ZSC_WARN1("In inflateSync(), inflateReset() returned %d.", ir_ret);
         return ir_ret;
     }
-    strm->total_in = in;  strm->total_out = out;
+    strm->total_in = in;
+    strm->total_out = out;
     state->mode = TYPE;
     return Z_OK;
 }

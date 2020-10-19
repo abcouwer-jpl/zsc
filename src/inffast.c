@@ -124,9 +124,11 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
        input data or output space */
     do {
         if (bits < 15) {
-            hold += (U32)(*in++) << bits;
+            hold += (U32)(*in) << bits;
+            in++;
             bits += 8;
-            hold += (U32)(*in++) << bits;
+            hold += (U32)(*in) << bits;
+            in++;
             bits += 8;
         }
         here = lcode[hold & lmask];
@@ -143,7 +145,8 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
             op &= 15;                           /* number of extra bits */
             if (op) {
                 if (bits < op) {
-                    hold += (U32)(*in++) << bits;
+                    hold += (U32)(*in) << bits;
+                    in++;
                     bits += 8;
                 }
                 len += (U32)hold & ((1U << op) - 1);
@@ -151,9 +154,11 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                 bits -= op;
             }
             if (bits < 15) {
-                hold += (U32)(*in++) << bits;
+                hold += (U32)(*in) << bits;
+                in++;
                 bits += 8;
-                hold += (U32)(*in++) << bits;
+                hold += (U32)(*in) << bits;
+                in++;
                 bits += 8;
             }
             here = dcode[hold & dmask];
@@ -166,10 +171,12 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                 dist = (U32)(here.val);
                 op &= 15;                       /* number of extra bits */
                 if (bits < op) {
-                    hold += (U32)(*in++) << bits;
+                    hold += (U32)(*in) << bits;
+                    in++;
                     bits += 8;
                     if (bits < op) {
-                        hold += (U32)(*in++) << bits;
+                        hold += (U32)(*in) << bits;
+                        in++;
                         bits += 8;
                     }
                 }

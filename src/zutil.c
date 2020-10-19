@@ -79,35 +79,59 @@ U32 zlibCompileFlags()
     flags = 0;
     // Abcouwer ZSC - uShrt and uInt replaced with U32, per MISRA.
     // So this returns size of U32 twice
-    ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_1);
-    switch ((I32)(sizeof(U32))) {
-    case 2:     break;
-    case 4:     flags += 1;     break;
-    case 8:     flags += 2;     break;
-    default:    flags += 3;
+    ZSC_COMPILE_ASSERT((I32 )(sizeof(U32)) == 4, bad_u32_1);
+    switch ((I32) (sizeof(U32))) {
+    case 2:
+        break;
+    case 4:
+        flags += 1;
+        break;
+    case 8:
+        flags += 2;
+        break;
+    default:
+        flags += 3;
     }
-    ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_2);
-    switch ((I32)(sizeof(U32))) {
-    case 2:     break;
-    case 4:     flags += 1 << 2;        break;
-    case 8:     flags += 2 << 2;        break;
-    default:    flags += 3 << 2;
+    ZSC_COMPILE_ASSERT((I32 )(sizeof(U32)) == 4, bad_u32_2);
+    switch ((I32) (sizeof(U32))) {
+    case 2:
+        break;
+    case 4:
+        flags += 1 << 2;
+        break;
+    case 8:
+        flags += 2 << 2;
+        break;
+    default:
+        flags += 3 << 2;
     }
-    switch ((I32)(sizeof(void*))) {
-    case 2:     break;
-    case 4:     flags += 1 << 4;        break;
-    case 8:     flags += 2 << 4;        break;
-    default:    flags += 3 << 4;
+    switch ((I32) (sizeof(void*))) {
+    case 2:
+        break;
+    case 4:
+        flags += 1 << 4;
+        break;
+    case 8:
+        flags += 2 << 4;
+        break;
+    default:
+        flags += 3 << 4;
     }
 
     // Abcouwer ZSC - crc combine functions were removed, no need for z_off_t type
     // z_off_t would be size that can represent largest offset in system
     // providing size of unsigned long
-    switch ((I32)(sizeof(unsigned long))) {
-    case 2:     break;
-    case 4:     flags += 1 << 6;        break;
-    case 8:     flags += 2 << 6;        break;
-    default:    flags += 3 << 6;
+    switch ((I32) (sizeof(unsigned long))) {
+    case 2:
+        break;
+    case 4:
+        flags += 1 << 6;
+        break;
+    case 8:
+        flags += 2 << 6;
+        break;
+    default:
+        flags += 3 << 6;
     }
 
     /* Abcouwer ZSC - removed conditional compilation flags:

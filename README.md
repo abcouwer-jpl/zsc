@@ -14,6 +14,24 @@ neil.abcouwer [at] jpl.nasa.gov.
 If you fork from this repo for more than just playing around, 
 Neil would appreciate learning what it's being used for.
 
+## Using the code
+
+This code does not by itself compile into an executable of library. 
+This code is intended to be compiled along with the code that uses it.
+
+`include/zsc/zsc_pub.h` defines public functions for compression and decompression
+that handle the aforemention work buffers, and function that check buffer sizes.
+
+`include/zsc/zsc_pub_types.h` defines macros for buffer sizing at compile time
+and various public types.
+
+zsc expects a configuration dependent `include/zsc/zsc_conf_global_types`
+and `include/zsc/zsc_conf_private` that one must create for your 
+specific configuration. `zsc_conf_global_types` defines sized typees, and 
+`zsc_conf_global_types` defines macros and memory functions. 
+`test/zsc_test_global_types` and `test/zsc_test_private` are examples 
+that will be copied over to `include/zsc` for unit testing.
+
 ## version info
 
 This version of zlib is targeted toward safety-critical applications, 
@@ -52,20 +70,28 @@ in inffast.c, rather than restructure the code.
 In violation of advisory MISRA Directive R15.1, gotos have been left 
 in the code, rather than restructure.
 
-### Using the code
+### static analysis
 
-`include/zsc/zsc_pub.h` defines public functions for compression and decompression
-that handle the aforemention work buffers, and function that check buffer sizes.
+This library has been analyzed using Cobra (http://spinroot.com/cobra/, https://github.com/nimble-code/Cobra). 
 
-`include/zsc/zsc_pub_types.h` defines macros for buffer sizing at compile time
-and various public types.
+To use Cobra, following the Cobra instructions to clone and configure. 
+You may want to add these lines in your bashrc (or equivalent):
 
-zsc expects a configuration dependent `include/zsc/zsc_conf_global_types`
-and `include/zsc/zsc_conf_private` that one must create for your 
-specific configuration. `zsc_conf_global_types` defines sized typees, and 
-`zsc_conf_global_types` defines macros and memory functions. 
-`test/zsc_test_global_types` and `test/zsc_test_private` are examples 
-that will be copied over to `include/zsc` for unit testing.
+`export COBRA=/path/to/your/clone/of/Cobra`
+`export PATH=$PATH:$COBRA/bin_linux`
+`export C_BASE=$COBRA/rules`
+
+Then run commands of the form:
+
+`cobra -f file -I/path/to/this/repo/include /path/to/this/repo/src/*.c`
+
+Where file can be one of several rules files. This code, compiled with the unit test headers, was checked against the basic, misra2012, p10, and jpl rules. Running 
+
+`./build.bash cobra`
+
+runs all these checks. There will be some false positives and some items that have been left as-is, where changing the existing code would be higher-risk.
+
+The main encoding/decoding loops loop over every pixel of an image or the entirety of the compressed bitstream. Thus the overhead of function calls becomes significant. Therefore these main loops exceed advised function sizes and use macros for the sake of performance.
 
 ## Building
 
@@ -102,7 +128,7 @@ to do appropriate declarations for your framework, and you may need to make
 build changes so they aren't overwritten.
 
   
-### TODO 
+## TODO 
 - run more static analyzers, like semmle
 - get close to 100% coverage in testing (currently at 91%)
 
