@@ -25,12 +25,12 @@ else
   elif [[ "$1" = "save" ]] ; then
     echo "Saving testing results"
     if [[ -e ./coverage ]] ; then
-    	cp -r ./coverage ../test/output/
+    	cp -r ./coverage/* $source_path/test/output/coverage/
     else
     	echo "No coverage results found"
     fi
     if [[ -e ./Testing/Temporary/LastTest.log ]] ; then
-		cp ./Testing/Temporary/LastTest.log ../test/output/Test.log
+        cp ./Testing/Temporary/LastTest.log $source_path/test/output/Test.log
     else
     	echo "No test results found"
     fi
@@ -56,10 +56,10 @@ else
   elif [[ "$1" = "cobra-misra" ]] ; then
     echo "Running misra cobra tests (assumes cobra is configured)"
     cobra -f misra2012 -I$source_path/include -I$source_path/build $source_path/src/*.c
-elif [[ "$1" = "cobra-p10" ]] ; then
+  elif [[ "$1" = "cobra-p10" ]] ; then
     echo "Running p10 cobra tests (assumes cobra is configured)"
     cobra -f p10 -I$source_path/include -I$source_path/build $source_path/src/*.c  
-elif [[ "$1" = "cobra-jpl" ]] ; then
+  elif [[ "$1" = "cobra-jpl" ]] ; then
     echo "Running jpl cobra tests (assumes cobra is configured)"
     cobra -f jpl -I$source_path/include -I$source_path/build $source_path/src/*.c
   elif [[ "$1" = "clean" ]] ; then

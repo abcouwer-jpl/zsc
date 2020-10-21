@@ -20,14 +20,14 @@ This code does not by itself compile into an executable of library.
 This code is intended to be compiled along with the code that uses it.
 
 `include/zsc/zsc_pub.h` defines public functions for compression and decompression
-that handle the aforemention work buffers, and function that check buffer sizes.
+that handle the aforementioned work buffers, and function that check buffer sizes.
 
 `include/zsc/zsc_pub_types.h` defines macros for buffer sizing at compile time
 and various public types.
 
 zsc expects a configuration dependent `include/zsc/zsc_conf_global_types`
 and `include/zsc/zsc_conf_private` that one must create for your 
-specific configuration. `zsc_conf_global_types` defines sized typees, and 
+specific configuration. `zsc_conf_global_types` defines sized types, and 
 `zsc_conf_global_types` defines macros and memory functions. 
 `test/zsc_test_global_types` and `test/zsc_test_private` are examples 
 that will be copied over to `include/zsc` for unit testing.
@@ -70,33 +70,16 @@ in inffast.c, rather than restructure the code.
 In violation of advisory MISRA Directive R15.1, gotos have been left 
 in the code, rather than restructure.
 
-### static analysis
 
-This library has been analyzed using Cobra (http://spinroot.com/cobra/, https://github.com/nimble-code/Cobra). 
-
-To use Cobra, following the Cobra instructions to clone and configure. 
-You may want to add these lines in your bashrc (or equivalent):
-
-`export COBRA=/path/to/your/clone/of/Cobra`
-`export PATH=$PATH:$COBRA/bin_linux`
-`export C_BASE=$COBRA/rules`
-
-Then run commands of the form:
-
-`cobra -f file -I/path/to/this/repo/include /path/to/this/repo/src/*.c`
-
-Where file can be one of several rules files. This code, compiled with the unit test headers, was checked against the basic, misra2012, p10, and jpl rules. Running 
-
-`./build.bash cobra`
-
-runs all these checks. There will be some false positives and some items that have been left as-is, where changing the existing code would be higher-risk.
-
-The main encoding/decoding loops loop over every pixel of an image or the entirety of the compressed bitstream. Thus the overhead of function calls becomes significant. Therefore these main loops exceed advised function sizes and use macros for the sake of performance.
 
 ## Building
 
-This code does not by itself compile into an executable of library. 
+This code does not by itself compile into an executable or library. 
 This code is intended to be compiled along with the code that uses it.
+
+For testing, you'll need the following dependencies:
+
+`build-essential cmake gcc valgrind lcov`
 
 To run unit tests (including pulling google test framework and corpus data): 
 
@@ -127,19 +110,50 @@ To use with your own framework, you will need to define your own versions of
 to do appropriate declarations for your framework, and you may need to make 
 build changes so they aren't overwritten.
 
+## static analysis
+
+This library has been analyzed using Cobra (http://spinroot.com/cobra/, 
+https://github.com/nimble-code/Cobra). 
+
+To use Cobra, follow the Cobra instructions to clone and configure. 
+On linux, you may need the "yacc" program from the "bison" package.
+You may want to add these lines in your bashrc (or equivalent) 
+as discussed in the cobra readme:
+
+`export COBRA=/path/to/your/clone/of/Cobra`
+`export PATH=$PATH:$COBRA/bin_linux`
+`export C_BASE=$COBRA/rules`
+
+Then run commands of the form:
+
+`cobra -f file -I/path/to/this/repo/include /path/to/this/repo/src/*.c`
+
+Where file can be one of several rules files. This code, compiled with the 
+unit test headers, was checked against the basic, misra2012, p10, and jpl rules. 
+Running 
+
+`./build.bash cobra`
+
+runs all these checks. There will be some false positives and some items that 
+have been left as-is, where changing the existing code would be higher-risk.
+
+The main encoding/decoding loops loop over every pixel of an image or the 
+entirety of the compressed bitstream. Thus the overhead of function calls 
+becomes significant. Therefore these main loops exceed advised function sizes 
+and use macros for the sake of performance.
   
 ## TODO 
+
 - run more static analyzers, like semmle
 - get close to 100% coverage in testing (currently at 91%)
 
-
 ## Git
 
-This version was created by pushing zlib 1.2.11 to the JPL internal github, via
+This version was created by pushing zlib 1.2.11, via
 
   git clone https://github.com/madler/zlib.git
   cd zlib
-  git push --mirror https://github.jpl.nasa.gov/abcouwer/zlib-safe.git
+  git push --mirror github_url
 
 To pull any future changes from public zlib, one should be able to do
 
@@ -149,7 +163,7 @@ To pull any future changes from public zlib, one should be able to do
   
 But no guarantees on how well this work, given the significant changes.
   
-## Original Zlib README
+## Original zlib README
 
 1.2.11.f-abcouwer-safety-v0 specific info ends here.
 The information below this line is all from zlib 1.2.11's README.
