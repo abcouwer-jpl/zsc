@@ -1,14 +1,21 @@
-Start testing: Oct 14 09:40 PDT
+Start testing: Oct 22 11:21 PDT
 ----------------------------------------------------------
 1/1 Testing: zlib_gtest_test
 1/1 Test: zlib_gtest_test
 Command: "/mnt/c/Users/abcouwer/Documents/Dev/comp/zlib-safe/build/zlib_gtest"
 Directory: /mnt/c/Users/abcouwer/Documents/Dev/comp/zlib-safe/build
-"zlib_gtest_test" start time: Oct 14 09:40 PDT
+"zlib_gtest_test" start time: Oct 22 11:21 PDT
 Output:
 ----------------------------------------------------------
-[==========] Running 69 tests from 1 test suite.
+[==========] Running 70 tests from 2 test suites.
 [----------] Global test environment set-up.
+[----------] 1 test from ZlibDeathTest
+[ RUN      ] ZlibDeathTest.Asserts
+death tests enabled.
+death tests done
+[       OK ] ZlibDeathTest.Asserts (396 ms)
+[----------] 1 test from ZlibDeathTest (396 ms total)
+
 [----------] 69 tests from ZlibTest
 [ RUN      ] ZlibTest.Version
 zlib version 1.2.11.f-abcouwer-safety-critical-v0 = 0x12bf, compile flags = 0xa5
@@ -58,7 +65,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.Compress (29 ms)
+[       OK ] ZlibTest.Compress (34 ms)
 [ RUN      ] ZlibTest.CompressGzip
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 3, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -104,7 +111,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressGzip (28 ms)
+[       OK ] ZlibTest.CompressGzip (37 ms)
 [ RUN      ] ZlibTest.CompressGzipAlloced
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 4, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -150,7 +157,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressGzipAlloced (24 ms)
+[       OK ] ZlibTest.CompressGzipAlloced (26 ms)
 [ RUN      ] ZlibTest.CompressGzipNull
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 2, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -196,7 +203,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressGzipNull (23 ms)
+[       OK ] ZlibTest.CompressGzipNull (31 ms)
 [ RUN      ] ZlibTest.CompressRaw
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -243,7 +250,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressRaw (22 ms)
+[       OK ] ZlibTest.CompressRaw (27 ms)
 [ RUN      ] ZlibTest.CompressNone
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0, level = 0, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -322,7 +329,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressBestSpeed (9 ms)
+[       OK ] ZlibTest.CompressBestSpeed (11 ms)
 [ RUN      ] ZlibTest.CompressBestCompression
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0, level = 9, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -368,7 +375,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressBestCompression (23 ms)
+[       OK ] ZlibTest.CompressBestCompression (26 ms)
 [ RUN      ] ZlibTest.CompressFiltered
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 1, max block size = 100000.
@@ -414,7 +421,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressFiltered (25 ms)
+[       OK ] ZlibTest.CompressFiltered (29 ms)
 [ RUN      ] ZlibTest.CompressHuffmanOnly
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 2, max block size = 100000.
@@ -460,7 +467,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressHuffmanOnly (7 ms)
+[       OK ] ZlibTest.CompressHuffmanOnly (8 ms)
 [ RUN      ] ZlibTest.CompressRLE
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 3, max block size = 100000.
@@ -506,7 +513,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressRLE (7 ms)
+[       OK ] ZlibTest.CompressRLE (9 ms)
 [ RUN      ] ZlibTest.CompressFixed
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0, level = -1, windowbits = 15, memLevel = 8, strategy = 4, max block size = 100000.
@@ -552,7 +559,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CompressFixed (22 ms)
+[       OK ] ZlibTest.CompressFixed (25 ms)
 [ RUN      ] ZlibTest.CorpusGzip
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -1321,7 +1328,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 513216
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CorpusGzip (9148 ms)
+[       OK ] ZlibTest.CorpusGzip (9933 ms)
 [ RUN      ] ZlibTest.CorpusNoComp
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -2014,7 +2021,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 513216
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CorpusNoComp (170 ms)
+[       OK ] ZlibTest.CorpusNoComp (198 ms)
 [ RUN      ] ZlibTest.CorpusNoFlushNoComp
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -2791,7 +2798,7 @@ inflate cycle 1
 before: stream.avail_in = 513297. stream.avail_out = 513216.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CorpusNoFlushNoComp (167 ms)
+[       OK ] ZlibTest.CorpusNoFlushNoComp (250 ms)
 [ RUN      ] ZlibTest.CorpusLevels
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -5094,7 +5101,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 513216
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CorpusLevels (19989 ms)
+[       OK ] ZlibTest.CorpusLevels (22110 ms)
 [ RUN      ] ZlibTest.AliceAllLevels
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -5501,7 +5508,7 @@ Uncompress. Work buf size: 39920.
 Using uncompress function
 uncompressed len: 152089
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.AliceAllLevels (161 ms)
+[       OK ] ZlibTest.AliceAllLevels (174 ms)
 [ RUN      ] ZlibTest.CorpusFullFlush
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -6437,7 +6444,7 @@ inflate cycle 1
 before: stream.avail_in = 55798. stream.avail_out = 513216.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CorpusFullFlush (3265 ms)
+[       OK ] ZlibTest.CorpusFullFlush (3501 ms)
 [ RUN      ] ZlibTest.CorpusPartialFlush
 
 Compress file corpus/cantrbry/alice29.txt.
@@ -7162,7 +7169,7 @@ inflate cycle 1
 before: stream.avail_in = 55422. stream.avail_out = 513216.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.CorpusPartialFlush (10011 ms)
+[       OK ] ZlibTest.CorpusPartialFlush (10646 ms)
 [ RUN      ] ZlibTest.Dictionary
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x1, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7208,7 +7215,7 @@ after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 2
 getting dictionary
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.Dictionary (25 ms)
+[       OK ] ZlibTest.Dictionary (27 ms)
 [ RUN      ] ZlibTest.Pending
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x2, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7437,7 +7444,7 @@ inflate cycle 1
 before: stream.avail_in = 62031. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.FullFlush (14 ms)
+[       OK ] ZlibTest.FullFlush (15 ms)
 [ RUN      ] ZlibTest.PartialFlush
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x40, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7475,7 +7482,7 @@ inflate cycle 1
 before: stream.avail_in = 54523. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.PartialFlush (24 ms)
+[       OK ] ZlibTest.PartialFlush (28 ms)
 [ RUN      ] ZlibTest.SyncFlush
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x100, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7526,7 +7533,7 @@ inflate cycle 1
 before: stream.avail_in = 54558. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.SyncFlush (26 ms)
+[       OK ] ZlibTest.SyncFlush (28 ms)
 [ RUN      ] ZlibTest.NoFlush
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x80, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7564,7 +7571,7 @@ inflate cycle 1
 before: stream.avail_in = 54175. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoFlush (24 ms)
+[       OK ] ZlibTest.NoFlush (25 ms)
 [ RUN      ] ZlibTest.NoFlushInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x880, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7613,7 +7620,7 @@ before: stream.avail_in = 4. stream.avail_out = 0.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 4
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoFlushInflateBlock (24 ms)
+[       OK ] ZlibTest.NoFlushInflateBlock (25 ms)
 [ RUN      ] ZlibTest.NoFlushHuff
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x80, level = -1, windowbits = 15, memLevel = 8, strategy = 2, max block size = 100000.
@@ -7651,7 +7658,7 @@ inflate cycle 1
 before: stream.avail_in = 87918. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoFlushHuff (7 ms)
+[       OK ] ZlibTest.NoFlushHuff (6 ms)
 [ RUN      ] ZlibTest.NoFlushRLE
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x80, level = -1, windowbits = 15, memLevel = 8, strategy = 3, max block size = 100000.
@@ -7689,7 +7696,7 @@ inflate cycle 1
 before: stream.avail_in = 87611. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoFlushRLE (7 ms)
+[       OK ] ZlibTest.NoFlushRLE (8 ms)
 [ RUN      ] ZlibTest.FullFlushRLE
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x8, level = -1, windowbits = 15, memLevel = 8, strategy = 3, max block size = 100000.
@@ -7740,7 +7747,7 @@ inflate cycle 1
 before: stream.avail_in = 87848. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.FullFlushRLE (8 ms)
+[       OK ] ZlibTest.FullFlushRLE (7 ms)
 [ RUN      ] ZlibTest.FullFlushHuff
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x8, level = -1, windowbits = 15, memLevel = 8, strategy = 2, max block size = 100000.
@@ -7842,7 +7849,7 @@ inflate cycle 1
 before: stream.avail_in = 67160. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.FullFlushFast (9 ms)
+[       OK ] ZlibTest.FullFlushFast (10 ms)
 [ RUN      ] ZlibTest.NoFlushFast
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x80, level = 1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7880,7 +7887,7 @@ inflate cycle 1
 before: stream.avail_in = 62015. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoFlushFast (9 ms)
+[       OK ] ZlibTest.NoFlushFast (10 ms)
 [ RUN      ] ZlibTest.NoFlushFastInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x880, level = 1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -7929,7 +7936,7 @@ before: stream.avail_in = 4. stream.avail_out = 0.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 4
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoFlushFastInflateBlock (10 ms)
+[       OK ] ZlibTest.NoFlushFastInflateBlock (9 ms)
 [ RUN      ] ZlibTest.NoFlushNoComp
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x80, level = 0, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -8189,7 +8196,7 @@ inflate cycle 1
 before: stream.avail_in = 4641030. stream.avail_out = 4638690.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.FullFlushNoComp (100 ms)
+[       OK ] ZlibTest.FullFlushNoComp (120 ms)
 [ RUN      ] ZlibTest.NoWrapPartialFlushNoComp
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0x40, level = 0, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -8228,7 +8235,7 @@ inflate cycle 1
 before: stream.avail_in = 152169. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapPartialFlushNoComp (2 ms)
+[       OK ] ZlibTest.NoWrapPartialFlushNoComp (7 ms)
 [ RUN      ] ZlibTest.NoWrapSyncFlushNoComp
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0x100, level = 0, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -8267,7 +8274,7 @@ inflate cycle 1
 before: stream.avail_in = 152169. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapSyncFlushNoComp (2 ms)
+[       OK ] ZlibTest.NoWrapSyncFlushNoComp (1 ms)
 [ RUN      ] ZlibTest.NoWrapFullFlushNoComp
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0x8, level = 0, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -8306,7 +8313,7 @@ inflate cycle 1
 before: stream.avail_in = 152169. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapFullFlushNoComp (1 ms)
+[       OK ] ZlibTest.NoWrapFullFlushNoComp (2 ms)
 [ RUN      ] ZlibTest.Corrupt
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x10, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -8472,7 +8479,7 @@ Output:
                             CHAPTER I
 
                       Down the Rabbit...
-[       OK ] ZlibTest.FullFlushCorrupt (22 ms)
+[       OK ] ZlibTest.FullFlushCorrupt (23 ms)
 [ RUN      ] ZlibTest.TinyOutput
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 4, scenarios = 0x20, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -8509,7 +8516,7 @@ inflate cycle 1
 before: stream.avail_in = 100128. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.TinyOutput (34 ms)
+[       OK ] ZlibTest.TinyOutput (46 ms)
 [ RUN      ] ZlibTest.TinyOutputInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 4, scenarios = 0x820, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -10720,7 +10727,7 @@ before: stream.avail_in = 8. stream.avail_out = 0.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 725
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.TinyOutputInflateBlock (35 ms)
+[       OK ] ZlibTest.TinyOutputInflateBlock (37 ms)
 [ RUN      ] ZlibTest.DictionaryWouldFillWindow
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x1020, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -10767,7 +10774,7 @@ after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 2
 getting dictionary
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.DictionaryWouldFillWindow (33 ms)
+[       OK ] ZlibTest.DictionaryWouldFillWindow (43 ms)
 [ RUN      ] ZlibTest.DictionaryWouldFillWindowInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x1820, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -12987,7 +12994,7 @@ after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 725
 getting dictionary
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.DictionaryWouldFillWindowInflateBlock (35 ms)
+[       OK ] ZlibTest.DictionaryWouldFillWindowInflateBlock (48 ms)
 [ RUN      ] ZlibTest.NoWrapDictionaryWouldFillWindow
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0x1020, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -13031,7 +13038,7 @@ before: stream.avail_in = 100064. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 getting dictionary
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapDictionaryWouldFillWindow (34 ms)
+[       OK ] ZlibTest.NoWrapDictionaryWouldFillWindow (47 ms)
 [ RUN      ] ZlibTest.NoWrapDictionaryWouldFillWindowInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0x1820, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15246,7 +15253,7 @@ after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 724
 getting dictionary
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapDictionaryWouldFillWindowInflateBlock (32 ms)
+[       OK ] ZlibTest.NoWrapDictionaryWouldFillWindowInflateBlock (44 ms)
 [ RUN      ] ZlibTest.NoWrapReset
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0x200, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15290,7 +15297,7 @@ inflate cycle 1
 before: stream.avail_in = 54169. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapReset (46 ms)
+[       OK ] ZlibTest.NoWrapReset (52 ms)
 [ RUN      ] ZlibTest.NoWrapResetInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 0, scenarios = 0xa00, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15350,7 +15357,7 @@ before: stream.avail_in = 0. stream.avail_out = 0.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 3
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.NoWrapResetInflateBlock (47 ms)
+[       OK ] ZlibTest.NoWrapResetInflateBlock (52 ms)
 [ RUN      ] ZlibTest.Reset
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x200, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15391,7 +15398,7 @@ inflate cycle 1
 before: stream.avail_in = 54175. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.Reset (48 ms)
+[       OK ] ZlibTest.Reset (51 ms)
 [ RUN      ] ZlibTest.ResetInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0xa00, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15495,7 +15502,7 @@ inflate cycle 1
 before: stream.avail_in = 54189. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.GzipReset (48 ms)
+[       OK ] ZlibTest.GzipReset (54 ms)
 [ RUN      ] ZlibTest.GzipResetInflateBlock
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 3, scenarios = 0xa00, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15558,7 +15565,7 @@ before: stream.avail_in = 8. stream.avail_out = 0.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 cycles = 4
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.GzipResetInflateBlock (48 ms)
+[       OK ] ZlibTest.GzipResetInflateBlock (59 ms)
 [ RUN      ] ZlibTest.BigHeaderBufferSmallAvail
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 4, scenarios = 0x400, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15595,7 +15602,7 @@ inflate cycle 1
 before: stream.avail_in = 103079. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.BigHeaderBufferSmallAvail (34 ms)
+[       OK ] ZlibTest.BigHeaderBufferSmallAvail (36 ms)
 [ RUN      ] ZlibTest.InflateWindowBits0
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 1, scenarios = 0x4000, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15631,7 +15638,7 @@ inflate cycle 1
 before: stream.avail_in = 54175. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.InflateWindowBits0 (26 ms)
+[       OK ] ZlibTest.InflateWindowBits0 (25 ms)
 [ RUN      ] ZlibTest.GZipInflateWindowBits0
 Compress file corpus/cantrbry/alice29.txt.
 Zlib Test: buf_len = 152089, wrapper = 3, scenarios = 0x4000, level = -1, windowbits = 15, memLevel = 8, strategy = 0, max block size = 100000.
@@ -15667,14 +15674,14 @@ inflate cycle 1
 before: stream.avail_in = 54189. stream.avail_out = 152089.
 after:  stream.avail_in = 0. stream.avail_out = 0.
 Decompressed buffer had 0 errors.
-[       OK ] ZlibTest.GZipInflateWindowBits0 (24 ms)
+[       OK ] ZlibTest.GZipInflateWindowBits0 (27 ms)
 [ RUN      ] ZlibTest.Bounds
 Test how string sizes add to output size
 sizeof(deflate_state)=5920, Z_DEFLATE_STATE_SIZE = 6400
 sizeof(inflate_state)=7152, Z_INFLATE_STATE_SIZE = 7600
 [       OK ] ZlibTest.Bounds (0 ms)
-[ RUN      ] ZlibTest.CompressSafeErrors
-test errors in compress_safe
+[ RUN      ] ZlibTest.ZSCCompressErrors
+test errors in zsc_compress
 bad window and mem level
 ZSC WARNING In deflateWorkSize2(), bad mem_level (26) or window_bits (1337).
 ZSC WARNING In zsc_compress_gzip2(), could not get min work buf size, error -2.
@@ -15691,9 +15698,9 @@ ZSC WARNING In deflate(), 0 avail_out.
 ZSC WARNING In zsc_compress_gzip2(), deflate loop ended with error code -5.
 ZSC WARNING In zsc_compress_gzip2(), output buffer (42 bytes) was smaller than bounds (152148/152216 bytes). Output may not have fit in the buffer.
 zError:buffer error
-[       OK ] ZlibTest.CompressSafeErrors (1 ms)
-[ RUN      ] ZlibTest.UncompressSafeErrors
-test errors in uncompress_safe
+[       OK ] ZlibTest.ZSCCompressErrors (2 ms)
+[ RUN      ] ZlibTest.ZSCUncompressErrors
+test errors in zsc_uncompress
 work buf size = 0
 ZSC WARNING In zsc_uncompress_safe_gzip2(), work buffer (0 B) is smaller than required (39920 B).
 zError:insufficient memory
@@ -15708,7 +15715,7 @@ gzip header when not gzip
 ZSC WARNING In inflateGetHeader(), strm is not gzip.
 ZSC WARNING In zsc_uncompress_safe_gzip2(), could not get header, error -2.
 zError:stream error
-[       OK ] ZlibTest.UncompressSafeErrors (12 ms)
+[       OK ] ZlibTest.ZSCUncompressErrors (11 ms)
 [ RUN      ] ZlibTest.DeflateErrors
 test errors in deflate.c
 null version gives error
@@ -15796,17 +15803,17 @@ ZSC WARNING In inflateValidate(), bad state.
 ZSC WARNING In inflateMark(), bad state.
 ZSC WARNING In inflateCodesUsed(), bad state.
 [       OK ] ZlibTest.InflateUndocumented (0 ms)
-[----------] 69 tests from ZlibTest (44125 ms total)
+[----------] 69 tests from ZlibTest (48208 ms total)
 
 [----------] Global test environment tear-down
-[==========] 69 tests from 1 test suite ran. (44126 ms total)
-[  PASSED  ] 69 tests.
+[==========] 70 tests from 2 test suites ran. (48604 ms total)
+[  PASSED  ] 70 tests.
 <end of output>
-Test time =  44.17 sec
+Test time =  48.65 sec
 ----------------------------------------------------------
 Test Passed.
-"zlib_gtest_test" end time: Oct 14 09:41 PDT
-"zlib_gtest_test" time elapsed: 00:00:44
+"zlib_gtest_test" end time: Oct 22 11:22 PDT
+"zlib_gtest_test" time elapsed: 00:00:48
 ----------------------------------------------------------
 
-End testing: Oct 14 09:41 PDT
+End testing: Oct 22 11:22 PDT

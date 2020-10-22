@@ -31,13 +31,13 @@
             <td class="headerValue">coverage.info.cleaned</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">11</td>
-            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntry">15</td>
+            <td class="headerCovTableEntry">15</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2020-10-14 09:41:46</td>
+            <td class="headerValue">2020-10-22 11:22:20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -141,60 +141,84 @@
 <span class="lineNum">      79 </span><span class="lineCov">          2 :     flags = 0;</span>
 <span class="lineNum">      80 </span>            :     // Abcouwer ZSC - uShrt and uInt replaced with U32, per MISRA.
 <span class="lineNum">      81 </span>            :     // So this returns size of U32 twice
-<span class="lineNum">      82 </span>            :     ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_1);
-<span class="lineNum">      83 </span>            :     switch ((I32)(sizeof(U32))) {
-<span class="lineNum">      84 </span>            :     case 2:     break;
-<span class="lineNum">      85 </span><span class="lineCov">          2 :     case 4:     flags += 1;     break;</span>
-<span class="lineNum">      86 </span>            :     case 8:     flags += 2;     break;
-<span class="lineNum">      87 </span>            :     default:    flags += 3;
-<span class="lineNum">      88 </span>            :     }
-<span class="lineNum">      89 </span>            :     ZSC_COMPILE_ASSERT((I32)(sizeof(U32)) == 4, bad_u32_2);
-<span class="lineNum">      90 </span>            :     switch ((I32)(sizeof(U32))) {
-<span class="lineNum">      91 </span>            :     case 2:     break;
-<span class="lineNum">      92 </span><span class="lineCov">          2 :     case 4:     flags += 1 &lt;&lt; 2;        break;</span>
-<span class="lineNum">      93 </span>            :     case 8:     flags += 2 &lt;&lt; 2;        break;
-<span class="lineNum">      94 </span>            :     default:    flags += 3 &lt;&lt; 2;
-<span class="lineNum">      95 </span>            :     }
-<span class="lineNum">      96 </span>            :     switch ((I32)(sizeof(void*))) {
-<span class="lineNum">      97 </span>            :     case 2:     break;
-<span class="lineNum">      98 </span>            :     case 4:     flags += 1 &lt;&lt; 4;        break;
-<span class="lineNum">      99 </span><span class="lineCov">          2 :     case 8:     flags += 2 &lt;&lt; 4;        break;</span>
-<span class="lineNum">     100 </span>            :     default:    flags += 3 &lt;&lt; 4;
-<span class="lineNum">     101 </span>            :     }
-<span class="lineNum">     102 </span>            : 
-<span class="lineNum">     103 </span>            :     // Abcouwer ZSC - crc combine functions were removed, no need for z_off_t type
-<span class="lineNum">     104 </span>            :     // z_off_t would be size that can represent largest offset in system
-<span class="lineNum">     105 </span>            :     // providing size of unsigned long
-<span class="lineNum">     106 </span>            :     switch ((I32)(sizeof(unsigned long))) {
-<span class="lineNum">     107 </span>            :     case 2:     break;
-<span class="lineNum">     108 </span>            :     case 4:     flags += 1 &lt;&lt; 6;        break;
-<span class="lineNum">     109 </span><span class="lineCov">          2 :     case 8:     flags += 2 &lt;&lt; 6;        break;</span>
-<span class="lineNum">     110 </span>            :     default:    flags += 3 &lt;&lt; 6;
-<span class="lineNum">     111 </span>            :     }
-<span class="lineNum">     112 </span>            : 
-<span class="lineNum">     113 </span>            :     /* Abcouwer ZSC - removed conditional compilation flags:
-<span class="lineNum">     114 </span>            :      * ASMV/ASMINF, ZLIB_WINAPI, BUILDFIXED, DYNAMIC_CRC_TABLE, NO_GZCOMPRESS,
-<span class="lineNum">     115 </span>            :      * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST. ZLIB_DEBUG     */
-<span class="lineNum">     116 </span>            : 
-<span class="lineNum">     117 </span>            :     /* Abcouwer ZSC - sprintf variants not checked, as used in gzprintf,
-<span class="lineNum">     118 </span>            :      * and gz code not included */
-<span class="lineNum">     119 </span>            : 
-<span class="lineNum">     120 </span><span class="lineCov">          2 :     return flags;</span>
-<span class="lineNum">     121 </span>            : }
-<span class="lineNum">     122 </span>            : 
-<span class="lineNum">     123 </span>            : /* exported to allow conversion of error code to string for compress() and
-<a name="124"><span class="lineNum">     124 </span>            :  * uncompress()</a>
-<span class="lineNum">     125 </span>            :  */
-<span class="lineNum">     126 </span><span class="lineCov">          8 : const U8 * zError(err)</span>
-<span class="lineNum">     127 </span>            :     ZlibReturn err;
-<span class="lineNum">     128 </span>            : {
-<span class="lineNum">     129 </span><span class="lineCov">          8 :     return ERR_MSG(err);</span>
-<span class="lineNum">     130 </span>            : }
-<span class="lineNum">     131 </span>            : 
-<span class="lineNum">     132 </span>            : 
-<span class="lineNum">     133 </span>            : // Abcouwer ZSC - removed solo memcpy and related functions
-<span class="lineNum">     134 </span>            : 
-<span class="lineNum">     135 </span>            : // Abcouwer ZSC - removed dynamic memory allocation functions
+<span class="lineNum">      82 </span>            :     ZSC_COMPILE_ASSERT((I32 )(sizeof(U32)) == 4, bad_u32_1);
+<span class="lineNum">      83 </span>            :     switch ((I32) (sizeof(U32))) {
+<span class="lineNum">      84 </span>            :     case 2:
+<span class="lineNum">      85 </span>            :         break;
+<span class="lineNum">      86 </span>            :     case 4:
+<span class="lineNum">      87 </span><span class="lineCov">          2 :         flags += 1;</span>
+<span class="lineNum">      88 </span><span class="lineCov">          2 :         break;</span>
+<span class="lineNum">      89 </span>            :     case 8:
+<span class="lineNum">      90 </span>            :         flags += 2;
+<span class="lineNum">      91 </span>            :         break;
+<span class="lineNum">      92 </span>            :     default:
+<span class="lineNum">      93 </span>            :         flags += 3;
+<span class="lineNum">      94 </span>            :     }
+<span class="lineNum">      95 </span>            :     ZSC_COMPILE_ASSERT((I32 )(sizeof(U32)) == 4, bad_u32_2);
+<span class="lineNum">      96 </span>            :     switch ((I32) (sizeof(U32))) {
+<span class="lineNum">      97 </span>            :     case 2:
+<span class="lineNum">      98 </span>            :         break;
+<span class="lineNum">      99 </span>            :     case 4:
+<span class="lineNum">     100 </span><span class="lineCov">          2 :         flags += 1 &lt;&lt; 2;</span>
+<span class="lineNum">     101 </span><span class="lineCov">          2 :         break;</span>
+<span class="lineNum">     102 </span>            :     case 8:
+<span class="lineNum">     103 </span>            :         flags += 2 &lt;&lt; 2;
+<span class="lineNum">     104 </span>            :         break;
+<span class="lineNum">     105 </span>            :     default:
+<span class="lineNum">     106 </span>            :         flags += 3 &lt;&lt; 2;
+<span class="lineNum">     107 </span>            :     }
+<span class="lineNum">     108 </span>            :     switch ((I32) (sizeof(void*))) {
+<span class="lineNum">     109 </span>            :     case 2:
+<span class="lineNum">     110 </span>            :         break;
+<span class="lineNum">     111 </span>            :     case 4:
+<span class="lineNum">     112 </span>            :         flags += 1 &lt;&lt; 4;
+<span class="lineNum">     113 </span>            :         break;
+<span class="lineNum">     114 </span>            :     case 8:
+<span class="lineNum">     115 </span><span class="lineCov">          2 :         flags += 2 &lt;&lt; 4;</span>
+<span class="lineNum">     116 </span><span class="lineCov">          2 :         break;</span>
+<span class="lineNum">     117 </span>            :     default:
+<span class="lineNum">     118 </span>            :         flags += 3 &lt;&lt; 4;
+<span class="lineNum">     119 </span>            :     }
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :     // Abcouwer ZSC - crc combine functions were removed, no need for z_off_t type
+<span class="lineNum">     122 </span>            :     // z_off_t would be size that can represent largest offset in system
+<span class="lineNum">     123 </span>            :     // providing size of unsigned long
+<span class="lineNum">     124 </span>            :     switch ((I32) (sizeof(unsigned long))) {
+<span class="lineNum">     125 </span>            :     case 2:
+<span class="lineNum">     126 </span>            :         break;
+<span class="lineNum">     127 </span>            :     case 4:
+<span class="lineNum">     128 </span>            :         flags += 1 &lt;&lt; 6;
+<span class="lineNum">     129 </span>            :         break;
+<span class="lineNum">     130 </span>            :     case 8:
+<span class="lineNum">     131 </span><span class="lineCov">          2 :         flags += 2 &lt;&lt; 6;</span>
+<span class="lineNum">     132 </span><span class="lineCov">          2 :         break;</span>
+<span class="lineNum">     133 </span>            :     default:
+<span class="lineNum">     134 </span>            :         flags += 3 &lt;&lt; 6;
+<span class="lineNum">     135 </span>            :     }
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span>            :     /* Abcouwer ZSC - removed conditional compilation flags:
+<span class="lineNum">     138 </span>            :      * ASMV/ASMINF, ZLIB_WINAPI, BUILDFIXED, DYNAMIC_CRC_TABLE, NO_GZCOMPRESS,
+<span class="lineNum">     139 </span>            :      * PKZIP_BUG_WORKAROUND, NO_GZIP, FASTEST. ZLIB_DEBUG     */
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            :     /* Abcouwer ZSC - sprintf variants not checked, as used in gzprintf,
+<span class="lineNum">     142 </span>            :      * and gz code not included */
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineCov">          2 :     return flags;</span>
+<span class="lineNum">     145 </span>            : }
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span>            : /* exported to allow conversion of error code to string for compress() and
+<a name="148"><span class="lineNum">     148 </span>            :  * uncompress()</a>
+<span class="lineNum">     149 </span>            :  */
+<span class="lineNum">     150 </span><span class="lineCov">          8 : const U8 * zError(err)</span>
+<span class="lineNum">     151 </span>            :     ZlibReturn err;
+<span class="lineNum">     152 </span>            : {
+<span class="lineNum">     153 </span><span class="lineCov">          8 :     return ERR_MSG(err);</span>
+<span class="lineNum">     154 </span>            : }
+<span class="lineNum">     155 </span>            : 
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            : // Abcouwer ZSC - removed solo memcpy and related functions
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span>            : // Abcouwer ZSC - removed dynamic memory allocation functions
 </pre>
       </td>
     </tr>
