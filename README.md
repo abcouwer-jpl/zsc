@@ -172,15 +172,19 @@ Brian Morrison on 2020-10-21.
 
 This version was created by pushing zlib 1.2.11, via
 
-  git clone https://github.com/madler/zlib.git
-  cd zlib
-  git push --mirror github_url
+`git clone https://github.com/madler/zlib.git`
+
+`cd zlib`
+
+`git push --mirror github_url`
 
 To pull any future changes from public zlib, one should be able to do
 
-  git remote add public https://github.com/madler/zlib.git
-  git pull public master # Creates a merge commit
-  git push origin master
+`git remote add public https://github.com/madler/zlib.git`
+
+`git pull public master # Creates a merge commit`
+
+`git push origin master`
   
 But no guarantees on how well this work, given the significant changes.
 
