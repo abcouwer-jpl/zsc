@@ -35,3 +35,7 @@ build
 
 # ignore CMake generated zconf file
 zconf.h.included
+
+#ignore configuration files
+include/zsc/zsc_conf_global_types.h
+include/zsc/zsc_conf_private.h

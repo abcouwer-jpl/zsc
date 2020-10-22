@@ -4,12 +4,17 @@
  * Any commercial use must be negotiated with the Office of Technology
  * Transfer at the California Institute of Technology.
  *
- * This software may be subject to U.S. export control laws.
- * By accepting this software, the user agrees to comply with
- * all applicable U.S. export laws and regulations. User has the
- * responsibility to obtain export licenses, or other export authority
- * as may be required before exporting such information to foreign
- * countries or providing access to foreign persons.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file        inftrees.c
  * @date        2020-08-05
@@ -27,6 +32,7 @@
 
 #include "zsc/zutil.h"
 #include "zsc/inftrees.h"
+#include "zsc/zsc_conf_private.h"
 
 #define MAXBITS 15
 
@@ -51,17 +57,13 @@ const U8 inflate_copyright[] =
    table index bits.  It will differ if the request is greater than the
    longest code or if it is less than the shortest code.
  */
-I32 inflate_table(type, lens, codes, table, bits, work)
-codetype type;
-U16 *lens;
-U32 codes;
-code **table;
-U32 *bits;
-U16 *work;
+I32 inflate_table(codetype type, U16 *lens, U32 codes,
+        code **table, U32 *bits, U16 *work)
 {
     U32 len;               /* a code's length in bits */
     U32 sym;               /* index of code symbols */
-    U32 min, max;          /* minimum and maximum code lengths */
+    U32 min;               /* minimum code length */
+    U32 max;               /* maximum code length */
     U32 root;              /* number of index bits for root table */
     U32 curr;              /* number of index bits for current table */
     U32 drop;              /* code bits to drop for sub-table */
@@ -130,10 +132,12 @@ U16 *work;
         count[len] = 0;
     }
     for (sym = 0; sym < codes; sym++) {
+        ZSC_ASSERT3(lens[sym] < MAXBITS+1, lens[sym], MAXBITS+1, sym);
         count[lens[sym]]++;
     }
 
     /* bound code lengths, force root to be within code lengths */
+    ZSC_ASSERT(bits != Z_NULL);
     root = *bits;
     for (max = MAXBITS; max >= 1; max--) {
         if (count[max] != 0) {
@@ -243,11 +247,14 @@ U16 *work;
 
     /* check available table space */
     if ((type == LENS && used > ENOUGH_LENS) ||
-        (type == DISTS && used > ENOUGH_DISTS))
+        (type == DISTS && used > ENOUGH_DISTS)) {
         return 1;
+    }
 
     /* process all codes and make table entries */
-    for (;;) {
+    // ZSC Abcouwer - add loop limit
+    U32 loops;
+    for (loops = 0; loops <= codes; loops++) {
         /* create table entry */
         here.bits = (U8)(len - drop);
         if (work[sym] + 1U < match) {
@@ -287,7 +294,7 @@ U16 *work;
 
         /* go to next symbol, update count, len */
         sym++;
-        (count[len])--;
+        count[len]--;
         if (count[len] == 0) {
             if (len == max) {
                 break;
@@ -331,6 +338,8 @@ U16 *work;
             (*table)[low].val = (U16)(next - *table);
         }
     }
+    // check did not exit due to loop limit
+    ZSC_ASSERT2(loops <= codes, loops, codes);
 
     /* fill in remaining table entry if code is incomplete (guaranteed to have
        at most one remaining entry, since if the code is incomplete, the

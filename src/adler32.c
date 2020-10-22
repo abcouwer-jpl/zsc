@@ -1,3 +1,32 @@
+/***********************************************************************
+ * Copyright 2020, by the California Institute of Technology.
+ * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+ * Any commercial use must be negotiated with the Office of Technology
+ * Transfer at the California Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @file        adler32.c
+ * @date        2020-10-12
+ * @author      Mark Adler, Neil Abcouwer
+ * @brief       Adler-32 checksums
+ *
+ * Modified version of adler32-c for safety-critical applications.
+ * Safer macros, fixed-length types, other small changes.
+ *
+ * Original file header follows.
+ */
+
 /* adler32.c -- compute the Adler-32 checksum of a data stream
  * Copyright (C) 1995-2011, 2016 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h

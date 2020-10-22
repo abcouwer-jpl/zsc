@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info.cleaned - src/inffast.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - inffast.c<span style="font-size: 80%;"> (source / <a href="inffast.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info.cleaned</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">146</td>
+            <td class="headerCovTableEntry">162</td>
+            <td class="headerCovTableEntryHi">90.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2020-10-22 11:22:20</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Copyright 2020, by the California Institute of Technology.
+<span class="lineNum">       3 </span>            :  * ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged.
+<span class="lineNum">       4 </span>            :  * Any commercial use must be negotiated with the Office of Technology
+<span class="lineNum">       5 </span>            :  * Transfer at the California Institute of Technology.
+<span class="lineNum">       6 </span>            :  *
+<span class="lineNum">       7 </span>            :  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<span class="lineNum">       8 </span>            :  * you may not use this file except in compliance with the License.
+<span class="lineNum">       9 </span>            :  * You may obtain a copy of the License at
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  *     http://www.apache.org/licenses/LICENSE-2.0
+<span class="lineNum">      12 </span>            :  *
+<span class="lineNum">      13 </span>            :  * Unless required by applicable law or agreed to in writing, software
+<span class="lineNum">      14 </span>            :  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<span class="lineNum">      15 </span>            :  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<span class="lineNum">      16 </span>            :  * See the License for the specific language governing permissions and
+<span class="lineNum">      17 </span>            :  * limitations under the License.
+<span class="lineNum">      18 </span>            :  *
+<span class="lineNum">      19 </span>            :  * @file        inffast.c
+<span class="lineNum">      20 </span>            :  * @date        2020-08-05
+<span class="lineNum">      21 </span>            :  * @author      Mark Adler, Neil Abcouwer
+<span class="lineNum">      22 </span>            :  * @brief       Fast decoding
+<span class="lineNum">      23 </span>            :  *
+<span class="lineNum">      24 </span>            :  * Modified version of inffast.c for safety-critical applications.
+<span class="lineNum">      25 </span>            :  * Original file header follows.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span>            : /* inffast.c -- fast decoding
+<span class="lineNum">      30 </span>            :  * Copyright (C) 1995-2017 Mark Adler
+<span class="lineNum">      31 </span>            :  * For conditions of distribution and use, see copyright notice in zlib.h
+<span class="lineNum">      32 </span>            :  */
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : #include &quot;zsc/zutil.h&quot;
+<span class="lineNum">      35 </span>            : #include &quot;zsc/inftrees.h&quot;
+<span class="lineNum">      36 </span>            : #include &quot;zsc/inflate.h&quot;
+<span class="lineNum">      37 </span>            : #include &quot;zsc/inffast.h&quot;
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : // Abcouwer ZSC - no assembly included, warnings removed
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : /*
+<span class="lineNum">      42 </span>            :    Decode literal, length, and distance codes and write out the resulting
+<span class="lineNum">      43 </span>            :    literal and match bytes until either not enough input or output is
+<span class="lineNum">      44 </span>            :    available, an end-of-block is encountered, or a data error is encountered.
+<span class="lineNum">      45 </span>            :    When large enough input and output buffers are supplied to inflate(), for
+<span class="lineNum">      46 </span>            :    example, a 16K input buffer and a 64K output buffer, more than 95% of the
+<span class="lineNum">      47 </span>            :    inflate execution time is spent in this routine.
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            :    Entry assumptions:
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            :         state-&gt;mode == LEN
+<span class="lineNum">      52 </span>            :         strm-&gt;avail_in &gt;= 6
+<span class="lineNum">      53 </span>            :         strm-&gt;avail_out &gt;= 258
+<span class="lineNum">      54 </span>            :         start &gt;= strm-&gt;avail_out
+<span class="lineNum">      55 </span>            :         state-&gt;bits &lt; 8
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :    On return, state-&gt;mode is one of:
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            :         LEN -- ran out of enough output space or enough available input
+<span class="lineNum">      60 </span>            :         TYPE -- reached end of block code, inflate() to interpret next block
+<span class="lineNum">      61 </span>            :         BAD -- error in block data
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            :    Notes:
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :     - The maximum input bits used by a length/distance pair is 15 bits for the
+<span class="lineNum">      66 </span>            :       length code, 5 bits for the length extra, 15 bits for the distance code,
+<span class="lineNum">      67 </span>            :       and 13 bits for the distance extra.  This totals 48 bits, or six bytes.
+<span class="lineNum">      68 </span>            :       Therefore if strm-&gt;avail_in &gt;= 6, then there is enough input to avoid
+<span class="lineNum">      69 </span>            :       checking for available input while decoding.
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            :     - The maximum bytes that a single length/distance pair can output is 258
+<span class="lineNum">      72 </span>            :       bytes, which is the maximum length that can be coded.  inflate_fast()
+<span class="lineNum">      73 </span>            :       requires strm-&gt;avail_out &gt;= 258 for each loop to avoid checking for
+<a name="74"><span class="lineNum">      74 </span>            :       output space.</a>
+<span class="lineNum">      75 </span>            :  */
+<span class="lineNum">      76 </span><span class="lineCov">      10472 : void inflate_fast(strm, start)</span>
+<span class="lineNum">      77 </span>            : z_stream * strm;
+<span class="lineNum">      78 </span>            : U32 start;         /* inflate()'s starting value for strm-&gt;avail_out */
+<span class="lineNum">      79 </span>            : {
+<span class="lineNum">      80 </span>            :     inflate_state *state;
+<span class="lineNum">      81 </span>            :     const U8 *in;      /* local strm-&gt;next_in */
+<span class="lineNum">      82 </span>            :     const U8 *last;    /* have enough input while in &lt; last */
+<span class="lineNum">      83 </span>            :     U8 *out;     /* local strm-&gt;next_out */
+<span class="lineNum">      84 </span>            :     U8 *beg;     /* inflate()'s initial strm-&gt;next_out */
+<span class="lineNum">      85 </span>            :     U8 *end;     /* while out &lt; end, enough space available */
+<span class="lineNum">      86 </span>            :     U32 dmax;              /* maximum distance from zlib header */
+<span class="lineNum">      87 </span>            :     U32 wsize;             /* window size or zero if not using window */
+<span class="lineNum">      88 </span>            :     U32 whave;             /* valid bytes in the window */
+<span class="lineNum">      89 </span>            :     U32 wnext;             /* window write index */
+<span class="lineNum">      90 </span>            :     U8 *window;  /* allocated sliding window, if wsize != 0 */
+<span class="lineNum">      91 </span>            :     U32 hold;         /* local strm-&gt;hold */
+<span class="lineNum">      92 </span>            :     U32 bits;              /* local strm-&gt;bits */
+<span class="lineNum">      93 </span>            :     code const *lcode;      /* local strm-&gt;lencode */
+<span class="lineNum">      94 </span>            :     code const *dcode;      /* local strm-&gt;distcode */
+<span class="lineNum">      95 </span>            :     U32 lmask;             /* mask for first level of length codes */
+<span class="lineNum">      96 </span>            :     U32 dmask;             /* mask for first level of distance codes */
+<span class="lineNum">      97 </span>            :     code here;                  /* retrieved table entry */
+<span class="lineNum">      98 </span>            :     U32 op;                /* code bits, operation, extra bits, or */
+<span class="lineNum">      99 </span>            :                                 /*  window position, window bytes to copy */
+<span class="lineNum">     100 </span>            :     U32 len;               /* match length, unused bytes */
+<span class="lineNum">     101 </span>            :     U32 dist;              /* match distance */
+<span class="lineNum">     102 </span>            :     U8 *from;    /* where to copy match from */
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :     /* copy state to local variables */
+<span class="lineNum">     105 </span><span class="lineCov">      10472 :     state = (inflate_state *)strm-&gt;state;</span>
+<span class="lineNum">     106 </span><span class="lineCov">      10472 :     in = strm-&gt;next_in;</span>
+<span class="lineNum">     107 </span><span class="lineCov">      10472 :     last = in + (strm-&gt;avail_in - 5);</span>
+<span class="lineNum">     108 </span><span class="lineCov">      10472 :     out = strm-&gt;next_out;</span>
+<span class="lineNum">     109 </span><span class="lineCov">      10472 :     beg = out - (start - strm-&gt;avail_out);</span>
+<span class="lineNum">     110 </span><span class="lineCov">      10472 :     end = out + (strm-&gt;avail_out - 257);</span>
+<span class="lineNum">     111 </span><span class="lineCov">      10472 :     dmax = state-&gt;dmax;</span>
+<span class="lineNum">     112 </span><span class="lineCov">      10472 :     wsize = state-&gt;wsize;</span>
+<span class="lineNum">     113 </span><span class="lineCov">      10472 :     whave = state-&gt;whave;</span>
+<span class="lineNum">     114 </span><span class="lineCov">      10472 :     wnext = state-&gt;wnext;</span>
+<span class="lineNum">     115 </span><span class="lineCov">      10472 :     window = state-&gt;window;</span>
+<span class="lineNum">     116 </span><span class="lineCov">      10472 :     hold = state-&gt;hold;</span>
+<span class="lineNum">     117 </span><span class="lineCov">      10472 :     bits = state-&gt;bits;</span>
+<span class="lineNum">     118 </span><span class="lineCov">      10472 :     lcode = state-&gt;lencode;</span>
+<span class="lineNum">     119 </span><span class="lineCov">      10472 :     dcode = state-&gt;distcode;</span>
+<span class="lineNum">     120 </span><span class="lineCov">      10472 :     lmask = (1U &lt;&lt; state-&gt;lenbits) - 1;</span>
+<span class="lineNum">     121 </span><span class="lineCov">      10472 :     dmask = (1U &lt;&lt; state-&gt;distbits) - 1;</span>
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            :     /* decode literals and length/distances until end-of-block or not enough
+<span class="lineNum">     124 </span>            :        input data or output space */
+<span class="lineNum">     125 </span>            :     do {
+<span class="lineNum">     126 </span><span class="lineCov">   19116459 :         if (bits &lt; 15) {</span>
+<span class="lineNum">     127 </span><span class="lineCov">   12585511 :             hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     128 </span><span class="lineCov">   12585511 :             in++;</span>
+<span class="lineNum">     129 </span><span class="lineCov">   12585511 :             bits += 8;</span>
+<span class="lineNum">     130 </span><span class="lineCov">   12585511 :             hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     131 </span><span class="lineCov">   12585511 :             in++;</span>
+<span class="lineNum">     132 </span><span class="lineCov">   12585511 :             bits += 8;</span>
+<span class="lineNum">     133 </span>            :         }
+<span class="lineNum">     134 </span><span class="lineCov">   19116459 :         here = lcode[hold &amp; lmask];</span>
+<span class="lineNum">     135 </span><span class="lineCov">   19484131 :       dolen:</span>
+<span class="lineNum">     136 </span><span class="lineCov">   19484131 :         op = (U32)(here.bits);</span>
+<span class="lineNum">     137 </span><span class="lineCov">   19484131 :         hold &gt;&gt;= op;</span>
+<span class="lineNum">     138 </span><span class="lineCov">   19484131 :         bits -= op;</span>
+<span class="lineNum">     139 </span><span class="lineCov">   19484131 :         op = (U32)(here.op);</span>
+<span class="lineNum">     140 </span><span class="lineCov">   19484131 :         if (op == 0) {                          /* literal */</span>
+<span class="lineNum">     141 </span><span class="lineCov">    7890915 :             *out++ = (U8)(here.val);</span>
+<span class="lineNum">     142 </span>            :         }
+<span class="lineNum">     143 </span><span class="lineCov">   11593216 :         else if (op &amp; 16) {                     /* length base */</span>
+<span class="lineNum">     144 </span><span class="lineCov">   11215334 :             len = (U32)(here.val);</span>
+<span class="lineNum">     145 </span><span class="lineCov">   11215334 :             op &amp;= 15;                           /* number of extra bits */</span>
+<span class="lineNum">     146 </span><span class="lineCov">   11215334 :             if (op) {</span>
+<span class="lineNum">     147 </span><span class="lineCov">    1654260 :                 if (bits &lt; op) {</span>
+<span class="lineNum">     148 </span><span class="lineCov">        252 :                     hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     149 </span><span class="lineCov">        252 :                     in++;</span>
+<span class="lineNum">     150 </span><span class="lineCov">        252 :                     bits += 8;</span>
+<span class="lineNum">     151 </span>            :                 }
+<span class="lineNum">     152 </span><span class="lineCov">    1654260 :                 len += (U32)hold &amp; ((1U &lt;&lt; op) - 1);</span>
+<span class="lineNum">     153 </span><span class="lineCov">    1654260 :                 hold &gt;&gt;= op;</span>
+<span class="lineNum">     154 </span><span class="lineCov">    1654260 :                 bits -= op;</span>
+<span class="lineNum">     155 </span>            :             }
+<span class="lineNum">     156 </span><span class="lineCov">   11215334 :             if (bits &lt; 15) {</span>
+<span class="lineNum">     157 </span><span class="lineCov">    2511878 :                 hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     158 </span><span class="lineCov">    2511878 :                 in++;</span>
+<span class="lineNum">     159 </span><span class="lineCov">    2511878 :                 bits += 8;</span>
+<span class="lineNum">     160 </span><span class="lineCov">    2511878 :                 hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     161 </span><span class="lineCov">    2511878 :                 in++;</span>
+<span class="lineNum">     162 </span><span class="lineCov">    2511878 :                 bits += 8;</span>
+<span class="lineNum">     163 </span>            :             }
+<span class="lineNum">     164 </span><span class="lineCov">   11215334 :             here = dcode[hold &amp; dmask];</span>
+<span class="lineNum">     165 </span><span class="lineCov">   11578097 :           dodist:</span>
+<span class="lineNum">     166 </span><span class="lineCov">   11578097 :             op = (U32)(here.bits);</span>
+<span class="lineNum">     167 </span><span class="lineCov">   11578097 :             hold &gt;&gt;= op;</span>
+<span class="lineNum">     168 </span><span class="lineCov">   11578097 :             bits -= op;</span>
+<span class="lineNum">     169 </span><span class="lineCov">   11578097 :             op = (U32)(here.op);</span>
+<span class="lineNum">     170 </span><span class="lineCov">   11578097 :             if (op &amp; 16) {                      /* distance base */</span>
+<span class="lineNum">     171 </span><span class="lineCov">   11215334 :                 dist = (U32)(here.val);</span>
+<span class="lineNum">     172 </span><span class="lineCov">   11215334 :                 op &amp;= 15;                       /* number of extra bits */</span>
+<span class="lineNum">     173 </span><span class="lineCov">   11215334 :                 if (bits &lt; op) {</span>
+<span class="lineNum">     174 </span><span class="lineCov">     187699 :                     hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     175 </span><span class="lineCov">     187699 :                     in++;</span>
+<span class="lineNum">     176 </span><span class="lineCov">     187699 :                     bits += 8;</span>
+<span class="lineNum">     177 </span><span class="lineCov">     187699 :                     if (bits &lt; op) {</span>
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :                         hold += (U32)(*in) &lt;&lt; bits;</span>
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :                         in++;</span>
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :                         bits += 8;</span>
+<span class="lineNum">     181 </span>            :                     }
+<span class="lineNum">     182 </span>            :                 }
+<span class="lineNum">     183 </span><span class="lineCov">   11215334 :                 dist += (U32)hold &amp; ((1U &lt;&lt; op) - 1);</span>
+<span class="lineNum">     184 </span>            :                 // Abcouwer ZSC - enable code from INFLATE_STRICT
+<span class="lineNum">     185 </span><span class="lineCov">   11215334 :                 if (dist &gt; dmax) {</span>
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :                     strm-&gt;msg = (U8*)&quot;invalid distance too far back&quot;;</span>
+<span class="lineNum">     187 </span><span class="lineNoCov">          0 :                     state-&gt;mode = BAD;</span>
+<span class="lineNum">     188 </span><span class="lineNoCov">          0 :                     break;</span>
+<span class="lineNum">     189 </span>            :                 }
+<span class="lineNum">     190 </span><span class="lineCov">   11215334 :                 hold &gt;&gt;= op;</span>
+<span class="lineNum">     191 </span><span class="lineCov">   11215334 :                 bits -= op;</span>
+<span class="lineNum">     192 </span><span class="lineCov">   11215334 :                 op = (U32)(out - beg);     /* max distance in output */</span>
+<span class="lineNum">     193 </span><span class="lineCov">   11215334 :                 if (dist &gt; op) {                /* see if copy from window */</span>
+<span class="lineNum">     194 </span><span class="lineCov">      38510 :                     op = dist - op;             /* distance back in window */</span>
+<span class="lineNum">     195 </span><span class="lineCov">      38510 :                     if (op &gt; whave) {</span>
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :                         if (state-&gt;sane) {</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :                             strm-&gt;msg =</span>
+<span class="lineNum">     198 </span>            :                                 (U8*)&quot;invalid distance too far back&quot;;
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :                             state-&gt;mode = BAD;</span>
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :                             break;</span>
+<span class="lineNum">     201 </span>            :                         }
+<span class="lineNum">     202 </span>            :                     }
+<span class="lineNum">     203 </span><span class="lineCov">      38510 :                     from = window;</span>
+<span class="lineNum">     204 </span><span class="lineCov">      38510 :                     if (wnext == 0) {           /* very common case */</span>
+<span class="lineNum">     205 </span><span class="lineCov">      10891 :                         from += wsize - op;</span>
+<span class="lineNum">     206 </span><span class="lineCov">      10891 :                         if (op &lt; len) {         /* some from window */</span>
+<span class="lineNum">     207 </span><span class="lineCov">         16 :                             len -= op;</span>
+<span class="lineNum">     208 </span>            :                             do {
+<span class="lineNum">     209 </span><span class="lineCov">        207 :                                 *out++ = *from++;</span>
+<span class="lineNum">     210 </span><span class="lineCov">        207 :                                 op--;</span>
+<span class="lineNum">     211 </span><span class="lineCov">        207 :                             } while (op);</span>
+<span class="lineNum">     212 </span><span class="lineCov">         16 :                             from = out - dist;  /* rest from output */</span>
+<span class="lineNum">     213 </span>            :                         }
+<span class="lineNum">     214 </span>            :                     }
+<span class="lineNum">     215 </span><span class="lineCov">      27619 :                     else if (wnext &lt; op) {      /* wrap around window */</span>
+<span class="lineNum">     216 </span><span class="lineCov">       4509 :                         from += wsize + wnext - op;</span>
+<span class="lineNum">     217 </span><span class="lineCov">       4509 :                         op -= wnext;</span>
+<span class="lineNum">     218 </span><span class="lineCov">       4509 :                         if (op &lt; len) {         /* some from end of window */</span>
+<span class="lineNum">     219 </span><span class="lineCov">        191 :                             len -= op;</span>
+<span class="lineNum">     220 </span>            :                             do {
+<span class="lineNum">     221 </span><span class="lineCov">        475 :                                 *out++ = *from++;</span>
+<span class="lineNum">     222 </span><span class="lineCov">        475 :                                 op--;</span>
+<span class="lineNum">     223 </span><span class="lineCov">        475 :                             } while (op);</span>
+<span class="lineNum">     224 </span><span class="lineCov">        191 :                             from = window;</span>
+<span class="lineNum">     225 </span><span class="lineCov">        191 :                             if (wnext &lt; len) {  /* some from start of window */</span>
+<span class="lineNum">     226 </span><span class="lineCov">          4 :                                 op = wnext;</span>
+<span class="lineNum">     227 </span><span class="lineCov">          4 :                                 len -= op;</span>
+<span class="lineNum">     228 </span>            :                                 do {
+<span class="lineNum">     229 </span><span class="lineCov">         14 :                                     *out++ = *from++;</span>
+<span class="lineNum">     230 </span><span class="lineCov">         14 :                                     op--;</span>
+<span class="lineNum">     231 </span><span class="lineCov">         14 :                                 } while (op);</span>
+<span class="lineNum">     232 </span><span class="lineCov">          4 :                                 from = out - dist;      /* rest from output */</span>
+<span class="lineNum">     233 </span>            :                             }
+<span class="lineNum">     234 </span>            :                         }
+<span class="lineNum">     235 </span>            :                     }
+<span class="lineNum">     236 </span>            :                     else {                      /* contiguous in window */
+<span class="lineNum">     237 </span><span class="lineCov">      23110 :                         from += wnext - op;</span>
+<span class="lineNum">     238 </span><span class="lineCov">      23110 :                         if (op &lt; len) {         /* some from window */</span>
+<span class="lineNum">     239 </span><span class="lineCov">        536 :                             len -= op;</span>
+<span class="lineNum">     240 </span>            :                             do {
+<span class="lineNum">     241 </span><span class="lineCov">       1611 :                                 *out++ = *from++;</span>
+<span class="lineNum">     242 </span><span class="lineCov">       1611 :                                 op--;</span>
+<span class="lineNum">     243 </span><span class="lineCov">       1611 :                             } while (op);</span>
+<span class="lineNum">     244 </span><span class="lineCov">        536 :                             from = out - dist;  /* rest from output */</span>
+<span class="lineNum">     245 </span>            :                         }
+<span class="lineNum">     246 </span>            :                     }
+<span class="lineNum">     247 </span><span class="lineCov">     135756 :                     while (len &gt; 2) {</span>
+<span class="lineNum">     248 </span><span class="lineCov">      58736 :                         *out++ = *from++;</span>
+<span class="lineNum">     249 </span><span class="lineCov">      58736 :                         *out++ = *from++;</span>
+<span class="lineNum">     250 </span><span class="lineCov">      58736 :                         *out++ = *from++;</span>
+<span class="lineNum">     251 </span><span class="lineCov">      58736 :                         len -= 3;</span>
+<span class="lineNum">     252 </span>            :                     }
+<span class="lineNum">     253 </span><span class="lineCov">      38510 :                     if (len) {</span>
+<span class="lineNum">     254 </span><span class="lineCov">      19791 :                         *out++ = *from++;</span>
+<span class="lineNum">     255 </span><span class="lineCov">      19791 :                         if (len &gt; 1)</span>
+<span class="lineNum">     256 </span><span class="lineCov">       7962 :                             *out++ = *from++;</span>
+<span class="lineNum">     257 </span>            :                     }
+<span class="lineNum">     258 </span>            :                 }
+<span class="lineNum">     259 </span>            :                 else {
+<span class="lineNum">     260 </span><span class="lineCov">   11176824 :                     from = out - dist;          /* copy direct from output */</span>
+<span class="lineNum">     261 </span>            :                     do {                        /* minimum length is three */
+<span class="lineNum">     262 </span><span class="lineCov">   26877583 :                         *out++ = *from++;</span>
+<span class="lineNum">     263 </span><span class="lineCov">   26877583 :                         *out++ = *from++;</span>
+<span class="lineNum">     264 </span><span class="lineCov">   26877583 :                         *out++ = *from++;</span>
+<span class="lineNum">     265 </span><span class="lineCov">   26877583 :                         len -= 3;</span>
+<span class="lineNum">     266 </span><span class="lineCov">   26877583 :                     } while (len &gt; 2);</span>
+<span class="lineNum">     267 </span><span class="lineCov">   11176824 :                     if (len) {</span>
+<span class="lineNum">     268 </span><span class="lineCov">    7050272 :                         *out++ = *from++;</span>
+<span class="lineNum">     269 </span><span class="lineCov">    7050272 :                         if (len &gt; 1)</span>
+<span class="lineNum">     270 </span><span class="lineCov">    3474649 :                             *out++ = *from++;</span>
+<span class="lineNum">     271 </span>            :                     }
+<span class="lineNum">     272 </span>            :                 }
+<span class="lineNum">     273 </span>            :             }
+<span class="lineNum">     274 </span><span class="lineCov">     362763 :             else if ((op &amp; 64) == 0) {          /* 2nd level distance code */</span>
+<span class="lineNum">     275 </span><span class="lineCov">     362763 :                 here = dcode[here.val + (hold &amp; ((1U &lt;&lt; op) - 1))];</span>
+<span class="lineNum">     276 </span><span class="lineCov">     362763 :                 goto dodist;</span>
+<span class="lineNum">     277 </span>            :             }
+<span class="lineNum">     278 </span>            :             else {
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :                 strm-&gt;msg = (U8*)&quot;invalid distance code&quot;;</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :                 state-&gt;mode = BAD;</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :                 break;</span>
+<span class="lineNum">     282 </span>            :             }
+<span class="lineNum">     283 </span>            :         }
+<span class="lineNum">     284 </span><span class="lineCov">     377882 :         else if ((op &amp; 64) == 0) {              /* 2nd level length code */</span>
+<span class="lineNum">     285 </span><span class="lineCov">     367672 :             here = lcode[here.val + (hold &amp; ((1U &lt;&lt; op) - 1))];</span>
+<span class="lineNum">     286 </span><span class="lineCov">     367672 :             goto dolen;</span>
+<span class="lineNum">     287 </span>            :         }
+<span class="lineNum">     288 </span><span class="lineCov">      10210 :         else if (op &amp; 32) {                     /* end-of-block */</span>
+<span class="lineNum">     289 </span><span class="lineCov">      10210 :             state-&gt;mode = TYPE;</span>
+<span class="lineNum">     290 </span><span class="lineCov">      10210 :             break;</span>
+<span class="lineNum">     291 </span>            :         }
+<span class="lineNum">     292 </span>            :         else {
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :             strm-&gt;msg = (U8*)&quot;invalid literal/length code&quot;;</span>
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 :             state-&gt;mode = BAD;</span>
+<span class="lineNum">     295 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     296 </span>            :         }
+<span class="lineNum">     297 </span><span class="lineCov">   19106249 :     } while (in &lt; last &amp;&amp; out &lt; end);</span>
+<span class="lineNum">     298 </span>            : 
+<span class="lineNum">     299 </span>            :     /* return unused bytes (on entry, bits &lt; 8, so in won't go too far back) */
+<span class="lineNum">     300 </span><span class="lineCov">      10472 :     len = bits &gt;&gt; 3;</span>
+<span class="lineNum">     301 </span><span class="lineCov">      10472 :     in -= len;</span>
+<span class="lineNum">     302 </span><span class="lineCov">      10472 :     bits -= len &lt;&lt; 3;</span>
+<span class="lineNum">     303 </span><span class="lineCov">      10472 :     hold &amp;= (1U &lt;&lt; bits) - 1;</span>
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span>            :     /* update state and return */
+<span class="lineNum">     306 </span><span class="lineCov">      10472 :     strm-&gt;next_in = in;</span>
+<span class="lineNum">     307 </span><span class="lineCov">      10472 :     strm-&gt;next_out = out;</span>
+<span class="lineNum">     308 </span><span class="lineCov">      10472 :     strm-&gt;avail_in = (U32)(in &lt; last ? 5 + (last - in) : 5 - (in - last));</span>
+<span class="lineNum">     309 </span><span class="lineCov">      20944 :     strm-&gt;avail_out = (U32)(out &lt; end ?</span>
+<span class="lineNum">     310 </span><span class="lineCov">      10472 :                                  257 + (end - out) : 257 - (out - end));</span>
+<span class="lineNum">     311 </span><span class="lineCov">      10472 :     state-&gt;hold = hold;</span>
+<span class="lineNum">     312 </span><span class="lineCov">      10472 :     state-&gt;bits = bits;</span>
+<span class="lineNum">     313 </span><span class="lineCov">      10472 :     return;</span>
+<span class="lineNum">     314 </span>            : }
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span>            : /*
+<span class="lineNum">     317 </span>            :    inflate_fast() speedups that turned out slower (on a PowerPC G3 750CXe):
+<span class="lineNum">     318 </span>            :    - Using bit fields for code structure
+<span class="lineNum">     319 </span>            :    - Different op definition to avoid &amp; for extra bits (do &amp; for table bits)
+<span class="lineNum">     320 </span>            :    - Three separate decoding do-loops for direct, window, and wnext == 0
+<span class="lineNum">     321 </span>            :    - Special case for distance &gt; 1 copies to do overlapped load and store copy
+<span class="lineNum">     322 </span>            :    - Explicit branch predictions (based on measured branch probabilities)
+<span class="lineNum">     323 </span>            :    - Deferring match copy and interspersed it with decoding subsequent codes
+<span class="lineNum">     324 </span>            :    - Swapping literal/length else
+<span class="lineNum">     325 </span>            :    - Swapping window/direct else
+<span class="lineNum">     326 </span>            :    - Larger unrolled copy loops (three is about right)
+<span class="lineNum">     327 </span>            :    - Moving len -= 3 statement into middle of loop
+<span class="lineNum">     328 </span>            :  */
+<span class="lineNum">     329 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

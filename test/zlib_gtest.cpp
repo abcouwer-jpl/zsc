@@ -1,9 +1,3 @@
-/* example.c -- usage example of the zlib compression library
- * Copyright (C) 1995-2006, 2011, 2016 Jean-loup Gailly
- * For conditions of distribution and use, see copyright notice in zlib.h
- */
-
-/* @(#) $Id$ */
 
 #include "zsc/zutil.h"
 #include "zsc/zlib.h"
@@ -282,11 +276,15 @@ void zlib_test(
             head_in.extra_len = len;
         }
     }
-    head_out.name = (U8 *)malloc(80);
+    U8 name_buf[80];
+    U8 comment_buf[80];
+    U8 extra_buf[80];
+
+    head_out.name = name_buf; // (U8 *)malloc(80);
     head_out.name_max = 80;
-    head_out.comment = (U8 *)malloc(80);
+    head_out.comment = comment_buf; // (U8 *)malloc(80);
     head_out.comm_max = 80;
-    head_out.extra = (U8 *)malloc(80);
+    head_out.extra = extra_buf; // (U8 *)malloc(80);
     head_out.extra_max = 80;
 
     const U8 * dictionary = alice_dictionary;
@@ -473,7 +471,7 @@ void zlib_test(
                 err = deflateSetHeader(&stream, Z_NULL);
                 break;
             case WRAP_GZIP_BASIC:
-                case WRAP_GZIP_BUFFERS:
+            case WRAP_GZIP_BUFFERS:
                 err = deflateSetHeader(&stream, &head_in);
                 break;
             default:
@@ -741,7 +739,7 @@ void zlib_test(
 
         switch (wrapper) {
         case WRAP_NONE:
-            err = zsc_uncompress_safe2(uncompressed_buf, &uncompressed_buf_len_out,
+            err = zsc_uncompress2(uncompressed_buf, &uncompressed_buf_len_out,
                     compressed_buf, &compressed_buf_len_out,
                     work_buf, work_buf_len, windowBits);
             break;
@@ -751,7 +749,7 @@ void zlib_test(
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len);
             } else {
-                err = zsc_uncompress_safe2(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress2(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len, windowBits);
             }
@@ -760,11 +758,11 @@ void zlib_test(
         case WRAP_GZIP_BASIC:
         case WRAP_GZIP_BUFFERS:
             if (all_params_default) {
-                err = zsc_uncompress_safe_gzip(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress_gzip(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len, &head_out);
             } else {
-                err = zsc_uncompress_safe_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
+                err = zsc_uncompress_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
                         compressed_buf, &compressed_buf_len_out,
                         work_buf, work_buf_len, windowBits, &head_out);
             }
@@ -1008,13 +1006,18 @@ void zlib_test(
     free(compressed_buf);
     free(uncompressed_buf);
 
-
-    free(head_in.name);
-    free(head_in.comment);
-    free(head_in.extra);
-    free(head_out.name);
-    free(head_out.comment);
-    free(head_out.extra);
+    if (head_in.name) {
+        free(head_in.name);
+    }
+    if (head_in.comment) {
+        free(head_in.comment);
+    }
+    if (head_in.extra) {
+        free(head_in.extra);
+    }
+//    free(head_out.name);
+//    free(head_out.comment);
+//    free(head_out.extra);
 
 }
 
@@ -1446,8 +1449,8 @@ TEST_F(ZlibTest, Bounds) {
 
 }
 
-TEST_F(ZlibTest, CompressSafeErrors) {
-    printf("test errors in compress_safe\n");
+TEST_F(ZlibTest, ZSCCompressErrors) {
+    printf("test errors in zsc_compress\n");
 
 
     FILE * file = fopen("corpus/cantrbry/alice29.txt", "r");
@@ -1520,8 +1523,8 @@ TEST_F(ZlibTest, CompressSafeErrors) {
     free(work_buf);
 }
 
-TEST_F(ZlibTest, UncompressSafeErrors) {
-    printf("test errors in uncompress_safe\n");
+TEST_F(ZlibTest, ZSCUncompressErrors) {
+    printf("test errors in zsc_uncompress\n");
 
 
     FILE * file = fopen("corpus/cantrbry/alice29.txt", "r");
@@ -1565,6 +1568,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     EXPECT_EQ(err, Z_OK);
 
     free(work_buf);
+    free(source_buf);
 
     U32 uncompressed_buf_len = source_buf_len;
     U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
@@ -1588,7 +1592,7 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     printf("bad window bits arg\n");
     compressed_buf_len_out2 = compressed_buf_len_out;
     uncompressed_buf_len_out = uncompressed_buf_len;
-    err = zsc_uncompress_safe2(uncompressed_buf, &uncompressed_buf_len_out,
+    err = zsc_uncompress2(uncompressed_buf, &uncompressed_buf_len_out,
                             compressed_buf, &compressed_buf_len_out2,
                             work_buf, work_buf_len, 500);
     EXPECT_EQ(err, Z_STREAM_ERROR);
@@ -1608,11 +1612,15 @@ TEST_F(ZlibTest, UncompressSafeErrors) {
     memset(&header, 0, sizeof(header));
     compressed_buf_len_out2 = compressed_buf_len_out;
     uncompressed_buf_len_out = uncompressed_buf_len;
-    err = zsc_uncompress_safe_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
+    err = zsc_uncompress_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
                             compressed_buf, &compressed_buf_len_out2,
                             work_buf, work_buf_len, DEF_WBITS, &header);
     EXPECT_EQ(err, Z_STREAM_ERROR);
     printf("zError:%s\n", zError(err));
+
+    free(compressed_buf);
+    free(uncompressed_buf);
+    free(work_buf);
 
 }
 
@@ -1949,7 +1957,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 4;
-    err = zsc_uncompress_safe_gzip(out_buf, &out_buf_len_out,
+    err = zsc_uncompress_gzip(out_buf, &out_buf_len_out,
             header_arr4, &source_len_out,
                             work_buf, work_buf_size, Z_NULL);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1965,7 +1973,7 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 4;
-    err = zsc_uncompress_safe_gzip(out_buf, &out_buf_len_out,
+    err = zsc_uncompress_gzip(out_buf, &out_buf_len_out,
             header_arr4, &source_len_out,
                             work_buf, work_buf_size, Z_NULL);
     EXPECT_EQ(err, Z_DATA_ERROR);
@@ -1981,32 +1989,10 @@ TEST_F(ZlibTest, InflateErrors) {
 
     out_buf_len_out = out_buf_size;
     source_len_out = 4;
-    err = zsc_uncompress_safe_gzip(out_buf, &out_buf_len_out,
+    err = zsc_uncompress_gzip(out_buf, &out_buf_len_out,
             header_arr4, &source_len_out,
             work_buf, work_buf_size, Z_NULL);
     EXPECT_EQ(err, Z_DATA_ERROR);
-
-//    printf("bad gzip crc\n");
-//
-//    U8 header_arr_bad_crc[] = { 31, 139, 8, 2,
-//            0, 0, 0, 0, // time
-//            0, // level
-//            0, // os
-//
-//            };
-//    header_arr4[0] = 31;
-//    header_arr4[1] = 139 + 1;
-//    header_arr4[2] = 8;
-//    header_arr4[3] = 0;
-//    printf("header = 0x%02x 0x%02x 0x%02x 0x%02x\n",
-//            header_arr4[0], header_arr4[1], header_arr4[2], header_arr4[3]);
-//
-//    out_buf_len_out = out_buf_size;
-//    source_len_out = 4;
-//    err = uncompressSafeGzip(out_buf, &out_buf_len_out,
-//            header_arr4, &source_len_out,
-//            work_buf, work_buf_size, Z_NULL);
-//    EXPECT_EQ(err, Z_DATA_ERROR);
 
     printf("null stream as function input\n");
     err = inflateEnd(Z_NULL);
@@ -2180,105 +2166,311 @@ TEST_F(ZlibTest, InflateUndocumented) {
 
 }
 
-//TEST_F(ZlibTest, GetCRCTable) {
-//    const z_crc_t * table = get_crc_table();
-//    EXPECT_EQ(table[0], 0x00000000UL);
-//    EXPECT_EQ(table[1], 0x77073096UL);
-//    EXPECT_EQ(table[255], 0x2d02ef8dUL);
-//
-//}
+
+TEST(ZlibDeathTest, Asserts) {
 
 
-//TEST_F(ZlibTest, CRC32Combine) {
-//    unsigned char buf[] = { 5, 7, 21, 17, 35, 77, 201, 170, 85, 14 };
-//
-//    unsigned int crc3;
-//    unsigned int crc7;
-//    unsigned int crc4;
-//    unsigned int crc6;
-//    unsigned int crc37;
-//    unsigned int crc46;
-//
-//    crc3 = crc32(0, NULL, 0);
-//    crc3 = crc32(crc3, buf, 3);
-//
-//    crc7 = crc32(0, NULL, 0);
-//    crc7 = crc32(crc7, buf+3, 7);
-//
-//    crc4 = crc32(0, NULL, 0);
-//    crc4 = crc32(crc4, buf, 4);
-//
-//    crc6 = crc32(0, NULL, 0);
-//    crc6 = crc32(crc6, buf+4, 6);
-//
-//    // FIXME
-////    crc37 = crc32_combine64(crc3, crc7, 7);
-////
-////    crc46 = crc32_combine(crc4, crc6, 6);
-////
-////    EXPECT_EQ(crc37, crc46);
-//
-//// FIXME try again or delete
-////    crc3 = crc32_big(0, NULL, 0);
-////    crc3 = crc32_big(crc3, buf, 3);
-////
-////    crc3 = crc32_little(0, NULL, 0);
-////    crc3 = crc32_little(crc3, buf, 3);
-//
-//
-//
-//
-//    unsigned int adler1;
-//    unsigned int adler9;
-//    unsigned int adler3;
-//    unsigned int adler7;
-//    unsigned int adler4;
-//    unsigned int adler6;
-//    unsigned int adler19;
-//    unsigned int adler37;
-//    unsigned int adler46;
-//
-//    adler1 = adler32(0, NULL, 0);
-//    adler1 = adler32(adler1, buf, 1);
-//
-//    adler9 = adler32(0, NULL, 0);
-//    adler9 = adler32(adler9, buf+1, 9);
-//
-//    adler3 = adler32(0, NULL, 0);
-//    adler3 = adler32(adler3, buf, 3);
-//
-//    adler7 = adler32(0, NULL, 0);
-//    adler7 = adler32(adler7, buf+3, 7);
-//
-//    adler4 = adler32(0, NULL, 0);
-//    adler4 = adler32(adler4, buf, 4);
-//
-//    adler6 = adler32(0, NULL, 0);
-//    adler6 = adler32(adler6, buf+4, 6);
-//
-//    adler19 = adler32_combine(adler1, adler9, 9);
-//
-//    adler37 = adler32_combine(adler3, adler7, 7);
-//
-//    // FIXME
-////    adler46 = adler32_combine64(adler4, adler6, 6);
-//
-//    EXPECT_EQ(adler19, adler37);
-////    EXPECT_EQ(adler19, adler46);
-//
-//    // adler greater than BASE
-//    (void)adler32(65522, buf, 1);
-//    (void)adler32(65522, buf, 2);
-//
-//    unsigned char buf2[] = { 20, 10 };
-//    (void)adler32(65500, buf, 2);
-//
-//    // combine should have len >= 0
-//    EXPECT_EQ(adler32_combine(87, 42, -1), 0xffffffff);
-//
-//
-//
-//}
+    if (getenv("ZSC_DISABLE_DEATH_TESTS")) {
+        printf("disabling death tests... they don't play well with valgrind.\n");
+        return;
+    } else {
+        printf("death tests enabled.\n");
+    }
+
+    ZlibReturn zret;
+
+    ASSERT_DEATH(
+            zret = zsc_compress_get_min_work_buf_size(NULL),
+            "size_out");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_get_min_work_buf_size2(DEF_WBITS, DEF_MEM_LEVEL, NULL),
+            "size_out");
+
+    U32 source_len = 10000;
+    U32 max_block_len = 100000;
+
+    ASSERT_DEATH(
+            zret = zsc_compress_get_max_output_size(
+                    source_len, max_block_len, Z_DEFAULT_COMPRESSION, NULL),
+            "size_out");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_get_max_output_size_gzip(
+                    source_len, max_block_len, Z_DEFAULT_COMPRESSION, NULL,
+                    NULL),
+            "size_out");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_get_max_output_size2(
+                    source_len, max_block_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, NULL),
+            "size_out");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_get_max_output_size_gzip2(
+                    source_len, max_block_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, NULL, NULL),
+            "size_out");
+
+    U8 source_buf[10] = {42,85,63,25,35,91,16,23,255,1};
+    U32 source_buf_len = 10;
+    U32 compressed_buf_len = 10000;
+    U8 compressed_buf[10000];
+    U32 work_buf_len = 1000000;
+    U8 work_buf[1000000];
+    U32 compressed_buf_len_out;
+    U32 source_buf_len_out;
+    U32 uncompressed_buf_len = 100;
+    U8 uncompressed_buf[100];
+    U32 uncompressed_buf_len_out;
+
+
+    ASSERT_DEATH(
+            zret = zsc_compress(compressed_buf, &compressed_buf_len_out,
+                    NULL, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_compress(NULL, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_compress(compressed_buf, NULL,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_compress(compressed_buf, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    NULL, work_buf_len, Z_DEFAULT_COMPRESSION),
+            "work");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip(compressed_buf, &compressed_buf_len_out,
+                    NULL, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, NULL),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip(NULL, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, NULL),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip(compressed_buf, NULL,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION, NULL),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip(compressed_buf, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    NULL, work_buf_len, Z_DEFAULT_COMPRESSION, NULL),
+            "work");
+
+    ASSERT_DEATH(
+            zret = zsc_compress2(compressed_buf, &compressed_buf_len_out,
+                    NULL, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_compress2(NULL, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_compress2(compressed_buf, NULL,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_compress2(compressed_buf, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    NULL, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY),
+            "work");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip2(compressed_buf, &compressed_buf_len_out,
+                    NULL, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip2(NULL, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip2(compressed_buf, NULL,
+                    source_buf, source_buf_len, max_block_len,
+                    work_buf, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_compress_gzip2(compressed_buf, &compressed_buf_len_out,
+                    source_buf, source_buf_len, max_block_len,
+                    NULL, work_buf_len, Z_DEFAULT_COMPRESSION,
+                    DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL),
+            "work");
+
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_get_min_work_buf_size(NULL),
+            "size_out");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_get_min_work_buf_size2(DEF_WBITS, NULL),
+            "size_out");
+
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
+                    NULL, &compressed_buf_len_out,
+                    work_buf, work_buf_len),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, NULL,
+                    work_buf, work_buf_len),
+            "source_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress(NULL, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress(uncompressed_buf, NULL,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    NULL, work_buf_len),
+            "work");
+
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip(uncompressed_buf, &uncompressed_buf_len_out,
+                    NULL, &compressed_buf_len_out,
+                    work_buf, work_buf_len, NULL),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, NULL,
+                    work_buf, work_buf_len, NULL),
+            "source_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip(NULL, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len, NULL),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip(uncompressed_buf, NULL,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len, NULL),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    NULL, work_buf_len, NULL),
+            "work");
+
+
+
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress2(uncompressed_buf, &uncompressed_buf_len_out,
+                    NULL, &compressed_buf_len_out,
+                    work_buf, work_buf_len, DEF_WBITS),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress2(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, NULL,
+                    work_buf, work_buf_len, DEF_WBITS),
+            "source_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress2(NULL, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len, DEF_WBITS),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress2(uncompressed_buf, NULL,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len, DEF_WBITS),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress2(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    NULL, work_buf_len, DEF_WBITS),
+            "work");
+
+
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
+                    NULL, &compressed_buf_len_out,
+                    work_buf, work_buf_len, DEF_WBITS, NULL),
+            "source");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, NULL,
+                    work_buf, work_buf_len, DEF_WBITS, NULL),
+            "source_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip2(NULL, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len, DEF_WBITS, NULL),
+            "dest");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip2(uncompressed_buf, NULL,
+                    compressed_buf, &compressed_buf_len_out,
+                    work_buf, work_buf_len, DEF_WBITS, NULL),
+            "dest_len");
+
+    ASSERT_DEATH(
+            zret = zsc_uncompress_gzip2(uncompressed_buf, &uncompressed_buf_len_out,
+                    compressed_buf, &compressed_buf_len_out,
+                    NULL, work_buf_len, DEF_WBITS, NULL),
+            "work");
+
+
+
+
+    printf("death tests done\n");
+}
 
 
 int main(int argc, char **argv) {

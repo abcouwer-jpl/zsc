@@ -1,17 +1,38 @@
+# zsc
+
 ZLIB DATA COMPRESSION LIBRARY - safety-critical version
 
-zlib 1.2.11.f-abcouwer-safety-critical-v0 is a strpped-down version of zlib intended 
+zlib 1.2.11.f-abcouwer-safety-critical-v0 is a stripped-down version of zlib intended 
 to be safe for flight software or other safety-critical applications.
 
 See https://www.zlib.net/ for information about zlib.
 
 This zlib version's repo is at https://github.jpl.nasa.gov/abcouwer/zlib-safe.
-Owned/developed/maintained by Neil Abcouwer, neil.abcouwer@jpl.nasa.gov.
+Owned/developed/maintained by Neil Abcouwer, 
+neil.abcouwer [at] jpl.nasa.gov.
 
 If you fork from this repo for more than just playing around, 
 Neil would appreciate learning what it's being used for.
 
---
+## Using the code
+
+This code does not by itself compile into an executable of library. 
+This code is intended to be compiled along with the code that uses it.
+
+`include/zsc/zsc_pub.h` defines public functions for compression and decompression
+that handle the aforementioned work buffers, and function that check buffer sizes.
+
+`include/zsc/zsc_pub_types.h` defines macros for buffer sizing at compile time
+and various public types.
+
+zsc expects a configuration dependent `include/zsc/zsc_conf_global_types`
+and `include/zsc/zsc_conf_private` that one must create for your 
+specific configuration. `zsc_conf_global_types` defines sized types, and 
+`zsc_conf_global_types` defines macros and memory functions. 
+`test/zsc_test_global_types` and `test/zsc_test_private` are examples 
+that will be copied over to `include/zsc` for unit testing.
+
+## version info
 
 This version of zlib is targeted toward safety-critical applications, 
 such as spaceflight. Changes were made to follow the MISRA C 2012 guidelines: 
@@ -26,22 +47,22 @@ Changes have been noted in the Changelog and/or commented with the text
 "Abcouwer ZSC". Notable changes include:
 
 No dynamic memory allocation - Dynamic allocation after initialization is not safe.
-Dynamic memory functions have been removed. Users must provide work buffers to the
-compression and decompression functions. Functions declared in zsc_pub.h will assist 
-with this.
+Dynamic memory functions, and ways to use dynamic memory, have been removed. 
+Users must provide work buffers to the compression and decompression functions. 
+Functions declared in zsc_pub.h will assist with this.
 
 No conditional compilation - If code has N ifdefs, there are 2^N possible 
 versions of the code, and testing becomes impossible. Several compilation 
 options have been removed. If one of these options in necesary for your application,
 consider a pull request that implements the option in a run-time manner.
 
-Use of assertions
+Use of assertions - Assertion macros can be defined as whatever make sense 
+for your application.
 
 Use of types that define the size and sign - this has not yet been tested 
 on 16 bit systems, be wary.
 
-
-Exceptions
+### Exceptions
 
 In violation of required MISRA Directive R15.2, backward gotos have been left 
 in inffast.c, rather than restructure the code.
@@ -49,36 +70,111 @@ in inffast.c, rather than restructure the code.
 In violation of advisory MISRA Directive R15.1, gotos have been left 
 in the code, rather than restructure.
 
---
 
-  
-To build and run gtest test
 
-  ./build.bash test
-  
-To build and run gtest test with coverage
+## Building
 
-  ./build.bash coverage
+This code does not by itself compile into an executable or library. 
+This code is intended to be compiled along with the code that uses it.
+
+For testing, you'll need the following dependencies:
+
+`build-essential cmake gcc valgrind lcov`
+
+To run unit tests (including pulling google test framework and corpus data): 
+
+`  ./build.bash test`
   
-Then open ./build/coverage/index.html
+To build and run unit tests with coverage:
+
+`  ./build.bash coverage`
+  
+Then open ./build/coverage/index.html to look at results.
+
+To save unit test output to the test folder (so it can be committed 
+for later delta comparison)
+
+`  ./build.bash save`
+
+To run unit tests with valgrind:
+
+`./build.bash valgrind`
+
+To clean (remove the build directory):
+
+`./build.bash clean`
+
 
 To use with your own framework, you will need to define your own versions of
-zsc_conf_global_types.h and zsc_conf_private.h, 
-to do appropriate declarations for your framework.
+`zsc_conf_global_types.h` and `zsc_conf_private.h`, 
+to do appropriate declarations for your framework, and you may need to make 
+build changes so they aren't overwritten.
 
+## static analysis
+
+This library has been analyzed using Cobra (http://spinroot.com/cobra/, 
+https://github.com/nimble-code/Cobra). 
+
+To use Cobra, follow the Cobra instructions to clone and configure. 
+On linux, you may need the "yacc" program from the "bison" package.
+You may want to add these lines in your bashrc (or equivalent) 
+as discussed in the cobra readme:
+
+`export COBRA=/path/to/your/clone/of/Cobra`
+`export PATH=$PATH:$COBRA/bin_linux`
+`export C_BASE=$COBRA/rules`
+
+Then run commands of the form:
+
+`cobra -f file -I/path/to/this/repo/include /path/to/this/repo/src/*.c`
+
+Where file can be one of several rules files. This code, compiled with the 
+unit test headers, was checked against the basic, misra2012, p10, and jpl rules. 
+Running 
+
+`./build.bash cobra`
+
+runs all these checks. There will be some false positives and some items that 
+have been left as-is, where changing the existing code would be higher-risk.
+
+The main encoding/decoding loops loop over every pixel of an image or the 
+entirety of the compressed bitstream. Thus the overhead of function calls 
+becomes significant. Therefore these main loops exceed advised function sizes 
+and use macros for the sake of performance.
   
-TODO 
+## TODO 
+
 - run more static analyzers, like semmle
 - get close to 100% coverage in testing (currently at 91%)
 
+## JPL Development Info  
 
---
+This software was developed at the Jet Propulsion Laboratory, 
+California Institute of Technology, under a contract with the 
+National Aeronautics and Space Administration (80NM0018D0004).  
 
-This version was created by pushing zlib 1.2.11 to the JPL internal github, via
+This work was funded by funded by the NASA Space Technology 
+Mission Directorate (STMD) and the proposal, 
+"CubeRover for Affordable, Modular, and Scalable Planetary Exploration" 
+was selected as part of the NASA 2019 Tipping Point solicitation Topic 4: 
+Other Capabilities Needed for Exploration. The project is managed by the 
+STMD Utilizing Public-Private Partnerships to Advance Tipping Point 
+Technologies Program.
+
+This software was developed under JPL Task Plan No 15-106860.
+
+This software is reported via JPL NTR 51704.
+
+This software was approved for open source by JPL Software Release Authority 
+Brian Morrison on 2020-10-21.
+
+## Git
+
+This version was created by pushing zlib 1.2.11, via
 
   git clone https://github.com/madler/zlib.git
   cd zlib
-  git push --mirror https://github.jpl.nasa.gov/abcouwer/zlib-safe.git
+  git push --mirror github_url
 
 To pull any future changes from public zlib, one should be able to do
 
@@ -86,8 +182,12 @@ To pull any future changes from public zlib, one should be able to do
   git pull public master # Creates a merge commit
   git push origin master
   
---
+But no guarantees on how well this work, given the significant changes.
 
+
+
+  
+## Original zlib README
 
 1.2.11.f-abcouwer-safety-v0 specific info ends here.
 The information below this line is all from zlib 1.2.11's README.

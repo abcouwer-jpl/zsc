@@ -4,12 +4,17 @@
  * Any commercial use must be negotiated with the Office of Technology
  * Transfer at the California Institute of Technology.
  *
- * This software may be subject to U.S. export control laws.
- * By accepting this software, the user agrees to comply with
- * all applicable U.S. export laws and regulations. User has the
- * responsibility to obtain export licenses, or other export authority
- * as may be required before exporting such information to foreign
- * countries or providing access to foreign persons.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file        zsc_pub.h
  * @date        2020-07-01
@@ -354,7 +359,7 @@ ZlibReturn zsc_uncompress(
  * @param gz_head       Pointer to where the gzip wrapper will be saved.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-ZlibReturn zsc_uncompress_safe_gzip(
+ZlibReturn zsc_uncompress_gzip(
         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
         U8 *work, U32 work_len, gz_header * gz_head);
 
@@ -377,7 +382,7 @@ ZlibReturn zsc_uncompress_safe_gzip(
  *                      Should be in the range 9 to 15.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-ZlibReturn zsc_uncompress_safe2(
+ZlibReturn zsc_uncompress2(
         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
         U8 *work, U32 work_len, I32 window_bits);
 
@@ -401,7 +406,7 @@ ZlibReturn zsc_uncompress_safe2(
  * @param gz_head       Pointer to where the gzip wrapper will be saved.
  * @return Z_OK if decompression succeeded, an error code otherwise.
  */
-ZlibReturn zsc_uncompress_safe_gzip2(
+ZlibReturn zsc_uncompress_gzip2(
         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
         U8 *work, U32 work_len, I32 window_bits, gz_header * gz_head);
 

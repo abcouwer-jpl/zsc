@@ -4,12 +4,17 @@
  * Any commercial use must be negotiated with the Office of Technology
  * Transfer at the California Institute of Technology.
  *
- * This software may be subject to U.S. export control laws.
- * By accepting this software, the user agrees to comply with
- * all applicable U.S. export laws and regulations. User has the
- * responsibility to obtain export licenses, or other export authority
- * as may be required before exporting such information to foreign
- * countries or providing access to foreign persons.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file        crc32.c
  * @date        2020-08-05
@@ -17,6 +22,8 @@
  * @brief       compute the CRC-32 of a data stream
  *
  * Stripped-down version of crc32.c for safety-critical applications.
+ * Removed dynamic tables, condition compilation, combine function
+ *
  * Original file header follows.
  */
 
@@ -488,7 +495,7 @@ ZSC_PRIVATE const z_crc_t crc_table[TBLS][256] =
 
 
 /* ========================================================================= */
-#define DO1 crc = crc_table[0][((U32)crc ^ (*buf++)) & 0xff] ^ (crc >> 8)
+#define DO1 crc = crc_table[0][((U32)crc ^ (*buf)) & 0xff] ^ (crc >> 8); buf++
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
 /* ========================================================================= */
@@ -560,7 +567,8 @@ ZSC_PRIVATE U32 crc32_little(crc, buf, len)
     c = (z_crc_t)crc;
     c = ~c;
     while (len && ((ptrdiff_t)buf & 3)) {
-        c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
+        c = crc_table[0][(c ^ *buf) & 0xff] ^ (c >> 8);
+        buf++;
         len--;
     }
 
@@ -576,8 +584,9 @@ ZSC_PRIVATE U32 crc32_little(crc, buf, len)
     buf = (const U8 *)buf4;
 
     if (len) do {
-        c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
-        --len;
+        c = crc_table[0][(c ^ *buf) & 0xff] ^ (c >> 8);
+        buf++;
+        len--;
     } while (len);
     c = ~c;
     return (U32)c;

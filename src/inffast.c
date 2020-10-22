@@ -4,12 +4,17 @@
  * Any commercial use must be negotiated with the Office of Technology
  * Transfer at the California Institute of Technology.
  *
- * This software may be subject to U.S. export control laws.
- * By accepting this software, the user agrees to comply with
- * all applicable U.S. export laws and regulations. User has the
- * responsibility to obtain export licenses, or other export authority
- * as may be required before exporting such information to foreign
- * countries or providing access to foreign persons.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file        inffast.c
  * @date        2020-08-05
@@ -119,9 +124,11 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
        input data or output space */
     do {
         if (bits < 15) {
-            hold += (U32)(*in++) << bits;
+            hold += (U32)(*in) << bits;
+            in++;
             bits += 8;
-            hold += (U32)(*in++) << bits;
+            hold += (U32)(*in) << bits;
+            in++;
             bits += 8;
         }
         here = lcode[hold & lmask];
@@ -138,7 +145,8 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
             op &= 15;                           /* number of extra bits */
             if (op) {
                 if (bits < op) {
-                    hold += (U32)(*in++) << bits;
+                    hold += (U32)(*in) << bits;
+                    in++;
                     bits += 8;
                 }
                 len += (U32)hold & ((1U << op) - 1);
@@ -146,9 +154,11 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                 bits -= op;
             }
             if (bits < 15) {
-                hold += (U32)(*in++) << bits;
+                hold += (U32)(*in) << bits;
+                in++;
                 bits += 8;
-                hold += (U32)(*in++) << bits;
+                hold += (U32)(*in) << bits;
+                in++;
                 bits += 8;
             }
             here = dcode[hold & dmask];
@@ -161,10 +171,12 @@ U32 start;         /* inflate()'s starting value for strm->avail_out */
                 dist = (U32)(here.val);
                 op &= 15;                       /* number of extra bits */
                 if (bits < op) {
-                    hold += (U32)(*in++) << bits;
+                    hold += (U32)(*in) << bits;
+                    in++;
                     bits += 8;
                     if (bits < op) {
-                        hold += (U32)(*in++) << bits;
+                        hold += (U32)(*in) << bits;
+                        in++;
                         bits += 8;
                     }
                 }
