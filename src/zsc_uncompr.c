@@ -41,7 +41,7 @@ ZlibReturn zsc_uncompress_get_min_work_buf_size(U32 *size_out)
     return inflateWorkSize(size_out);
 }
 
-ZlibReturn zsc_uncompress_safe_gzip2(
+ZlibReturn zsc_uncompress_gzip2(
         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
         U8 *work, U32 work_len, I32 window_bits, gz_header * gz_head)
 {
@@ -153,11 +153,11 @@ ZlibReturn zsc_uncompress_safe_gzip2(
     return err;
 }
 
-ZlibReturn zsc_uncompress_safe2(
+ZlibReturn zsc_uncompress2(
         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
         U8 *work, U32 work_len, I32 window_bits)
 {
-    return zsc_uncompress_safe_gzip2(dest, dest_len, source, source_len,
+    return zsc_uncompress_gzip2(dest, dest_len, source, source_len,
             work, work_len, window_bits, Z_NULL);
 }
 
@@ -165,15 +165,15 @@ ZlibReturn zsc_uncompress(
         U8 *dest, U32 *dest_len, const U8 *source,
         U32 *source_len, U8 *work, U32 work_len)
 {
-    return zsc_uncompress_safe2(dest, dest_len, source, source_len,
+    return zsc_uncompress2(dest, dest_len, source, source_len,
             work, work_len, DEF_WBITS);
 }
 
-ZlibReturn zsc_uncompress_safe_gzip(
+ZlibReturn zsc_uncompress_gzip(
         U8 *dest, U32 *dest_len, const U8 *source, U32 *source_len,
         U8 *work, U32 work_len, gz_header * gz_head)
 {
-    return zsc_uncompress_safe_gzip2(dest, dest_len, source, source_len,
+    return zsc_uncompress_gzip2(dest, dest_len, source, source_len,
             work, work_len, DEF_WBITS + GZIP_CODE, gz_head);
 }
 

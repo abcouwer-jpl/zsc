@@ -147,6 +147,27 @@ and use macros for the sake of performance.
 - run more static analyzers, like semmle
 - get close to 100% coverage in testing (currently at 91%)
 
+## JPL Development Info  
+
+This software was developed at the Jet Propulsion Laboratory, 
+California Institute of Technology, under a contract with the 
+National Aeronautics and Space Administration (80NM0018D0004).  
+
+This work was funded by funded by the NASA Space Technology 
+Mission Directorate (STMD) and the proposal, 
+"CubeRover for Affordable, Modular, and Scalable Planetary Exploration" 
+was selected as part of the NASA 2019 Tipping Point solicitation Topic 4: 
+Other Capabilities Needed for Exploration. The project is managed by the 
+STMD Utilizing Public-Private Partnerships to Advance Tipping Point 
+Technologies Program.
+
+This software was developed under JPL Task Plan No 15-106860.
+
+This software is reported via JPL NTR 51704.
+
+This software was approved for open source by JPL Software Release Authority 
+Brian Morrison on 2020-10-21.
+
 ## Git
 
 This version was created by pushing zlib 1.2.11, via
@@ -162,6 +183,9 @@ To pull any future changes from public zlib, one should be able to do
   git push origin master
   
 But no guarantees on how well this work, given the significant changes.
+
+
+
   
 ## Original zlib README
 

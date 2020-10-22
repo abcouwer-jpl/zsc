@@ -5,6 +5,7 @@ source_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$source_path"
 mkdir -p build
 cd build
+unset ZSC_DISABLE_DEATH_TESTS
 
 if [ "$#" -ne 1 ] ; then
   echo "Building zlib Debug configuration"
@@ -19,6 +20,7 @@ else
     make coverage
   elif [[ "$1" = "valgrind" ]] ; then
     echo "Running Valgrind on zlib"
+    export ZSC_DISABLE_DEATH_TESTS=1
     cmake -DCMAKE_BUILD_TYPE=Valgrind ..
     make
     valgrind --leak-check=full -v ./zlib_gtest
