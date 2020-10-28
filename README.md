@@ -1,5 +1,7 @@
 # zsc
 
+The public version of this repo now lives at https://github.com/abcouwer-jpl/zsc.
+
 ZLIB DATA COMPRESSION LIBRARY - safety-critical version
 
 zlib 1.2.11.f-abcouwer-safety-critical-v0 is a stripped-down version of zlib intended 
