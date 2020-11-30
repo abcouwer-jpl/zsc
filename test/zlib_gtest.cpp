@@ -1078,15 +1078,10 @@ TEST_F(ZlibTest, Version) {
     U32 compile_flags = zlibCompileFlags();
     printf("zlib version %s = 0x%04x, compile flags = 0x%x\n",
             ZLIB_VERSION, ZLIB_VERNUM, zlibCompileFlags());
-
-    // Neil's unit testing was conducted on machine where
-    // sizeof(U32) = 4, sizeof(U32) = 4,
-    // (but both were switched to 32-bit)
-    // sizeof(voidpf) = 8, sizeof(z_off_t) = 8,
-    // allow debug flag
-    // results may not hold for different machine
-    // FIXME test on more machines
-    EXPECT_TRUE(compile_flags == 0xA5 || compile_flags == 0x1A5);
+   
+    // check that U32 is 4 bytes
+    EXPECT_TRUE( (compile_flags & 0xF) == 0x5);
+    
 }
 
 
