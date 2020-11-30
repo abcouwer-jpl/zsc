@@ -8,6 +8,9 @@
 #include "gtest/gtest.h"
 
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
+
 
 #ifdef STDC
 #  include <string.h>
@@ -34,7 +37,8 @@
 
 // disabling corpus test makes testing much faster,
 // but gets slightly less coverage
-#define DO_LONG_TESTS 1
+#define DO_LONG_TESTS 0
+#define DO_REALLY_LONG_TESTS 1
 
 
 // max size of a file from a corpus
@@ -77,7 +81,11 @@ typedef enum {
 
 } ZlibTestScenario;
 
-enum {NUM_CORPUS = 20}; //keep in sync
+enum {
+    NUM_CORPUS = 20, //keep in sync
+    NUM_CANTRBRY = 11
+};
+
 
 // FIXME try again or delete
 //// expose local functions
@@ -190,6 +198,19 @@ int good_allocs_allowed = 0;
 //    }
 //
 //}
+
+double get_wall_time(void) {
+    struct timeval time;
+    if (gettimeofday(&time,NULL)){
+        //  Handle error
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
+double get_cpu_time(void) {
+    return (double)clock() / CLOCKS_PER_SEC;
+}
+
 
 void zlib_test(
         U8 * source_buf,
@@ -1201,6 +1222,134 @@ TEST_F(ZlibTest, CorpusPartialFlush) {
     }
 }
 
+#endif
+
+#if DO_REALLY_LONG_TESTS
+
+TEST_F(ZlibTest, Performance) {
+
+    WrapType wrapper = WRAP_ZLIB;
+    int windowBits = DEF_WBITS;
+    int memLevel = DEF_MEM_LEVEL;
+    ZlibStrategy strategy = Z_DEFAULT_STRATEGY;
+    int max_block_size = 100000;
+
+    U8 * source_buf[NUM_CANTRBRY];
+    int source_buf_len[NUM_CANTRBRY];
+    U32 compressed_buf_len;
+    U8 * compressed_buf;
+    U32 work_buf_len;
+    U8 * work_buf;
+    U32 compressed_buf_len_out;
+
+    U32 total_input_len = 0;
+
+    for (int i = 0; i < NUM_CANTRBRY; i++) {
+        FILE * file = fopen(corpus_files[i], "r");
+        ASSERT_FALSE(file == NULL);
+        source_buf_len[i] = CORPUS_MAX_SIZE;
+        source_buf[i] = (U8*)malloc(source_buf_len[i]);
+        int nread = fread(source_buf[i], 1, source_buf_len[i], file);
+        ASSERT_FALSE(ferror(file));
+        fclose(file);
+        ASSERT_TRUE(nread <= source_buf_len[i]);
+        source_buf_len[i] = nread;
+        total_input_len += nread;
+    }
+
+    // size and allocate work and output buffers
+    U32 predicted_max_output_size;
+    ZlibReturn ret = zsc_compress_get_max_output_size(
+            CORPUS_MAX_SIZE,
+            CORPUS_MAX_SIZE,
+            Z_NO_COMPRESSION, // gives conservative
+            &predicted_max_output_size);
+    EXPECT_EQ(ret, Z_OK);
+    printf("max_output calculated at %u.\n", predicted_max_output_size);
+    compressed_buf_len = predicted_max_output_size;
+
+    compressed_buf = (U8 *) malloc(compressed_buf_len);
+    ASSERT_NE(compressed_buf, (U8*)NULL);
+    compressed_buf_len_out = compressed_buf_len;
+
+    ret = zsc_compress_get_min_work_buf_size(&work_buf_len);
+    EXPECT_EQ(ret, Z_OK);
+
+    work_buf = (U8 *) malloc(work_buf_len);
+    ASSERT_NE(work_buf, (U8*)NULL);
+
+    // fill work buffer with garbage
+    memset((void*)work_buf, 0xa5,work_buf_len);
+    printf("Compressed buf size: %u. Work buf size: %u.\n",
+            compressed_buf_len, work_buf_len);
+
+    printf("algo, input (B), output (B), compression ratio, space saving, wall duration (s), cpu duration (s), space saved per s\n");
+
+    {
+        double start_wall = get_wall_time();
+        double start_cpu = get_cpu_time();
+
+        U32 total_compressed_len = 0;
+
+        for (int i = 0; i < NUM_CANTRBRY; i++) {
+            compressed_buf_len_out = compressed_buf_len;
+            memcpy(compressed_buf,source_buf[i],source_buf_len[i]);
+            compressed_buf_len_out = source_buf_len[i];
+            total_compressed_len += compressed_buf_len_out;
+        }
+
+        double end_wall = get_wall_time();
+        double end_cpu = get_cpu_time();
+        double dur_wall = end_wall - start_wall;
+        double dur_cpu = end_cpu - start_cpu;
+        double compression_ratio = (double)total_input_len / (double)total_compressed_len;
+        double space_savings = 1 - (double)total_compressed_len / (double)total_input_len;
+        double space_saved_per_s = ((int)total_input_len - (int)total_compressed_len) / dur_cpu;
+
+        printf("memcpy(), %07d, %07d, %.3f, %+.3f, %.3f, %.3f, %.3e\n",
+                 total_input_len, total_compressed_len,
+                 compression_ratio, space_savings,
+                 dur_wall, dur_cpu, space_saved_per_s);
+
+
+    }
+
+    for (int level = Z_NO_COMPRESSION; level <= Z_BEST_COMPRESSION; level++) {
+
+        double start_wall = get_wall_time();
+        double start_cpu = get_cpu_time();
+
+        U32 total_compressed_len = 0;
+
+        for (int i = 0; i < NUM_CANTRBRY; i++) {
+            compressed_buf_len_out = compressed_buf_len;
+            ret = zsc_compress(compressed_buf, &compressed_buf_len_out,
+                    source_buf[i], source_buf_len[i], max_block_size,
+                    work_buf, work_buf_len, level);
+            EXPECT_EQ(ret, Z_OK);
+            total_compressed_len += compressed_buf_len_out;
+        }
+
+        double end_wall = get_wall_time();
+        double end_cpu = get_cpu_time();
+        double dur_wall = end_wall - start_wall;
+        double dur_cpu = end_cpu - start_cpu;
+        double compression_ratio = (double)total_input_len / (double)total_compressed_len;
+        double space_savings = 1 - (double)total_compressed_len / (double)total_input_len;
+        double space_saved_per_s = ((int)total_input_len - (int)total_compressed_len) / dur_cpu;
+
+        printf("level %d,  %07d, %07d, %.3f, %+.3f, %.3f, %.3f, %.3e\n",
+                level, total_input_len, total_compressed_len,
+                compression_ratio, space_savings,
+                dur_wall, dur_cpu, space_saved_per_s);
+
+    }
+
+    for (int i = 0; i < NUM_CANTRBRY; i++) {
+        free(source_buf[i]);
+    }
+
+}
 #endif
 
 TEST_F(ZlibTest, Dictionary) {
