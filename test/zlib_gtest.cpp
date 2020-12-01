@@ -201,10 +201,8 @@ int good_allocs_allowed = 0;
 
 double get_wall_time(void) {
     struct timeval time;
-    if (gettimeofday(&time,NULL)){
-        //  Handle error
-        return 0;
-    }
+    int ret = gettimeofday(&time,NULL);
+    EXPECT_EQ(ret, 0);
     return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 double get_cpu_time(void) {
@@ -1278,76 +1276,214 @@ TEST_F(ZlibTest, Performance) {
     work_buf = (U8 *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (U8*)NULL);
 
+    // size and allocate decompression buffers
+    U32 uncompressed_buf_len = CORPUS_MAX_SIZE;
+    U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
+    EXPECT_NE(uncompressed_buf, (U8 * )NULL);
+
+    U32 work_buf_len2;
+    U8 * work_buf2;
+    ret = zsc_uncompress_get_min_work_buf_size(&work_buf_len2);
+    EXPECT_EQ(ret, Z_OK);
+    work_buf2 = (U8 *) malloc(work_buf_len2);
+    ASSERT_NE(work_buf, (U8 *)Z_NULL);
+
+    U32 uncompressed_buf_len_out = uncompressed_buf_len;
+
     // fill work buffer with garbage
     memset((void*)work_buf, 0xa5,work_buf_len);
     printf("Compressed buf size: %u. Work buf size: %u.\n",
             compressed_buf_len, work_buf_len);
 
-    printf("algo, input (B), output (B), compression ratio, space saving, wall duration (s), cpu duration (s), space saved per s\n");
+    U32 total_compressed_len;
+    double total_dur_wall;
+    double total_dur_cpu;
+    double total_decomp_dur_wall;
+    double total_decomp_dur_cpu;
+    double start_wall;
+    double start_cpu;
+    double end_wall;
+    double end_cpu;
+    double dur_wall;
+    double dur_cpu;
 
+    printf("algo, input (B), output (B), compression ratio, space saving, "
+            "wall duration (s), cpu duration (s), B saved per s,"
+            "decomp wall (s), decomp cpu (s), B (with decomp) saved per s\n");
+
+
+
+    for (int repeat = 0; repeat < 3; repeat++) {
+    for (int level = -1; level <= Z_BEST_COMPRESSION; level++)
     {
-        double start_wall = get_wall_time();
-        double start_cpu = get_cpu_time();
-
-        U32 total_compressed_len = 0;
-
-        for (int i = 0; i < NUM_CANTRBRY; i++) {
-            compressed_buf_len_out = compressed_buf_len;
-            memcpy(compressed_buf,source_buf[i],source_buf_len[i]);
-            compressed_buf_len_out = source_buf_len[i];
-            total_compressed_len += compressed_buf_len_out;
-        }
-
-        double end_wall = get_wall_time();
-        double end_cpu = get_cpu_time();
-        double dur_wall = end_wall - start_wall;
-        double dur_cpu = end_cpu - start_cpu;
-        double compression_ratio = (double)total_input_len / (double)total_compressed_len;
-        double space_savings = 1 - (double)total_compressed_len / (double)total_input_len;
-        double space_saved_per_s = ((int)total_input_len - (int)total_compressed_len) / dur_cpu;
-
-        printf("memcpy(), %07d, %07d, %.3f, %+.3f, %.3f, %.3f, %.3e\n",
-                 total_input_len, total_compressed_len,
-                 compression_ratio, space_savings,
-                 dur_wall, dur_cpu, space_saved_per_s);
-
-
-    }
-
-    for (int level = Z_NO_COMPRESSION; level <= Z_BEST_COMPRESSION; level++) {
-
-        double start_wall = get_wall_time();
-        double start_cpu = get_cpu_time();
-
-        U32 total_compressed_len = 0;
+        total_compressed_len = 0;
+        total_dur_wall = 0;
+        total_dur_cpu = 0;
+        total_decomp_dur_wall = 0;
+        total_decomp_dur_cpu = 0;
 
         for (int i = 0; i < NUM_CANTRBRY; i++) {
+            // fill buffers with garbage
+            memset((void*)work_buf, 0xa5,work_buf_len);
+            memset((void*)work_buf2, 0x5a,work_buf_len2);
+            memset((void*)compressed_buf, 0xb6, compressed_buf_len);
+            memset((void*)uncompressed_buf, 0x6b, uncompressed_buf_len);
+
             compressed_buf_len_out = compressed_buf_len;
-            ret = zsc_compress(compressed_buf, &compressed_buf_len_out,
-                    source_buf[i], source_buf_len[i], max_block_size,
-                    work_buf, work_buf_len, level);
+            uncompressed_buf_len_out = uncompressed_buf_len;
+            ret = Z_OK;
+
+            // time compression
+            if(Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+                start_wall = get_wall_time();
+                start_cpu = get_cpu_time();
+                ret = zsc_compress(compressed_buf, &compressed_buf_len_out,
+                        source_buf[i], source_buf_len[i], max_block_size,
+                        work_buf, work_buf_len, level);
+                end_wall = get_wall_time();
+                end_cpu = get_cpu_time();
+            } else {
+                start_wall = get_wall_time();
+                start_cpu = get_cpu_time();
+                memcpy(compressed_buf, source_buf[i], source_buf_len[i]);
+                compressed_buf_len_out = source_buf_len[i];
+                end_wall = get_wall_time();
+                end_cpu = get_cpu_time();
+            }
+
+
+
             EXPECT_EQ(ret, Z_OK);
+            dur_wall = end_wall - start_wall;
+            dur_cpu = end_cpu - start_cpu;
+            total_dur_wall += dur_wall;
+            total_dur_cpu += dur_cpu;
             total_compressed_len += compressed_buf_len_out;
+
+            // time decompression
+            start_wall = get_wall_time();
+            start_cpu = get_cpu_time();
+            if(Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+                ret = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
+                        compressed_buf, &compressed_buf_len_out,
+                        work_buf2, work_buf_len2);
+            } else {
+                memcpy(uncompressed_buf, compressed_buf, compressed_buf_len_out);
+                uncompressed_buf_len_out = compressed_buf_len_out;
+            }
+            end_wall = get_wall_time();
+            end_cpu = get_cpu_time();
+
+            EXPECT_EQ(ret, Z_OK);
+            dur_wall = end_wall - start_wall;
+            dur_cpu = end_cpu - start_cpu;
+            total_decomp_dur_wall += dur_wall;
+            total_decomp_dur_cpu += dur_cpu;
+
         }
 
-        double end_wall = get_wall_time();
-        double end_cpu = get_cpu_time();
-        double dur_wall = end_wall - start_wall;
-        double dur_cpu = end_cpu - start_cpu;
-        double compression_ratio = (double)total_input_len / (double)total_compressed_len;
-        double space_savings = 1 - (double)total_compressed_len / (double)total_input_len;
-        double space_saved_per_s = ((int)total_input_len - (int)total_compressed_len) / dur_cpu;
+        double compression_ratio = (double) total_input_len
+                / (double) total_compressed_len;
+        double space_savings = 1
+                - (double) total_compressed_len / (double) total_input_len;
+        double space_saved_per_s = ((int) total_input_len
+                - (int) total_compressed_len)
+                                   / total_dur_cpu;
+        double space_saved_decomped_per_s = ((int) total_input_len
+                - (int) total_compressed_len)
+                                   / (total_dur_cpu + total_decomp_dur_cpu);
 
-        printf("level %d,  %07d, %07d, %.3f, %+.3f, %.3f, %.3f, %.3e\n",
-                level, total_input_len, total_compressed_len,
+        if(Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printf("level %d, ", level);
+        } else {
+            printf("memcpy(), ");
+        }
+
+        printf("%07d, %07d, %g, %g, %g, %g, %g, %g, %g, %g\n",
+                total_input_len, total_compressed_len,
                 compression_ratio, space_savings,
-                dur_wall, dur_cpu, space_saved_per_s);
+                total_dur_wall, total_dur_cpu, space_saved_per_s,
+                total_decomp_dur_wall, total_decomp_dur_cpu, space_saved_decomped_per_s);
 
     }
+    }
+
+//    {
+//           total_compressed_len = 0;
+//           total_dur_wall = 0;
+//           total_dur_cpu = 0;
+//           total_decomp_dur_wall = 0;
+//           total_decomp_dur_cpu = 0;
+//
+//           for (int i = 0; i < NUM_CANTRBRY; i++) {
+//               // time compression
+//               start_wall = get_wall_time();
+//               start_cpu = get_cpu_time();
+//               memcpy(compressed_buf,source_buf[i], source_buf_len[i]);
+//               end_wall = get_wall_time();
+//               end_cpu = get_cpu_time();
+//
+//               dur_wall = end_wall - start_wall;
+//               dur_cpu = end_cpu - start_cpu;
+//               total_dur_wall += dur_wall;
+//               total_dur_cpu += dur_cpu;
+//               compressed_buf_len_out = compressed_buf_len;
+//               total_compressed_len += compressed_buf_len_out;
+//
+//               // time decompression
+//               start_wall = get_wall_time();
+//               start_cpu = get_cpu_time();
+//               memcpy(uncompressed_buf,compressed_buf, source_buf_len[i]);
+//               end_wall = get_wall_time();
+//               end_cpu = get_cpu_time();
+//               dur_wall = end_wall - start_wall;
+//               dur_cpu = end_cpu - start_cpu;
+//               total_decomp_dur_wall += dur_wall;
+//               total_decomp_dur_cpu += dur_cpu;
+//           }
+//
+//           start_wall = get_wall_time();
+//           start_cpu = get_cpu_time();
+//
+//           total_compressed_len = 0;
+//
+//           for (int i = 0; i < NUM_CANTRBRY; i++) {
+//               compressed_buf_len_out = compressed_buf_len;
+//               memcpy(compressed_buf,source_buf[i],source_buf_len[i]);
+//               compressed_buf_len_out = source_buf_len[i];
+//               total_compressed_len += compressed_buf_len_out;
+//           }
+//
+//           end_wall = get_wall_time();
+//           end_cpu = get_cpu_time();
+//           dur_wall = end_wall - start_wall;
+//           dur_cpu = end_cpu - start_cpu;
+//
+//           double compression_ratio = (double) total_input_len
+//                   / (double) total_compressed_len;
+//           double space_savings = 1
+//                   - (double) total_compressed_len / (double) total_input_len;
+//           double space_saved_per_s = ((int) total_input_len
+//                   - (int) total_compressed_len)
+//                                      / total_dur_cpu;
+//           double space_saved_decomped_per_s = ((int) total_input_len
+//                   - (int) total_compressed_len)
+//                                      / (total_dur_cpu + total_decomp_dur_cpu);
+//
+//           printf("memcpy(), %07d, %07d, %g, %g, %g, %g, %g, %g, %g, %g\n",
+//                   total_input_len, total_compressed_len,
+//                   compression_ratio, space_savings,
+//                   total_dur_wall, total_dur_cpu, space_saved_per_s,
+//                   total_decomp_dur_wall, total_decomp_dur_cpu, space_saved_decomped_per_s);
+//       }
 
     for (int i = 0; i < NUM_CANTRBRY; i++) {
         free(source_buf[i]);
     }
+    free(compressed_buf);
+    free(work_buf);
+    free(uncompressed_buf);
+    free(work_buf2);
 
 }
 #endif
