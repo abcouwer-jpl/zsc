@@ -37,9 +37,7 @@
 
 // disabling corpus test makes testing much faster,
 // but gets slightly less coverage
-#define DO_LONG_TESTS 0
-#define DO_REALLY_LONG_TESTS 1
-
+#define DO_LONG_TESTS 1
 
 // max size of a file from a corpus
 enum {
@@ -83,16 +81,9 @@ typedef enum {
 
 enum {
     NUM_CORPUS = 20, //keep in sync
-    NUM_CANTRBRY = 11
+    NUM_CANTRBRY = 11,
+    NUM_PERFORMANCE_LEVELS = 11, // 0 - 9, compare to memcpy
 };
-
-
-// FIXME try again or delete
-//// expose local functions
-//extern unsigned long crc32_big(unsigned long crc,
-//        const unsigned char *buf, z_size_t len);
-//extern unsigned long crc32_little(unsigned long crc,
-//        const unsigned char *buf, z_size_t len);
 
 
 char *corpus_files[NUM_CORPUS] = {
@@ -118,15 +109,20 @@ char *corpus_files[NUM_CORPUS] = {
         (char*)"corpus/calgary/pic",
 };
 
-
-//static const char hello[] = "hello, hello!";
-///* "hello world" would be more standard, but the repeated "hello"
-// * stresses the compression code better, sorry...
-// */
-//
-//static const char dictionary[] = "hello";
-//static U32 dictId;    /* Adler32 value of the dictionary */
-
+// in order of canterbury corpus results tables
+char *cantrbry_files[NUM_CANTRBRY] = {
+        (char*)"corpus/cantrbry/alice29.txt", // text
+        (char*)"corpus/cantrbry/ptt5", // fax
+        (char*)"corpus/cantrbry/fields.c", // Csrc
+        (char*)"corpus/cantrbry/kennedy.xls", // Excl
+        (char*)"corpus/cantrbry/sum", // SPRC
+        (char*)"corpus/cantrbry/lcet10.txt", // tech
+        (char*)"corpus/cantrbry/plrabn12.txt", // poem
+        (char*)"corpus/cantrbry/cp.html", // html
+        (char*)"corpus/cantrbry/grammar.lsp", // list
+        (char*)"corpus/cantrbry/xargs.1", // man
+        (char*)"corpus/cantrbry/asyoulik.txt", // play
+};
 
 static const U8 * alice_dictionary = (const U8 *)
         "queen" "time" "thought" "could" "and the" "in the" "would" "went"
@@ -185,20 +181,6 @@ class ZlibTest : public ::testing::Test {
 //  // for Foo.
 };
 
-int good_allocs_allowed = 0;
-
-//// a bad allocator function which only returns NULL, for testing fault cases
-//voidpf zlib_test_bad_alloc(voidpf opaque, U32 items, U32 size)
-//{
-//    if (good_allocs_allowed > 0) {
-//        good_allocs_allowed--;
-//        return z_static_alloc (opaque, items, size);
-//    } else {
-//        return Z_NULL;
-//    }
-//
-//}
-
 double get_wall_time(void) {
     struct timeval time;
     int ret = gettimeofday(&time,NULL);
@@ -239,6 +221,12 @@ void zlib_test(
         windowBits = 9;
         memLevel = 1;
     }
+
+    // timing
+    double start_wall;
+    double start_cpu;
+    double end_wall;
+    double end_cpu;
 
     // if all params are default, we'll use more basic functions
     bool all_params_default =
@@ -373,6 +361,7 @@ void zlib_test(
 
     compressed_buf = (U8 *) malloc(compressed_buf_len);
     ASSERT_NE(compressed_buf, (U8*)NULL);
+    memset((void*)compressed_buf, 0xa5,compressed_buf_len); // fill with garbage
 
     // get work buf
 
@@ -385,11 +374,13 @@ void zlib_test(
     work_buf = (U8 *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (U8*)NULL);
     compressed_buf_len_out = compressed_buf_len;
-    // fill work buffer with garbage
     memset((void*)work_buf, 0xa5,work_buf_len);
 
     printf("Compressed buf size: %u. Work buf size: %u.\n",
             compressed_buf_len, work_buf_len);
+
+    start_wall = get_wall_time();
+    start_cpu = get_cpu_time();
 
     if(scenarios == SCENARIO_BASIC
             || (all_params_default && (scenarios & SCENARIO_CORRUPT))) {
@@ -440,25 +431,11 @@ void zlib_test(
             break;
         }
         EXPECT_EQ(err, Z_OK);
-
-
     } else {
         printf("Using deflate functions\n");
-
-//        z_static_mem mem;
-//        mem.work = work_buf;
-//        mem.work_len = work_buf_len;
-//        mem.work_alloced = 0;
-
         z_stream stream;
-//        stream.zalloc = z_static_alloc;
-//        stream.zfree = z_static_free;
-//        stream.opaque = (voidpf) &mem;
-
         stream.next_work = work_buf;
         stream.avail_work = work_buf_len;
-
-
         printf("deflateInit with windowBits=%d\n", windowBits);
 
         if (all_params_default && wrapper == WRAP_ZLIB) {
@@ -642,15 +619,19 @@ void zlib_test(
             EXPECT_EQ(err, Z_STREAM_ERROR);
         }
 
+
     } // end else scenarios != SCENARIO_BASIC
+
+    end_wall = get_wall_time();
+    end_cpu = get_cpu_time();
 
     EXPECT_LE(compressed_buf_len_out, predicted_max_output_size);
 
 
     free(work_buf);
 
-    printf("Compressed to size: %u.\n",
-            compressed_buf_len_out);
+    printf("Compressed to size: %u. Duration: %f s\n",
+            compressed_buf_len_out, end_cpu - start_cpu);
 
     // sync search
     unsigned got = 0;
@@ -704,18 +685,6 @@ void zlib_test(
          }
          printf("\n...\n");
     }
-//    if(max_block_size < compressed_buf_len_out) {
-//
-//        for (int i = max_block_size-100;
-//                i < max_block_size+100;
-//                i++) {
-//            if(i%20 == 0) {
-//                printf("\n%04d: ", i);
-//            }
-//            printf("%02x ", compressed_buf[i]);
-//        }
-//        printf("\n...\n");
-//    }
     for (int i = MAX(0,compressed_buf_len_out-100); i < compressed_buf_len_out; i++) {
         if(i%20 == 0) {
             printf("\n%04d: ", i);
@@ -723,11 +692,6 @@ void zlib_test(
         printf("%02x ", compressed_buf[i]);
     }
     printf("\n...\n");
-
-
-
-
-
 
     if(scenarios & SCENARIO_CORRUPT) {
         printf("Corrupting compressed buffer\n");
@@ -737,12 +701,13 @@ void zlib_test(
     U32 uncompressed_buf_len = source_buf_len;
     U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
     EXPECT_NE(uncompressed_buf, (U8 * )NULL);
+    memset((void*)uncompressed_buf, 0x5a,uncompressed_buf_len); // fill with garbage
+
     err = zsc_uncompress_get_min_work_buf_size(&work_buf_len);
     EXPECT_EQ(err, Z_OK);
     work_buf = (U8 *) malloc(work_buf_len);
     ASSERT_NE(work_buf, (U8 *)Z_NULL);
-    // fill work buffer with garbage
-    memset((void*)work_buf, 0x5a,work_buf_len);
+    memset((void*)work_buf, 0x5a,work_buf_len); // fill with garbage
 
     printf("Uncompress. Work buf size: %u.\n",
             work_buf_len);
@@ -750,6 +715,8 @@ void zlib_test(
     U32 uncompressed_buf_len_out = uncompressed_buf_len;
 
 
+    start_wall = get_wall_time();
+    start_cpu = get_cpu_time();
 
     if (scenarios == SCENARIO_BASIC
             || (all_params_default && (scenarios & SCENARIO_CORRUPT))) {
@@ -983,6 +950,10 @@ void zlib_test(
 
     } // end if not basic
 
+    end_wall = get_wall_time();
+    end_cpu = get_cpu_time();
+
+    printf("Duration: %f s\n", end_cpu - start_cpu);
 
     // Compare
     if (!(scenarios & SCENARIO_CORRUPT)) {
@@ -1034,9 +1005,6 @@ void zlib_test(
     if (head_in.extra) {
         free(head_in.extra);
     }
-//    free(head_out.name);
-//    free(head_out.comment);
-//    free(head_out.extra);
 
 }
 
@@ -1159,8 +1127,10 @@ TEST_F(ZlibTest, CompressFixed) {
             DEF_WBITS, DEF_MEM_LEVEL, Z_FIXED);
 }
 
-
+// skip long tests when doing performance testing
+#ifndef ZSC_ENABLE_PERFORMANCE_TESTS
 #if DO_LONG_TESTS
+
 TEST_F(ZlibTest, CorpusGzip) {
     for (int j = 0; j < NUM_CORPUS; j++) {
         printf("\n");
@@ -1221,272 +1191,9 @@ TEST_F(ZlibTest, CorpusPartialFlush) {
 }
 
 #endif
-
-#if DO_REALLY_LONG_TESTS
-
-TEST_F(ZlibTest, Performance) {
-
-    WrapType wrapper = WRAP_ZLIB;
-    int windowBits = DEF_WBITS;
-    int memLevel = DEF_MEM_LEVEL;
-    ZlibStrategy strategy = Z_DEFAULT_STRATEGY;
-    int max_block_size = 100000;
-
-    U8 * source_buf[NUM_CANTRBRY];
-    int source_buf_len[NUM_CANTRBRY];
-    U32 compressed_buf_len;
-    U8 * compressed_buf;
-    U32 work_buf_len;
-    U8 * work_buf;
-    U32 compressed_buf_len_out;
-
-    U32 total_input_len = 0;
-
-    for (int i = 0; i < NUM_CANTRBRY; i++) {
-        FILE * file = fopen(corpus_files[i], "r");
-        ASSERT_FALSE(file == NULL);
-        source_buf_len[i] = CORPUS_MAX_SIZE;
-        source_buf[i] = (U8*)malloc(source_buf_len[i]);
-        int nread = fread(source_buf[i], 1, source_buf_len[i], file);
-        ASSERT_FALSE(ferror(file));
-        fclose(file);
-        ASSERT_TRUE(nread <= source_buf_len[i]);
-        source_buf_len[i] = nread;
-        total_input_len += nread;
-    }
-
-    // size and allocate work and output buffers
-    U32 predicted_max_output_size;
-    ZlibReturn ret = zsc_compress_get_max_output_size(
-            CORPUS_MAX_SIZE,
-            CORPUS_MAX_SIZE,
-            Z_NO_COMPRESSION, // gives conservative
-            &predicted_max_output_size);
-    EXPECT_EQ(ret, Z_OK);
-    printf("max_output calculated at %u.\n", predicted_max_output_size);
-    compressed_buf_len = predicted_max_output_size;
-
-    compressed_buf = (U8 *) malloc(compressed_buf_len);
-    ASSERT_NE(compressed_buf, (U8*)NULL);
-    compressed_buf_len_out = compressed_buf_len;
-
-    ret = zsc_compress_get_min_work_buf_size(&work_buf_len);
-    EXPECT_EQ(ret, Z_OK);
-
-    work_buf = (U8 *) malloc(work_buf_len);
-    ASSERT_NE(work_buf, (U8*)NULL);
-
-    // size and allocate decompression buffers
-    U32 uncompressed_buf_len = CORPUS_MAX_SIZE;
-    U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
-    EXPECT_NE(uncompressed_buf, (U8 * )NULL);
-
-    U32 work_buf_len2;
-    U8 * work_buf2;
-    ret = zsc_uncompress_get_min_work_buf_size(&work_buf_len2);
-    EXPECT_EQ(ret, Z_OK);
-    work_buf2 = (U8 *) malloc(work_buf_len2);
-    ASSERT_NE(work_buf, (U8 *)Z_NULL);
-
-    U32 uncompressed_buf_len_out = uncompressed_buf_len;
-
-    // fill work buffer with garbage
-    memset((void*)work_buf, 0xa5,work_buf_len);
-    printf("Compressed buf size: %u. Work buf size: %u.\n",
-            compressed_buf_len, work_buf_len);
-
-    U32 total_compressed_len;
-    double total_dur_wall;
-    double total_dur_cpu;
-    double total_decomp_dur_wall;
-    double total_decomp_dur_cpu;
-    double start_wall;
-    double start_cpu;
-    double end_wall;
-    double end_cpu;
-    double dur_wall;
-    double dur_cpu;
-
-    printf("algo, input (B), output (B), compression ratio, space saving, "
-            "wall duration (s), cpu duration (s), B saved per s,"
-            "decomp wall (s), decomp cpu (s), B (with decomp) saved per s\n");
-
-
-
-    for (int repeat = 0; repeat < 3; repeat++) {
-    for (int level = -1; level <= Z_BEST_COMPRESSION; level++)
-    {
-        total_compressed_len = 0;
-        total_dur_wall = 0;
-        total_dur_cpu = 0;
-        total_decomp_dur_wall = 0;
-        total_decomp_dur_cpu = 0;
-
-        for (int i = 0; i < NUM_CANTRBRY; i++) {
-            // fill buffers with garbage
-            memset((void*)work_buf, 0xa5,work_buf_len);
-            memset((void*)work_buf2, 0x5a,work_buf_len2);
-            memset((void*)compressed_buf, 0xb6, compressed_buf_len);
-            memset((void*)uncompressed_buf, 0x6b, uncompressed_buf_len);
-
-            compressed_buf_len_out = compressed_buf_len;
-            uncompressed_buf_len_out = uncompressed_buf_len;
-            ret = Z_OK;
-
-            // time compression
-            if(Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-                start_wall = get_wall_time();
-                start_cpu = get_cpu_time();
-                ret = zsc_compress(compressed_buf, &compressed_buf_len_out,
-                        source_buf[i], source_buf_len[i], max_block_size,
-                        work_buf, work_buf_len, level);
-                end_wall = get_wall_time();
-                end_cpu = get_cpu_time();
-            } else {
-                start_wall = get_wall_time();
-                start_cpu = get_cpu_time();
-                memcpy(compressed_buf, source_buf[i], source_buf_len[i]);
-                compressed_buf_len_out = source_buf_len[i];
-                end_wall = get_wall_time();
-                end_cpu = get_cpu_time();
-            }
-
-
-
-            EXPECT_EQ(ret, Z_OK);
-            dur_wall = end_wall - start_wall;
-            dur_cpu = end_cpu - start_cpu;
-            total_dur_wall += dur_wall;
-            total_dur_cpu += dur_cpu;
-            total_compressed_len += compressed_buf_len_out;
-
-            // time decompression
-            start_wall = get_wall_time();
-            start_cpu = get_cpu_time();
-            if(Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-                ret = zsc_uncompress(uncompressed_buf, &uncompressed_buf_len_out,
-                        compressed_buf, &compressed_buf_len_out,
-                        work_buf2, work_buf_len2);
-            } else {
-                memcpy(uncompressed_buf, compressed_buf, compressed_buf_len_out);
-                uncompressed_buf_len_out = compressed_buf_len_out;
-            }
-            end_wall = get_wall_time();
-            end_cpu = get_cpu_time();
-
-            EXPECT_EQ(ret, Z_OK);
-            dur_wall = end_wall - start_wall;
-            dur_cpu = end_cpu - start_cpu;
-            total_decomp_dur_wall += dur_wall;
-            total_decomp_dur_cpu += dur_cpu;
-
-        }
-
-        double compression_ratio = (double) total_input_len
-                / (double) total_compressed_len;
-        double space_savings = 1
-                - (double) total_compressed_len / (double) total_input_len;
-        double space_saved_per_s = ((int) total_input_len
-                - (int) total_compressed_len)
-                                   / total_dur_cpu;
-        double space_saved_decomped_per_s = ((int) total_input_len
-                - (int) total_compressed_len)
-                                   / (total_dur_cpu + total_decomp_dur_cpu);
-
-        if(Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printf("level %d, ", level);
-        } else {
-            printf("memcpy(), ");
-        }
-
-        printf("%07d, %07d, %g, %g, %g, %g, %g, %g, %g, %g\n",
-                total_input_len, total_compressed_len,
-                compression_ratio, space_savings,
-                total_dur_wall, total_dur_cpu, space_saved_per_s,
-                total_decomp_dur_wall, total_decomp_dur_cpu, space_saved_decomped_per_s);
-
-    }
-    }
-
-//    {
-//           total_compressed_len = 0;
-//           total_dur_wall = 0;
-//           total_dur_cpu = 0;
-//           total_decomp_dur_wall = 0;
-//           total_decomp_dur_cpu = 0;
-//
-//           for (int i = 0; i < NUM_CANTRBRY; i++) {
-//               // time compression
-//               start_wall = get_wall_time();
-//               start_cpu = get_cpu_time();
-//               memcpy(compressed_buf,source_buf[i], source_buf_len[i]);
-//               end_wall = get_wall_time();
-//               end_cpu = get_cpu_time();
-//
-//               dur_wall = end_wall - start_wall;
-//               dur_cpu = end_cpu - start_cpu;
-//               total_dur_wall += dur_wall;
-//               total_dur_cpu += dur_cpu;
-//               compressed_buf_len_out = compressed_buf_len;
-//               total_compressed_len += compressed_buf_len_out;
-//
-//               // time decompression
-//               start_wall = get_wall_time();
-//               start_cpu = get_cpu_time();
-//               memcpy(uncompressed_buf,compressed_buf, source_buf_len[i]);
-//               end_wall = get_wall_time();
-//               end_cpu = get_cpu_time();
-//               dur_wall = end_wall - start_wall;
-//               dur_cpu = end_cpu - start_cpu;
-//               total_decomp_dur_wall += dur_wall;
-//               total_decomp_dur_cpu += dur_cpu;
-//           }
-//
-//           start_wall = get_wall_time();
-//           start_cpu = get_cpu_time();
-//
-//           total_compressed_len = 0;
-//
-//           for (int i = 0; i < NUM_CANTRBRY; i++) {
-//               compressed_buf_len_out = compressed_buf_len;
-//               memcpy(compressed_buf,source_buf[i],source_buf_len[i]);
-//               compressed_buf_len_out = source_buf_len[i];
-//               total_compressed_len += compressed_buf_len_out;
-//           }
-//
-//           end_wall = get_wall_time();
-//           end_cpu = get_cpu_time();
-//           dur_wall = end_wall - start_wall;
-//           dur_cpu = end_cpu - start_cpu;
-//
-//           double compression_ratio = (double) total_input_len
-//                   / (double) total_compressed_len;
-//           double space_savings = 1
-//                   - (double) total_compressed_len / (double) total_input_len;
-//           double space_saved_per_s = ((int) total_input_len
-//                   - (int) total_compressed_len)
-//                                      / total_dur_cpu;
-//           double space_saved_decomped_per_s = ((int) total_input_len
-//                   - (int) total_compressed_len)
-//                                      / (total_dur_cpu + total_decomp_dur_cpu);
-//
-//           printf("memcpy(), %07d, %07d, %g, %g, %g, %g, %g, %g, %g, %g\n",
-//                   total_input_len, total_compressed_len,
-//                   compression_ratio, space_savings,
-//                   total_dur_wall, total_dur_cpu, space_saved_per_s,
-//                   total_decomp_dur_wall, total_decomp_dur_cpu, space_saved_decomped_per_s);
-//       }
-
-    for (int i = 0; i < NUM_CANTRBRY; i++) {
-        free(source_buf[i]);
-    }
-    free(compressed_buf);
-    free(work_buf);
-    free(uncompressed_buf);
-    free(work_buf2);
-
-}
 #endif
+
+
 
 TEST_F(ZlibTest, Dictionary) {
     zlib_test_alice(WRAP_ZLIB, SCENARIO_DICTIONARY);
@@ -1940,70 +1647,6 @@ TEST_F(ZlibTest, DeflateErrors) {
     ASSERT_EQ(err, Z_OK);
     U8 *work_buf = (U8*)malloc(work_buf_size);
     ASSERT_NE(work_buf, (U8*)NULL);
-
-
-//    z_static_mem mem;
-//    memset(&mem, 0, sizeof(mem));
-//    mem.work = work_buf;
-//    mem.work_len = work_buf_size;
-//    mem.work_alloced = 0;
-//
-//    z_stream stream;
-//    memset(&stream, 0, sizeof(stream));
-//    stream.zalloc = (alloc_func)0;
-//    stream.zfree = (free_func)0;
-//    stream.opaque = (voidpf)0;
-//
-//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-//    EXPECT_EQ(err, Z_STREAM_ERROR);
-//
-//
-//    printf("null free gives error\n");
-//    memset(&stream, 0, sizeof(stream));
-//    stream.zalloc = (alloc_func)z_static_alloc;
-//    stream.zfree = (free_func)0;
-//    stream.opaque = (voidpf)0;
-//
-//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-//    EXPECT_EQ(err, Z_STREAM_ERROR);
-//
-//
-//    printf("null allocation gives error\n");
-//    memset(&mem, 0, sizeof(mem));
-//    mem.work = work_buf;
-//    mem.work_len = work_buf_size;
-//    mem.work_alloced = 0;
-//    memset(&stream, 0, sizeof(stream));
-//    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
-//    stream.zfree = (free_func)z_static_free;
-//    stream.opaque = (voidpf)&mem;
-//
-//    good_allocs_allowed = 0;
-//
-//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-//    EXPECT_EQ(err, Z_MEM_ERROR);
-//
-//
-//    memset(&mem, 0, sizeof(mem));
-//    mem.work = work_buf;
-//    mem.work_len = work_buf_size;
-//    mem.work_alloced = 0;
-//    memset(&stream, 0, sizeof(stream));
-//    stream.zalloc = (alloc_func)zlib_test_bad_alloc;
-//    stream.zfree = (free_func)z_static_free;
-//    stream.opaque = (voidpf)&mem;
-//
-//    good_allocs_allowed = 1;
-//
-//    err = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-//            DEF_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-//    EXPECT_EQ(err, Z_MEM_ERROR);
-
-
-
 
     printf("deflate fns should fail with null stream\n");
     // FIXME make assert eventually
@@ -2752,6 +2395,473 @@ TEST(ZlibDeathTest, Asserts) {
     printf("death tests done\n");
 }
 
+#if ZSC_ENABLE_PERFORMANCE_TESTS
+
+TEST_F(ZlibTest, Performance) {
+
+    WrapType wrapper = WRAP_ZLIB;
+    int windowBits = DEF_WBITS;
+    int memLevel = DEF_MEM_LEVEL;
+    ZlibStrategy strategy = Z_DEFAULT_STRATEGY;
+    int max_block_size = 100000;
+
+    U8 * source_buf[NUM_CANTRBRY];
+    int source_buf_len[NUM_CANTRBRY];
+    U32 compressed_buf_len;
+    U8 * compressed_buf;
+    U32 c_work_buf_len;
+    U8 * c_work_buf;
+    U32 compressed_buf_len_out;
+
+    U32 total_input_len = 0;
+
+    for (int i = 0; i < NUM_CANTRBRY; i++) {
+        FILE * file = fopen(cantrbry_files[i], "r");
+        ASSERT_FALSE(file == NULL);
+        source_buf_len[i] = CORPUS_MAX_SIZE_CANTRBRY;
+        source_buf[i] = (U8*)malloc(source_buf_len[i]);
+        int nread = fread(source_buf[i], 1, source_buf_len[i], file);
+        ASSERT_FALSE(ferror(file));
+        fclose(file);
+        ASSERT_TRUE(nread <= source_buf_len[i]);
+        source_buf_len[i] = nread;
+        total_input_len += nread;
+    }
+
+    // size and allocate work and output buffers
+    U32 predicted_max_output_size;
+    ZlibReturn ret = zsc_compress_get_max_output_size(
+            CORPUS_MAX_SIZE,
+            CORPUS_MAX_SIZE,
+            Z_NO_COMPRESSION, // gives conservative
+            &predicted_max_output_size);
+    EXPECT_EQ(ret, Z_OK);
+    compressed_buf_len = predicted_max_output_size;
+
+    compressed_buf = (U8 *) malloc(compressed_buf_len);
+    ASSERT_NE(compressed_buf, (U8*)NULL);
+    compressed_buf_len_out = compressed_buf_len;
+
+    ret = zsc_compress_get_min_work_buf_size(&c_work_buf_len);
+    EXPECT_EQ(ret, Z_OK);
+
+    c_work_buf = (U8 *) malloc(c_work_buf_len);
+    ASSERT_NE(c_work_buf, (U8*)NULL);
+
+    // size and allocate decompression buffers
+    U32 uncompressed_buf_len = CORPUS_MAX_SIZE;
+    U8 * uncompressed_buf = (U8 *) malloc(uncompressed_buf_len);
+    EXPECT_NE(uncompressed_buf, (U8 * )NULL);
+
+    U32 uc_work_buf_len;
+    U8 * uc_work_buf;
+    ret = zsc_uncompress_get_min_work_buf_size(&uc_work_buf_len);
+    EXPECT_EQ(ret, Z_OK);
+    uc_work_buf = (U8 *) malloc(uc_work_buf_len);
+    ASSERT_NE(c_work_buf, (U8 *)Z_NULL);
+
+    U32 uncompressed_buf_len_out = uncompressed_buf_len;
+
+    int num_repeats = 2; // FIXME add more
+    int num_tests = NUM_PERFORMANCE_LEVELS; // 10 levels + memcpy
+    U32 compressed_len[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double compress_dur_wall[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double compress_dur_cpu[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double decomp_dur_wall[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double decomp_dur_cpu[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    // derived values
+    double compression_ratio[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double remainder_ratio[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double space_saving_ratio[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double bits_compressed_per_s[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double bits_decomped_per_s[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double bits_saved_per_s[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+
+    int total_compressed_bytes[NUM_PERFORMANCE_LEVELS];
+    double avg_compression_ratio[NUM_PERFORMANCE_LEVELS];
+    double total_compression_ratio[NUM_PERFORMANCE_LEVELS];
+
+    double total_compress_dur[NUM_PERFORMANCE_LEVELS];
+    double total_decomp_dur[NUM_PERFORMANCE_LEVELS];
+
+    double avg_bits_compressed_per_s[NUM_PERFORMANCE_LEVELS];
+    double avg_bits_decomped_per_s[NUM_PERFORMANCE_LEVELS];
+    double avg_bits_saved_per_s[NUM_PERFORMANCE_LEVELS];
+
+    double start_wall;
+    double start_cpu;
+    double end_wall;
+    double end_cpu;
+
+    for (int test = 0; test < num_tests; test++) {
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            compressed_len[test][i_cantr] = 0;
+            compress_dur_wall[test][i_cantr] = 0;
+            compress_dur_cpu[test][i_cantr] = 0;
+            decomp_dur_wall[test][i_cantr] = 0;
+            decomp_dur_cpu[test][i_cantr] = 0;
+        }
+    }
+
+    for (int repeat = 0; repeat < num_repeats; repeat++) {
+        for (int test = 0; test < num_tests; test++) {
+            for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+                int level = test - 1;
+                // fill buffers with garbage
+                memset((void*) c_work_buf, 0xa5, c_work_buf_len);
+                memset((void*) uc_work_buf, 0x5a, uc_work_buf_len);
+                memset((void*) compressed_buf, 0xb6, compressed_buf_len);
+                memset((void*) uncompressed_buf, 0x6b, uncompressed_buf_len);
+
+                compressed_buf_len_out = compressed_buf_len;
+                ret = Z_OK;
+
+                // time compression
+                start_wall = get_wall_time();
+                start_cpu = get_cpu_time();
+                if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+                    ret = zsc_compress(compressed_buf, &compressed_buf_len_out,
+                            source_buf[i_cantr], source_buf_len[i_cantr], max_block_size,
+                            c_work_buf, c_work_buf_len, level);
+                } else {
+                    memcpy(compressed_buf, source_buf[i_cantr], source_buf_len[i_cantr]);
+                    compressed_buf_len_out = source_buf_len[i_cantr];
+                }
+                end_wall = get_wall_time();
+                end_cpu = get_cpu_time();
+
+                EXPECT_EQ(ret, Z_OK);
+                compress_dur_wall[test][i_cantr] += end_wall - start_wall;
+                compress_dur_cpu[test][i_cantr] += end_cpu - start_cpu;
+                compressed_len[test][i_cantr] += compressed_buf_len_out;
+
+                // time decompression
+                uncompressed_buf_len_out = uncompressed_buf_len;
+                start_wall = get_wall_time();
+                start_cpu = get_cpu_time();
+                if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+                    ret = zsc_uncompress(uncompressed_buf,
+                            &uncompressed_buf_len_out,
+                            compressed_buf, &compressed_buf_len_out,
+                            uc_work_buf, uc_work_buf_len);
+                } else {
+                    memcpy(uncompressed_buf, compressed_buf,
+                            compressed_buf_len_out);
+                    uncompressed_buf_len_out = compressed_buf_len_out;
+                }
+                end_wall = get_wall_time();
+                end_cpu = get_cpu_time();
+
+                EXPECT_EQ(ret, Z_OK);
+                decomp_dur_wall[test][i_cantr] += end_wall - start_wall;
+                decomp_dur_cpu[test][i_cantr] += end_cpu - start_cpu;
+            }
+        }
+    }
+
+    for (int test = 0; test < num_tests; test++) {
+        int total_uncompressed_bytes = 0;
+        total_compressed_bytes[test] = 0;
+        avg_compression_ratio[test] = 0;
+        avg_bits_compressed_per_s[test] = 0;
+        avg_bits_decomped_per_s[test] = 0;
+        avg_bits_saved_per_s[test] = 0;
+
+        total_compress_dur[test] = 0;
+        total_decomp_dur[test] = 0;
+
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            // calculate average values
+            compressed_len[test][i_cantr] /= num_repeats;
+            compress_dur_wall[test][i_cantr] /= num_repeats;
+            compress_dur_cpu[test][i_cantr] /= num_repeats;
+            decomp_dur_wall[test][i_cantr] /= num_repeats;
+            decomp_dur_cpu[test][i_cantr] /= num_repeats;
+
+            // calculated derived values
+            compression_ratio[test][i_cantr] = (double) source_buf_len[i_cantr]
+                    / (double) compressed_len[test][i_cantr];
+            remainder_ratio[test][i_cantr] =
+                    (double) compressed_len[test][i_cantr]
+                    / (double) source_buf_len[i_cantr];
+            space_saving_ratio[test][i_cantr] =
+                    1 - remainder_ratio[test][i_cantr];
+
+            bits_compressed_per_s[test][i_cantr] =
+                    8 * (double) source_buf_len[i_cantr] / compress_dur_cpu[test][i_cantr];
+            bits_decomped_per_s[test][i_cantr] =
+                    8 * (double) source_buf_len[i_cantr] / decomp_dur_cpu[test][i_cantr];
+            bits_saved_per_s[test][i_cantr] =
+                    8 * ((int) source_buf_len[i_cantr] - (int) compressed_len[test][i_cantr])
+                    / (compress_dur_cpu[test][i_cantr] + decomp_dur_cpu[test][i_cantr]);
+
+            total_uncompressed_bytes += source_buf_len[i_cantr];
+            total_compressed_bytes[test] += compressed_len[test][i_cantr];
+
+            total_compress_dur[test] += compress_dur_cpu[test][i_cantr];
+            total_decomp_dur[test] += decomp_dur_cpu[test][i_cantr];
+
+            avg_compression_ratio[test] += compression_ratio[test][i_cantr]
+                                           / num_tests;
+            avg_bits_compressed_per_s[test] +=
+                    bits_compressed_per_s[test][i_cantr] / num_tests;
+            avg_bits_decomped_per_s[test] += bits_decomped_per_s[test][i_cantr]
+                                             / num_tests;
+            avg_bits_saved_per_s[test] += bits_saved_per_s[test][i_cantr]
+                                          / num_tests;
+
+        }
+
+        total_compression_ratio[test] = (double) total_uncompressed_bytes
+                                        / (double) total_compressed_bytes[test];
+
+    }
+
+    printf("results are written to csv, for easier reading.\n");
+
+    int print_size = 1000000;
+    char * printbuf = (char *)malloc(print_size);
+    memset(printbuf, 0, print_size);
+    int printlen = 0;
+
+    // display compression ratios by level and cantrbry file
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "\ncompression ratios (uncompressed/compressed) by file and method\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "average is average of each compression ratio \n"
+                            "total is sum of all corpus bytes / size of compressed corpus.\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen],
+                    "level %d,  ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "%04.3f, ",
+                    compression_ratio[test][i_cantr]);
+        }
+        printlen += sprintf(&printbuf[printlen], "%04.3f, %04.3f\n",
+                total_compression_ratio[test], avg_compression_ratio[test]);
+    }
+
+    // display space saving ratios by level and cantrbry file
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "\nspace saving ratios (1 - compressed/uncompressed) by file and method\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "average is average of each compression ratio \n"
+                            "total is sum of all corpus bytes / size of compressed corpus.\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen],
+                    "level %d,  ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "% 04.3f, ",
+                    1-1/compression_ratio[test][i_cantr]);
+        }
+        printlen += sprintf(&printbuf[printlen], "% 04.3f, % 04.3f\n",
+                1-1/total_compression_ratio[test], 1-1/avg_compression_ratio[test]);
+    }
+
+
+    // display compression times by level and cantrbry file
+    printlen += sprintf(&printbuf[printlen],
+            "\ncompression durations (s) by file and method\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen], "level %d, ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "%g, ",
+                    compress_dur_cpu[test][i_cantr]);
+        }
+        printlen += sprintf(&printbuf[printlen], "%g\n",
+                total_compress_dur[test]);
+    }
+
+    // display compression rates by level and cantrbry file
+    printlen += sprintf(&printbuf[printlen],
+            "\ncompression rates (Mb/s) by file and method\n");
+    printlen += sprintf(&printbuf[printlen],
+            "total is corpus size / time to compress corpus. "
+            "total will be more affected by larger files\n");
+    printlen += sprintf(&printbuf[printlen],
+            "average is average of each compression rate. "
+            "compression rate doesn't look great for small files.\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "% 05.2f, ",
+                    (int) bits_compressed_per_s[test][i_cantr] / 1e6);
+        }
+        printlen += sprintf(&printbuf[printlen], "% 05.2f, % 05.2f\n",
+                (8*total_input_len / 1e6) / total_compress_dur[test],
+                avg_bits_compressed_per_s[test] / 1e6);
+    }
+
+    // display decompression times by level and cantrbry file
+    printlen += sprintf(&printbuf[printlen],
+            "\ndecompression durations (s) by file and method\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen], "level %d, ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "%g, ",
+                    decomp_dur_cpu[test][i_cantr]);
+        }
+        printlen += sprintf(&printbuf[printlen], "%g\n",
+                total_decomp_dur[test]);
+    }
+
+    // display decompression rates by level and cantrbry file
+    printlen += sprintf(&printbuf[printlen],
+            "\ndecompression rates (decompressed Mb/s) by file and method\n");
+    printlen += sprintf(&printbuf[printlen],
+            "total is corpus size / time to decompress corpus. "
+            "total will be more affected by larger files\n");
+    printlen += sprintf(&printbuf[printlen],
+            "average is average of each decompression rate. "
+            "rate doesn't look great for small files.\n");
+    printlen += sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "% 05.2f, ",
+                    bits_decomped_per_s[test][i_cantr] / 1e6);
+        }
+        printlen += sprintf(&printbuf[printlen], "% 05.2f, % 05.2f\n",
+                (8*total_input_len / 1e6) / total_decomp_dur[test],
+                avg_bits_decomped_per_s[test] / 1e6);
+    }
+
+    // display bits saved per second by level and cantrbry file
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "\nMb saved per second \n"
+                            "1e6*(uncompressed bits - compressed bits) / (compression time + decompression time) \n"
+                            "by file and method\n");
+    printlen += sprintf(&printbuf[printlen],
+            "total is (corpus size - compressed corpus size) / time to compress and decompress corpus. "
+            "total will be more affected by larger files\n");
+    printlen += sprintf(&printbuf[printlen],
+            "average is average of each rate. "
+            "rate doesn't look great for small files.\n");
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
+    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            printlen += sprintf(&printbuf[printlen], "% 06.2f, ",
+                    (int) bits_saved_per_s[test][i_cantr]/1e6);
+        }
+        printlen += sprintf(&printbuf[printlen], "% 06.2f, % 06.2f\n",
+                1e-6*8*((int)total_input_len-(int)total_compressed_bytes[test])
+                / (total_compress_dur[test] + total_decomp_dur[test]),
+                (int) avg_bits_saved_per_s[test]/1e6);
+    }
+
+    printlen +=
+            sprintf(&printbuf[printlen],
+                    "\nSummary:\n"
+                    "CR: average compression ratio \n"
+                            "SS: space saving ratio: 1 - ( 1/CR )\n"
+                            "CPS: Mb compressed per second\n"
+                            "DPS: Mb decompressed per second\n"
+                            "SPS: Mb saved per second\n"
+                            "(uncompressed size - compressed size) / (compression time + decompression time\n");
+
+    printlen += sprintf(&printbuf[printlen], "method, CR, SS, CPS, DPS, SPS\n");
+    for (int test = 0; test < num_tests; test++) {
+        int level = test - 1;
+        if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
+            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+        } else {
+            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+        }
+        printlen += sprintf(&printbuf[printlen],
+                "% 4.3f, % 4.3f, %.2f, %.2f, %.2f\n",
+                avg_compression_ratio[test],
+                1 - 1 / avg_compression_ratio[test],
+                avg_bits_compressed_per_s[test] / 1e6,
+                avg_bits_decomped_per_s[test] / 1e6,
+                avg_bits_saved_per_s[test] / 1e6);
+    }
+
+    // print buffer to csv and stdout
+    printf("%s", printbuf);
+
+    FILE * fptr = fopen("performance.csv", "w");
+
+    int bytes_written = fprintf(fptr, "%s", printbuf);
+    printf("wrote %d bytes to csv\n", bytes_written);
+
+    fclose(fptr);
+
+    for (int i = 0; i < NUM_CANTRBRY; i++) {
+        free(source_buf[i]);
+    }
+    free(compressed_buf);
+    free(c_work_buf);
+    free(uncompressed_buf);
+    free(uc_work_buf);
+    free(printbuf);
+}
+#endif
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

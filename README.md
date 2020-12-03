@@ -157,7 +157,7 @@ CPU: CPU time to compress the corpus (seconds)
 
 BSPS: bytes saved per second:  (UB - CB) / CPU
 
-DCPU: CPU time to decompress the corpus (seconds)
+DCPU: CPU time to decompress the buffers compressed with a certain setting (seconds)
 
 TBSPS: transmission bytes saved per second 
   Suppose you're trasmitting data from 1 node to another, instantaneously.
