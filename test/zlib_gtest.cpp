@@ -2415,6 +2415,10 @@ TEST_F(ZlibTest, Performance) {
 
     U32 total_input_len = 0;
 
+    bool trust_cpu_time = true;
+
+
+
     for (int i = 0; i < NUM_CANTRBRY; i++) {
         FILE * file = fopen(cantrbry_files[i], "r");
         ASSERT_FALSE(file == NULL);
@@ -2462,13 +2466,15 @@ TEST_F(ZlibTest, Performance) {
 
     U32 uncompressed_buf_len_out = uncompressed_buf_len;
 
-    int num_repeats = 2; // FIXME add more
+    int num_repeats = 3;
     int num_tests = NUM_PERFORMANCE_LEVELS; // 10 levels + memcpy
     U32 compressed_len[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
     double compress_dur_wall[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
     double compress_dur_cpu[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double compress_dur[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
     double decomp_dur_wall[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
     double decomp_dur_cpu[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
+    double decomp_dur[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
     // derived values
     double compression_ratio[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
     double remainder_ratio[NUM_PERFORMANCE_LEVELS][NUM_CANTRBRY];
@@ -2503,6 +2509,7 @@ TEST_F(ZlibTest, Performance) {
         }
     }
 
+
     for (int repeat = 0; repeat < num_repeats; repeat++) {
         for (int test = 0; test < num_tests; test++) {
             for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
@@ -2535,6 +2542,10 @@ TEST_F(ZlibTest, Performance) {
                 compress_dur_cpu[test][i_cantr] += end_cpu - start_cpu;
                 compressed_len[test][i_cantr] += compressed_buf_len_out;
 
+                if(end_cpu == start_cpu) {
+                    trust_cpu_time = false;
+                }
+
                 // time decompression
                 uncompressed_buf_len_out = uncompressed_buf_len;
                 start_wall = get_wall_time();
@@ -2555,7 +2566,22 @@ TEST_F(ZlibTest, Performance) {
                 EXPECT_EQ(ret, Z_OK);
                 decomp_dur_wall[test][i_cantr] += end_wall - start_wall;
                 decomp_dur_cpu[test][i_cantr] += end_cpu - start_cpu;
+
+                if(end_cpu == start_cpu) {
+                    trust_cpu_time = false;
+                }
             }
+        }
+    }
+
+    for (int test = 0; test < num_tests; test++) {
+        for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
+            compress_dur[test][i_cantr] =
+                    trust_cpu_time ? compress_dur_cpu[test][i_cantr] :
+                                     compress_dur_wall[test][i_cantr];
+            decomp_dur[test][i_cantr] =
+                    trust_cpu_time ? decomp_dur_cpu[test][i_cantr] :
+                                     decomp_dur_wall[test][i_cantr];
         }
     }
 
@@ -2573,10 +2599,8 @@ TEST_F(ZlibTest, Performance) {
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
             // calculate average values
             compressed_len[test][i_cantr] /= num_repeats;
-            compress_dur_wall[test][i_cantr] /= num_repeats;
-            compress_dur_cpu[test][i_cantr] /= num_repeats;
-            decomp_dur_wall[test][i_cantr] /= num_repeats;
-            decomp_dur_cpu[test][i_cantr] /= num_repeats;
+            compress_dur[test][i_cantr] /= num_repeats;
+            decomp_dur[test][i_cantr] /= num_repeats;
 
             // calculated derived values
             compression_ratio[test][i_cantr] = (double) source_buf_len[i_cantr]
@@ -2588,18 +2612,18 @@ TEST_F(ZlibTest, Performance) {
                     1 - remainder_ratio[test][i_cantr];
 
             bits_compressed_per_s[test][i_cantr] =
-                    8 * (double) source_buf_len[i_cantr] / compress_dur_cpu[test][i_cantr];
+                    8 * (double) source_buf_len[i_cantr] / compress_dur[test][i_cantr];
             bits_decomped_per_s[test][i_cantr] =
-                    8 * (double) source_buf_len[i_cantr] / decomp_dur_cpu[test][i_cantr];
+                    8 * (double) source_buf_len[i_cantr] / decomp_dur[test][i_cantr];
             bits_saved_per_s[test][i_cantr] =
                     8 * ((int) source_buf_len[i_cantr] - (int) compressed_len[test][i_cantr])
-                    / (compress_dur_cpu[test][i_cantr] + decomp_dur_cpu[test][i_cantr]);
+                    / (compress_dur[test][i_cantr] + decomp_dur[test][i_cantr]);
 
             total_uncompressed_bytes += source_buf_len[i_cantr];
             total_compressed_bytes[test] += compressed_len[test][i_cantr];
 
-            total_compress_dur[test] += compress_dur_cpu[test][i_cantr];
-            total_decomp_dur[test] += decomp_dur_cpu[test][i_cantr];
+            total_compress_dur[test] += compress_dur[test][i_cantr];
+            total_decomp_dur[test] += decomp_dur[test][i_cantr];
 
             avg_compression_ratio[test] += compression_ratio[test][i_cantr]
                                            / num_tests;
@@ -2617,206 +2641,209 @@ TEST_F(ZlibTest, Performance) {
 
     }
 
-    printf("results are written to csv, for easier reading.\n");
-
-    int print_size = 1000000;
-    char * printbuf = (char *)malloc(print_size);
-    memset(printbuf, 0, print_size);
+    // write results to csv
+    FILE * fptr = fopen("performance.csv", "w");
+    ASSERT_TRUE(fptr != NULL);
     int printlen = 0;
+
+    printlen += fprintf(fptr, "ZSC compression results\n");
+    printlen += fprintf(fptr, "Timing results use %s time and are averaged over %d repeated tests.\n",
+            trust_cpu_time? "CPU" : "wall", num_repeats);
+
 
     // display compression ratios by level and cantrbry file
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "\ncompression ratios (uncompressed/compressed) by file and method\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "average is average of each compression ratio \n"
                             "total is sum of all corpus bytes / size of compressed corpus.\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    printlen += fprintf(fptr, "total, avg\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen],
+            printlen += fprintf(fptr,
                     "level %d,  ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "%04.3f, ",
+            printlen += fprintf(fptr, "%04.3f, ",
                     compression_ratio[test][i_cantr]);
         }
-        printlen += sprintf(&printbuf[printlen], "%04.3f, %04.3f\n",
+        printlen += fprintf(fptr, "%04.3f, %04.3f\n",
                 total_compression_ratio[test], avg_compression_ratio[test]);
     }
 
     // display space saving ratios by level and cantrbry file
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "\nspace saving ratios (1 - compressed/uncompressed) by file and method\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "average is average of each compression ratio \n"
                             "total is sum of all corpus bytes / size of compressed corpus.\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    printlen += fprintf(fptr, "total, avg\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen],
+            printlen += fprintf(fptr,
                     "level %d,  ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "% 04.3f, ",
+            printlen += fprintf(fptr, "% 04.3f, ",
                     1-1/compression_ratio[test][i_cantr]);
         }
-        printlen += sprintf(&printbuf[printlen], "% 04.3f, % 04.3f\n",
+        printlen += fprintf(fptr, "% 04.3f, % 04.3f\n",
                 1-1/total_compression_ratio[test], 1-1/avg_compression_ratio[test]);
     }
 
 
     // display compression times by level and cantrbry file
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "\ncompression durations (s) by file and method\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total\n");
+    printlen += fprintf(fptr, "total\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen], "level %d, ", level);
+            printlen += fprintf(fptr, "level %d, ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "%g, ",
-                    compress_dur_cpu[test][i_cantr]);
+            printlen += fprintf(fptr, "%g, ",
+                    compress_dur[test][i_cantr]);
         }
-        printlen += sprintf(&printbuf[printlen], "%g\n",
+        printlen += fprintf(fptr, "%g\n",
                 total_compress_dur[test]);
     }
 
     // display compression rates by level and cantrbry file
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "\ncompression rates (Mb/s) by file and method\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "total is corpus size / time to compress corpus. "
             "total will be more affected by larger files\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "average is average of each compression rate. "
             "compression rate doesn't look great for small files.\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    printlen += fprintf(fptr, "total, avg\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+            printlen += fprintf(fptr, "level %d,  ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "% 05.2f, ",
-                    (int) bits_compressed_per_s[test][i_cantr] / 1e6);
+            printlen += fprintf(fptr, "% 05.2f, ",
+                    bits_compressed_per_s[test][i_cantr] / 1e6);
         }
-        printlen += sprintf(&printbuf[printlen], "% 05.2f, % 05.2f\n",
+        printlen += fprintf(fptr, "% 05.2f, % 05.2f\n",
                 (8*total_input_len / 1e6) / total_compress_dur[test],
                 avg_bits_compressed_per_s[test] / 1e6);
     }
 
     // display decompression times by level and cantrbry file
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "\ndecompression durations (s) by file and method\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total\n");
+    printlen += fprintf(fptr, "total\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen], "level %d, ", level);
+            printlen += fprintf(fptr, "level %d, ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "%g, ",
-                    decomp_dur_cpu[test][i_cantr]);
+            printlen += fprintf(fptr, "%g, ",
+                    decomp_dur[test][i_cantr]);
         }
-        printlen += sprintf(&printbuf[printlen], "%g\n",
+        printlen += fprintf(fptr, "%g\n",
                 total_decomp_dur[test]);
     }
 
     // display decompression rates by level and cantrbry file
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "\ndecompression rates (decompressed Mb/s) by file and method\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "total is corpus size / time to decompress corpus. "
             "total will be more affected by larger files\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "average is average of each decompression rate. "
             "rate doesn't look great for small files.\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    printlen += fprintf(fptr, "total, avg\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+            printlen += fprintf(fptr, "level %d,  ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "% 05.2f, ",
+            printlen += fprintf(fptr, "% 05.2f, ",
                     bits_decomped_per_s[test][i_cantr] / 1e6);
         }
-        printlen += sprintf(&printbuf[printlen], "% 05.2f, % 05.2f\n",
+        printlen += fprintf(fptr, "% 05.2f, % 05.2f\n",
                 (8*total_input_len / 1e6) / total_decomp_dur[test],
                 avg_bits_decomped_per_s[test] / 1e6);
     }
 
     // display bits saved per second by level and cantrbry file
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "\nMb saved per second \n"
                             "1e6*(uncompressed bits - compressed bits) / (compression time + decompression time) \n"
                             "by file and method\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "total is (corpus size - compressed corpus size) / time to compress and decompress corpus. "
             "total will be more affected by larger files\n");
-    printlen += sprintf(&printbuf[printlen],
+    printlen += fprintf(fptr,
             "average is average of each rate. "
             "rate doesn't look great for small files.\n");
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "method, text, fax, Csrc, Excl, SPRC, tech, poem, html, list, man, play, ");
-    printlen += sprintf(&printbuf[printlen], "total, avg\n");
+    printlen += fprintf(fptr, "total, avg\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+            printlen += fprintf(fptr, "level %d,  ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
         for (int i_cantr = 0; i_cantr < NUM_CANTRBRY; i_cantr++) {
-            printlen += sprintf(&printbuf[printlen], "% 06.2f, ",
+            printlen += fprintf(fptr, "% 06.2f, ",
                     (int) bits_saved_per_s[test][i_cantr]/1e6);
         }
-        printlen += sprintf(&printbuf[printlen], "% 06.2f, % 06.2f\n",
+        printlen += fprintf(fptr, "% 06.2f, % 06.2f\n",
                 1e-6*8*((int)total_input_len-(int)total_compressed_bytes[test])
                 / (total_compress_dur[test] + total_decomp_dur[test]),
                 (int) avg_bits_saved_per_s[test]/1e6);
     }
 
     printlen +=
-            sprintf(&printbuf[printlen],
+            fprintf(fptr,
                     "\nSummary:\n"
                     "CR: average compression ratio \n"
                             "SS: space saving ratio: 1 - ( 1/CR )\n"
@@ -2825,15 +2852,15 @@ TEST_F(ZlibTest, Performance) {
                             "SPS: Mb saved per second\n"
                             "(uncompressed size - compressed size) / (compression time + decompression time\n");
 
-    printlen += sprintf(&printbuf[printlen], "method, CR, SS, CPS, DPS, SPS\n");
+    printlen += fprintf(fptr, "method, CR, SS, CPS, DPS, SPS\n");
     for (int test = 0; test < num_tests; test++) {
         int level = test - 1;
         if (Z_NO_COMPRESSION <= level && level <= Z_BEST_COMPRESSION) {
-            printlen += sprintf(&printbuf[printlen], "level %d,  ", level);
+            printlen += fprintf(fptr, "level %d,  ", level);
         } else {
-            printlen += sprintf(&printbuf[printlen], "memcpy(), ");
+            printlen += fprintf(fptr, "memcpy(), ");
         }
-        printlen += sprintf(&printbuf[printlen],
+        printlen += fprintf(fptr,
                 "% 4.3f, % 4.3f, %.2f, %.2f, %.2f\n",
                 avg_compression_ratio[test],
                 1 - 1 / avg_compression_ratio[test],
@@ -2841,15 +2868,18 @@ TEST_F(ZlibTest, Performance) {
                 avg_bits_decomped_per_s[test] / 1e6,
                 avg_bits_saved_per_s[test] / 1e6);
     }
+    fclose(fptr);
 
-    // print buffer to csv and stdout
-    printf("%s", printbuf);
 
-    FILE * fptr = fopen("performance.csv", "w");
+    // regurgitate csv back to stdout
+    fptr = fopen("performance.csv", "r");
+    ASSERT_TRUE(fptr != NULL);
 
-    int bytes_written = fprintf(fptr, "%s", printbuf);
-    printf("wrote %d bytes to csv\n", bytes_written);
-
+    char buff[1000];
+    char *gets_ret;
+    while(fgets(buff, 1000, fptr) != NULL) {
+        puts(buff);
+    }
     fclose(fptr);
 
     for (int i = 0; i < NUM_CANTRBRY; i++) {
@@ -2859,7 +2889,6 @@ TEST_F(ZlibTest, Performance) {
     free(c_work_buf);
     free(uncompressed_buf);
     free(uc_work_buf);
-    free(printbuf);
 }
 #endif
 
