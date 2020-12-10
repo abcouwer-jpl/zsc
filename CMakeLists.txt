@@ -109,7 +109,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
       include(ExternalProject)
       ExternalProject_Add(cantrbry
           GIT_REPOSITORY    https://github.com/nabcouwer/cantrbry.git
-          GIT_TAG           master
+          GIT_TAG           main
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/cantrbry"
           BINARY_DIR        ""
           CONFIGURE_COMMAND ""
@@ -127,7 +127,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
       include(ExternalProject)
       ExternalProject_Add(artificl
           GIT_REPOSITORY    https://github.com/nabcouwer/artificl.git
-          GIT_TAG           master
+          GIT_TAG           main
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/artificl"
           BINARY_DIR        ""
           CONFIGURE_COMMAND ""
@@ -145,7 +145,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
       include(ExternalProject)
       ExternalProject_Add(large
           GIT_REPOSITORY    https://github.com/nabcouwer/large.git
-          GIT_TAG           master
+          GIT_TAG           main
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/large"
           BINARY_DIR        ""
           CONFIGURE_COMMAND ""
@@ -163,7 +163,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Test")
       include(ExternalProject)
       ExternalProject_Add(calgary
           GIT_REPOSITORY    https://github.com/nabcouwer/calgary.git
-          GIT_TAG           master
+          GIT_TAG           main
           SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/corpus/calgary"
           BINARY_DIR        ""
           CONFIGURE_COMMAND ""

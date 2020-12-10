@@ -226,7 +226,7 @@ To pull any future changes from public zlib, one should be able to do
 
 `git pull public master # Creates a merge commit`
 
-`git push origin master`
+`git push -u origin `
   
 But no guarantees on how well this work, given the significant changes.
 
