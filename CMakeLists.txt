@@ -77,6 +77,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
     DEPENDENCIES ctest)
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Performance")
+  add_definitions(-DZSC_ENABLE_PERFORMANCE_TESTS=1)
+  set(CMAKE_BUILD_TYPE "Test")
+endif()  
+
 if (CMAKE_BUILD_TYPE STREQUAL "Test")
 
   configure_file(

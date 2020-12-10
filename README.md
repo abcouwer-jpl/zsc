@@ -137,10 +137,52 @@ Running
 runs all these checks. There will be some false positives and some items that 
 have been left as-is, where changing the existing code would be higher-risk.
 
-The main encoding/decoding loops loop over every pixel of an image or the 
-entirety of the compressed bitstream. Thus the overhead of function calls 
-becomes significant. Therefore these main loops exceed advised function sizes 
-and use macros for the sake of performance.
+## Performance
+
+The performance of each 'level' of compression was compared by passing the 
+Canterbury corpus, 2810784 B, to each level, and to memcpy(). 
+The size of the compressed output and the time to generate it were recorded.
+This is the 'Performance' test within the unit test suite.
+The below numbers reflect testing on a 32bit Raspberry Pi 4.
+
+UB: uncompressed bytes
+
+CB: compressed bytes
+
+CR: compression ratio: UB / CB
+
+SS: space saving ratio: 1 - ( CB / UB )
+
+CPU: CPU time to compress the corpus (seconds)
+
+BSPS: bytes saved per second:  (UB - CB) / CPU
+
+DCPU: CPU time to decompress the buffers compressed with a certain setting (seconds)
+
+TBSPS: transmission bytes saved per second 
+  Suppose you're trasmitting data from 1 node to another, instantaneously.
+  How many bytes would you not have to transmit, if you compressed at the sender, 
+  and decompressed at the reciever? (UB - CB) / (CPU + DCPU)
+  
+| algo     | CB      | CR   | SS    | CPU    |  BSPS  | DCPU  | TBSPS |
+| -------- | ------- | ---- | ----- | ------ | ------ | ----- | ----- |
+| memcpy() | 2810784 | 1    | 0     | 0.0019 |  0     | 0.003 |  0    |
+| level 0  | 2811285 | 0.99 | -0    | 0.0208 |  -24K  | 0.020 | -12K  |
+| level 1  | 0842979 | 3.33 | 0.700 | 0.303  |  6.51M | 0.071 | 5.27M |
+| level 2  | 0821886 | 3.42 | 0.706 | 0.358  |  5.55M | 0.070 | 4.65M |
+| level 3  | 0809844 | 3.47 | 0.712 | 0.397  |  5.04M | 0.070 | 4.29M |
+| level 4  | 0768442 | 3.66 | 0.727 | 0.824  |  2.48M | 0.068 | 2.29M |
+| level 5  | 0747916 | 3.76 | 0.734 | 2.630  |   784K | 0.068 |  765K |
+| level 6  | 0744167 | 3.78 | 0.735 | 3.546  |   582K | 0.068 |  572K |
+| level 7  | 0742155 | 3.79 | 0.736 | 4.032  |   513K | 0.068 |  505K |
+| level 8  | 0738951 | 3.80 | 0.737 | 4.955  |   418K | 0.068 |  412K |
+| level 9  | 0738674 | 3.81 | 0.737 | 5.315  |   390K | 0.068 |  385K |
+
+Level 0 (no compression) is fastest, but actually adds bytes to the output.
+
+Level 1 (fastest), 2, and 3 are very fast, and achieve comparable compression
+levels as the higher levels. So in all but the most bandwidth-constrained scenarios,
+faster compression is probably a good pick.
   
 ## TODO 
 

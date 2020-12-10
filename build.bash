@@ -36,9 +36,19 @@ else
     else
     	echo "No test results found"
     fi
+    if [[ -e ./performance.csv ]] ; then
+        cp ./performance.csv $source_path/test/output/performance.csv
+    else
+    	echo "No test results found"
+    fi
   elif [[ "$1" = "cfstest" ]] ; then
     echo "Configuring for cFS and running zlib tests"
     cmake -DCMAKE_BUILD_TYPE=CfsTest ..
+    make
+    make test ARGS="-V"
+  elif [[ "$1" = "performance" ]] ; then
+    echo "Building zlib Performance configuration"
+    cmake -DCMAKE_BUILD_TYPE=Performance ..
     make
     make test ARGS="-V"
   elif [[ "$1" = "test" ]] ; then
